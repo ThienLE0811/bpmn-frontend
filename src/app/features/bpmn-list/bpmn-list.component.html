@@ -1,0 +1,249 @@
+<div class="bpmn-list-layout">
+  <!-- Page Header Title Area -->
+  <div class="page-title-bar">
+    <div class="title-info">
+      <h2>Danh sách Quy trình BPMN</h2>
+      <p>Quản lý, tạo mới và chỉnh sửa các sơ đồ quy trình nghiệp vụ (BPMN 2.0).</p>
+    </div>
+
+    <button class="btn btn-primary-glow" (click)="openCreateModal()">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+      >
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+      </svg>
+      Tạo quy trình mới
+    </button>
+  </div>
+
+  <!-- Main Dashboard View -->
+  <main class="main-content">
+    <div class="content-container">
+      <!-- Overview Stat Cards -->
+      <section class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon total">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Tổng số Quy trình</span>
+            <span class="stat-value">{{ processes().length }}</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon published">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Đã phát hành</span>
+            <span class="stat-value">2</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon draft">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Bản nháp</span>
+            <span class="stat-value">1</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Table Section -->
+      <section class="table-card">
+        <!-- Table Toolbar -->
+        <div class="table-toolbar">
+          <div class="search-box">
+            <svg
+              class="search-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              class="search-input"
+              [ngModel]="searchTerm()"
+              (ngModelChange)="searchTerm.set($event)"
+              placeholder="Tìm kiếm theo mã quy trình, tên hoặc mô tả..."
+            />
+          </div>
+
+          <div class="toolbar-right">
+            <span class="results-count">Hiển thị {{ filteredProcesses().length }} quy trình</span>
+          </div>
+        </div>
+
+        <!-- Table View -->
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th width="140">Mã Quy Trình</th>
+                <th>Tên & Mô Tả Quy Trình</th>
+                <th width="100">Phiên Bản</th>
+                <th width="140">Trạng Thái</th>
+                <th width="160">Lần Sửa Cuối</th>
+                <th width="130" class="text-right">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (process of filteredProcesses(); track process.id) {
+                <tr class="table-row" (click)="openEditModal(process)">
+                  <td>
+                    <span class="code-badge">{{ process.code }}</span>
+                  </td>
+                  <td>
+                    <div class="process-name-cell">
+                      <span class="name">{{ process.name }}</span>
+                      <span class="desc">{{ process.description }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="version-tag">{{ process.version }}</span>
+                  </td>
+                  <td>
+                    <span class="status-pill" [class]="process.status.toLowerCase()">
+                      <span class="dot"></span>
+                      {{ process.status === 'PUBLISHED' ? 'Đã phát hành' : 'Bản nháp' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="date-text">{{ process.updatedAt }}</span>
+                  </td>
+                  <td class="text-right">
+                    <div class="action-btns" (click)="$event.stopPropagation()">
+                      <button
+                        class="btn-action edit"
+                        (click)="openEditModal(process)"
+                        title="Mở sơ đồ quy trình"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                      </button>
+                      <button
+                        class="btn-action delete"
+                        (click)="deleteProcess(process, $event)"
+                        title="Xóa quy trình"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="15"
+                          height="15"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <polyline points="3 6 5 6 21 6" />
+                          <path
+                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="empty-cell">
+                    <div class="empty-state">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="48"
+                        height="48"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                      >
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                      </svg>
+                      <p>Không tìm thấy quy trình BPMN nào phù hợp.</p>
+                      <button class="btn btn-secondary btn-sm" (click)="openCreateModal()">
+                        Tạo quy trình mới
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- Modal Container chứa BpmnDesignerComponent -->
+@if (isModalOpen()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal-wrapper" (click)="$event.stopPropagation()">
+      <app-bpmn-designer
+        [processData]="selectedProcess()"
+        (save)="onSaveFromModal($event)"
+        (cancel)="closeModal()"
+      ></app-bpmn-designer>
+    </div>
+  </div>
+}

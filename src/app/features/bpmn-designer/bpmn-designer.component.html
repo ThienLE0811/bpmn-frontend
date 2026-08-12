@@ -10,38 +10,56 @@
         </svg>
       </div>
       <div class="brand-info">
-        <span class="app-title">BPMN Flow Designer</span>
-        <span class="file-name">
-          {{ currentFileName() }}
+        <input 
+          type="text" 
+          class="process-title-input" 
+          [ngModel]="processName()" 
+          (ngModelChange)="processName.set($event)" 
+          placeholder="Nhập tên quy trình..."
+        />
+        <div class="meta-row">
           <span class="status-badge" [class.modified]="isModified()">
-            {{ isModified() ? 'Chưa lưu' : 'Đã đồng bộ' }}
+            {{ isModified() ? 'Chưa lưu thay đổi' : 'Đã lưu' }}
           </span>
-        </span>
+          @if (processData?.code) {
+            <span class="process-id">Mã: {{ processData?.code }}</span>
+          }
+        </div>
       </div>
     </div>
 
     <!-- Actions Bar -->
     <div class="toolbar-actions">
-      <!-- File Operations -->
+      <!-- Save & Close Primary Actions -->
       <div class="btn-group">
-        <button class="btn btn-secondary" (click)="createNewDiagram()" title="Tạo sơ đồ mới">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Tạo mới
+        <button class="btn btn-save" (click)="onSave()" title="Lưu quy trình sơ đồ">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Lưu quy trình
         </button>
 
+        <button class="btn btn-close" (click)="onClose()" title="Đóng cửa sổ vẽ sơ đồ">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Đóng
+        </button>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- File Import/Export -->
+      <div class="btn-group">
         <label class="btn btn-secondary" title="Mở tệp BPMN từ máy tính">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-          Mở tệp
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          Nhập file
           <input type="file" (change)="onFileSelected($event)" accept=".bpmn,.xml" style="display: none;" />
         </label>
 
-        <button class="btn btn-primary" (click)="exportXml()" title="Tải xuống XML BPMN">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Tải XML
+        <button class="btn btn-secondary" (click)="exportXml()" title="Tải xuống XML BPMN">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Xuất XML
         </button>
 
-        <button class="btn btn-accent" (click)="exportSvg()" title="Xuất hình ảnh dạng SVG">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <button class="btn btn-secondary" (click)="exportSvg()" title="Xuất hình ảnh dạng SVG">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           Xuất SVG
         </button>
       </div>

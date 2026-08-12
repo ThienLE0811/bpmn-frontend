@@ -4,8 +4,22 @@ export const routes: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('./features/bpmn-designer/bpmn-designer.component').then(
-        (m) => m.BpmnDesignerComponent,
+      import('./layout/main-layout.component').then(
+        (m) => m.MainLayoutComponent,
       ),
+    children: [
+      {
+        path: '',
+        redirectTo: 'processes',
+        pathMatch: 'full',
+      },
+      {
+        path: 'processes',
+        loadComponent: () =>
+          import('./features/bpmn-list/bpmn-list.component').then(
+            (m) => m.BpmnListComponent,
+          ),
+      },
+    ],
   },
 ];
