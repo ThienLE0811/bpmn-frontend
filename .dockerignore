@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output (sẽ build trong Docker)
+dist/
+
+# Angular cache
+.angular/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+*.md
+
+# Tests
+*.spec.ts
+tsconfig.spec.json
+
+# Config files không cần trong build
+.editorconfig
+.prettierrc
+skills-lock.json
+.agents/

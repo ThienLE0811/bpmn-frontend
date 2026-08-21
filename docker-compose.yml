@@ -1,0 +1,47 @@
+# ============================================================
+# BPMN Frontend - Docker Compose
+# ============================================================
+# Sử dụng:
+#   Production:  docker compose up -d
+#   Dev proxy:   docker compose --profile dev up -d
+# ============================================================
+
+services:
+  # ========================================================
+  # Production: Build Angular + Serve với Nginx
+  # ========================================================
+  bpmn-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bpmn-frontend
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    # Cho phép container truy cập host network (backend API)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - bpmn-network
+
+  # ========================================================
+  # Dev: Nginx reverse proxy -> Angular dev server trên host
+  # ========================================================
+  bpmn-frontend-dev:
+    image: nginx:1.27-alpine
+    container_name: bpmn-frontend-dev
+    profiles:
+      - dev
+    ports:
+      - "8888:80"
+    volumes:
+      - ./nginx/nginx-dev.conf:/etc/nginx/nginx.conf:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - bpmn-network
+
+networks:
+  bpmn-network:
+    driver: bridge
