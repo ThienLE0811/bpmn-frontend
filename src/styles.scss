@@ -1,8 +1,17 @@
-/* Global styles for BPMN Frontend */
+/* Global styles for BPMN & DMN Frontend */
 @import 'bpmn-js/dist/assets/diagram-js.css';
 @import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 @import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-codes.css';
 @import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
+
+@import 'dmn-js/dist/assets/diagram-js.css';
+@import 'dmn-js/dist/assets/dmn-js-shared.css';
+@import 'dmn-js/dist/assets/dmn-js-drd.css';
+@import 'dmn-js/dist/assets/dmn-js-decision-table.css';
+@import 'dmn-js/dist/assets/dmn-js-decision-table-controls.css';
+@import 'dmn-js/dist/assets/dmn-js-literal-expression.css';
+@import 'dmn-js/dist/assets/dmn-js-boxed-expression.css';
+@import 'dmn-js/dist/assets/dmn-font/css/dmn.css';
 
 @import 'ng-zorro-antd/ng-zorro-antd.css';
 

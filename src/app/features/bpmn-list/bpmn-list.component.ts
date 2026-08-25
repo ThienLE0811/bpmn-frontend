@@ -1,9 +1,9 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BpmnProcessService } from '../../core/services/bpmn-process.service';
-import { BpmnProcess } from '../../core/models/bpmn-process.model';
-import { BpmnDesignerComponent } from '../bpmn-designer/bpmn-designer.component';
+import { BpmnProcessService } from '@core/services/bpmn-process.service';
+import { BpmnProcess } from '@core/models/bpmn-process.model';
+import { BpmnDesignerComponent } from '@shared/components/bpmn-designer/bpmn-designer.component';
 
 @Component({
   selector: 'app-bpmn-list',
@@ -25,7 +25,10 @@ export class BpmnListComponent {
     const term = this.searchTerm().toLowerCase().trim();
     if (!term) return this.processes();
     return this.processes().filter(
-      p => p.name.toLowerCase().includes(term) || p.code.toLowerCase().includes(term) || p.description.toLowerCase().includes(term)
+      (p) =>
+        p.name.toLowerCase().includes(term) ||
+        p.code.toLowerCase().includes(term) ||
+        p.description.toLowerCase().includes(term),
     );
   });
 
@@ -53,7 +56,7 @@ export class BpmnListComponent {
       status: current?.status,
       version: current?.version,
       name: event.name,
-      xml: event.xml
+      xml: event.xml,
     });
 
     this.closeModal();

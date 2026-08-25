@@ -9,12 +9,12 @@ import {
   EventEmitter,
   signal,
   OnChanges,
-  SimpleChanges
+  SimpleChanges,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import BpmnModeler from 'bpmn-js/lib/Modeler';
-import { BpmnProcess } from '../../core/models/bpmn-process.model';
+import { BpmnProcess } from '@core/models/bpmn-process.model';
 
 export interface BpmnElementProperties {
   id: string;
@@ -171,7 +171,7 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
       if (xml) {
         this.save.emit({
           name: this.processName(),
-          xml
+          xml,
         });
         this.isModified.set(false);
       }

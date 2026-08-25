@@ -20,6 +20,18 @@ export const routes: Routes = [
             (m) => m.BpmnListComponent,
           ),
       },
+      {
+        path: 'decisions',
+        loadComponent: () =>
+          import('./features/dmn-list/dmn-list.component').then(
+            (m) => m.DmnListComponent,
+          ),
+      },
+      {
+        path: 'dmn',
+        redirectTo: 'decisions',
+        pathMatch: 'full',
+      },
     ],
   },
 ];

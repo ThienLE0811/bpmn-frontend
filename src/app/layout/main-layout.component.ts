@@ -1,6 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { filter, map } from 'rxjs/operators';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
 
@@ -19,9 +21,27 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
   styleUrl: './main-layout.component.scss'
 })
 export class MainLayoutComponent {
+  private router = inject(Router);
   isCollapsed = signal<boolean>(false);
+
+  private currentUrl = toSignal(
+    this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd),
+      map(e => (e as NavigationEnd).urlAfterRedirects || (e as NavigationEnd).url)
+    ),
+    { initialValue: this.router.url }
+  );
+
+  protected breadcrumb = computed(() => {
+    const url = this.currentUrl();
+    if (url.includes('/decisions') || url.includes('/dmn')) {
+      return 'BPMN & DMN Platform / Bảng Quyết định DMN';
+    }
+    return 'BPMN & DMN Platform / Quản lý Quy trình BPMN';
+  });
 
   toggleCollapsed(): void {
     this.isCollapsed.set(!this.isCollapsed());
   }
 }
+

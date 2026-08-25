@@ -31,7 +31,7 @@
     </div>
 
     <ul nz-menu nzMode="inline" [nzInlineCollapsed]="isCollapsed()" class="sider-menu">
-      <li nz-menu-item nzSelected routerLink="/processes" routerLinkActive="nz-menu-item-selected">
+      <li nz-menu-item routerLink="/processes" routerLinkActive="nz-menu-item-selected">
         <span class="menu-icon">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -49,6 +49,25 @@
           </svg>
         </span>
         <span>Quy trình BPMN</span>
+      </li>
+
+      <li nz-menu-item routerLink="/decisions" routerLinkActive="nz-menu-item-selected">
+        <span class="menu-icon">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+            <polyline points="2 17 12 22 22 17"/>
+            <polyline points="2 12 12 17 22 12"/>
+          </svg>
+        </span>
+        <span>Bảng quyết định DMN</span>
       </li>
 
       <li nz-menu-item nzDisabled>
@@ -126,7 +145,7 @@
             </svg>
           }
         </button>
-        <span class="page-breadcrumb">BPMN Platform / Quản lý Quy trình</span>
+        <span class="page-breadcrumb">{{ breadcrumb() }}</span>
       </div>
 
       <div class="header-right">
