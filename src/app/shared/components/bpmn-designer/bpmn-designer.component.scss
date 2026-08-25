@@ -1,0 +1,184 @@
+.bpmn-designer-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background-color: #ffffff;
+  color: #0f172a;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+}
+
+/* Designer Main Body */
+.designer-body {
+  display: flex;
+  flex: 1;
+  height: calc(100% - 60px);
+  position: relative;
+  overflow: hidden;
+
+  .canvas-container {
+    flex: 1;
+    height: 100%;
+    background-color: #ffffff;
+    position: relative;
+
+    ::ng-deep .djs-palette {
+      top: 20px !important;
+      left: 20px !important;
+      width: 50px !important;
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 12px !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.02) !important;
+      padding: 5px !important;
+      box-sizing: border-box !important;
+
+      &.two-column.open {
+        width: 94px !important;
+
+        .entry {
+          float: left !important;
+          margin: 2px !important;
+        }
+      }
+
+      .entry {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 38px !important;
+        height: 38px !important;
+        line-height: 38px !important;
+        font-size: 22px !important;
+        color: #475569 !important;
+        border-radius: 6px !important;
+        margin: 2px auto !important;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &::before {
+          font-size: 22px !important;
+          line-height: 1 !important;
+        }
+
+        &:hover {
+          color: #2563eb !important;
+          background: #eff6ff !important;
+        }
+      }
+
+      .separator {
+        width: 28px !important;
+        margin: 6px auto !important;
+        border: none !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        clear: both;
+      }
+    }
+
+    ::ng-deep .bjs-powered-by {
+      display: none !important;
+    }
+  }
+
+  .properties-sidebar {
+    width: 320px;
+    height: 100%;
+    background: #f8fafc;
+    border-left: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 20px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #2563eb;
+
+      h3 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #0f172a;
+      }
+    }
+
+    .sidebar-content {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      flex: 1;
+      overflow-y: auto;
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        .form-label {
+          font-size: 12px;
+          font-weight: 600;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .form-input {
+          width: 100%;
+          padding: 10px 12px;
+          background: #ffffff;
+          border: 1px solid #cbd5e1;
+          border-radius: 8px;
+          color: #0f172a;
+          font-size: 13px;
+          outline: none;
+          transition: border-color 0.2s ease;
+
+          &:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+          }
+
+          &.readonly-input {
+            background: #f1f5f9;
+            color: #64748b;
+            cursor: not-allowed;
+          }
+        }
+
+        .type-badge {
+          display: inline-block;
+          padding: 6px 12px;
+          background: #eff6ff;
+          color: #2563eb;
+          border: 1px solid #bfdbfe;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 600;
+          font-family: monospace;
+          word-break: break-all;
+        }
+      }
+
+      .empty-selection {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 40px 10px;
+        color: #94a3b8;
+        gap: 12px;
+
+        p {
+          font-size: 13px;
+          line-height: 1.5;
+        }
+      }
+    }
+  }
+}

@@ -4,6 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve -o --port 4200",
+    "dev": "ng serve -o --port 4200",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
@@ -11,6 +12,7 @@
   "private": true,
   "packageManager": "npm@10.9.8",
   "dependencies": {
+    "@angular/animations": "^22.1.1",
     "@angular/common": "^22.1.0",
     "@angular/compiler": "^22.1.0",
     "@angular/core": "^22.1.0",
@@ -19,6 +21,7 @@
     "@angular/router": "^22.1.0",
     "bpmn-js": "^18.24.0",
     "diagram-js": "^15.24.0",
+    "dmn-js": "^17.10.1",
     "ng-zorro-antd": "^22.0.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"

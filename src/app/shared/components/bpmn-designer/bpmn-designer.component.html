@@ -1,0 +1,64 @@
+<div class="bpmn-designer-layout">
+  <!-- Top Navigation / Action Bar -->
+  <app-designer-header
+    type="bpmn"
+    [(title)]="processName"
+    [code]="processData?.code"
+    [isModified]="isModified()"
+    [currentZoom]="currentZoom()"
+    (save)="onSave()"
+    (close)="onClose()"
+    (fileSelected)="onFileSelected($event)"
+    (exportXml)="exportXml()"
+    (exportSvg)="exportSvg()"
+    (undo)="undo()"
+    (redo)="redo()"
+    (zoomIn)="zoomIn()"
+    (zoomOut)="zoomOut()"
+    (zoomReset)="zoomReset()"
+  />
+
+  <!-- Main Canvas & Sidebar Container -->
+  <div class="designer-body">
+    <!-- Canvas Area -->
+    <div class="canvas-container" #canvas></div>
+
+    <!-- Properties Panel Sidebar -->
+    <aside class="properties-sidebar">
+      <div class="sidebar-header">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        <h3>Thuộc tính Element</h3>
+      </div>
+
+      <div class="sidebar-content">
+        @if (selectedElement(); as element) {
+          <div class="form-group">
+            <label class="form-label">ID Element</label>
+            <input type="text" class="form-input readonly-input" [value]="element.id" readonly />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Loại (Type)</label>
+            <div class="type-badge">{{ element.type }}</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tên hiển thị (Label)</label>
+            <input 
+              type="text" 
+              class="form-input" 
+              [ngModel]="element.name" 
+              (ngModelChange)="updateSelectedElementName($event)" 
+              placeholder="Nhập tên nút quy trình..." 
+            />
+          </div>
+        } @else {
+          <div class="empty-selection">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 15l6 6m-6-6a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+            <p>Chọn một phần tử trên sơ đồ để xem và chỉnh sửa thông tin chi tiết.</p>
+          </div>
+        }
+      </div>
+    </aside>
+  </div>
+</div>
