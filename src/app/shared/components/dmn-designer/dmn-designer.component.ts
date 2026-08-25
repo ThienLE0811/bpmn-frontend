@@ -15,6 +15,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import DmnModeler from 'dmn-js/lib/Modeler';
 import { DmnDecision } from '@core/models/dmn-decision.model';
+import { DesignerHeaderComponent } from '../designer-header/designer-header.component';
 
 export interface DmnViewItem {
   id: string;
@@ -61,7 +62,7 @@ const DEFAULT_DMN_XML = `<?xml version="1.0" encoding="UTF-8"?>
 @Component({
   selector: 'app-dmn-designer',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DesignerHeaderComponent],
   templateUrl: './dmn-designer.component.html',
   styleUrl: './dmn-designer.component.scss',
 })

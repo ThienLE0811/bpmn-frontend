@@ -15,6 +15,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import BpmnModeler from 'bpmn-js/lib/Modeler';
 import { BpmnProcess } from '@core/models/bpmn-process.model';
+import { DesignerHeaderComponent } from '../designer-header/designer-header.component';
 
 export interface BpmnElementProperties {
   id: string;
@@ -70,7 +71,7 @@ const DEFAULT_BPMN_XML = `<?xml version="1.0" encoding="UTF-8"?>
 @Component({
   selector: 'app-bpmn-designer',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DesignerHeaderComponent],
   templateUrl: './bpmn-designer.component.html',
   styleUrl: './bpmn-designer.component.scss',
 })
