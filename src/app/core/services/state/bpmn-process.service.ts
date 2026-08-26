@@ -1,16 +1,21 @@
-import { Injectable, signal } from '@angular/core';
-import { BpmnProcess } from '../models/bpmn-process.model';
+import { Injectable, inject, signal } from '@angular/core';
+import { BpmnProcess } from '@core/models/bpmn-process.model';
+import { BpmnApiService } from '../api/bpmn-api.service';
 
 const INITIAL_PROCESSES: BpmnProcess[] = [
   {
     id: 'proc_101',
-    code: 'BPMN-ORDER-01',
+    processKey: 'BPMN-ORDER-01',
     name: 'Quy trình Xử lý Đơn hàng',
     description: 'Tiếp nhận đơn hàng, xác minh thanh toán, kiểm kê kho và giao hàng.',
-    version: 'v1.2.0',
+    category: 'ORDER',
+    version: 1,
     status: 'PUBLISHED',
+    createdBy: 'System Admin',
+    updatedBy: 'System Admin',
+    createdAt: '2026-08-12 08:30',
     updatedAt: '2026-08-12 08:30',
-    xml: `<?xml version="1.0" encoding="UTF-8"?>
+    bpmnXml: `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
@@ -95,23 +100,31 @@ const INITIAL_PROCESSES: BpmnProcess[] = [
   },
   {
     id: 'proc_102',
-    code: 'BPMN-HR-02',
+    processKey: 'BPMN-HR-02',
     name: 'Quy trình Duyệt nghỉ phép',
     description: 'Nhân viên gửi yêu cầu nghỉ phép, Quản lý trực tiếp duyệt và Nhân sự ghi nhận.',
-    version: 'v1.0.1',
+    category: 'HR',
+    version: 1,
     status: 'PUBLISHED',
+    createdBy: 'System Admin',
+    updatedBy: 'System Admin',
+    createdAt: '2026-08-11 14:15',
     updatedAt: '2026-08-11 14:15',
-    xml: ''
+    bpmnXml: null
   },
   {
     id: 'proc_103',
-    code: 'BPMN-LOAN-03',
+    processKey: 'BPMN-LOAN-03',
     name: 'Quy trình Tín dụng & Vay vốn',
     description: 'Thẩm định hồ sơ vay vốn cá nhân, duyệt hạn mức và giải ngân.',
-    version: 'v0.9.0',
+    category: 'FINANCE',
+    version: 1,
     status: 'DRAFT',
+    createdBy: 'System Admin',
+    updatedBy: null,
+    createdAt: '2026-08-10 17:45',
     updatedAt: '2026-08-10 17:45',
-    xml: ''
+    bpmnXml: null
   }
 ];
 
@@ -119,29 +132,83 @@ const INITIAL_PROCESSES: BpmnProcess[] = [
   providedIn: 'root'
 })
 export class BpmnProcessService {
+  private readonly bpmnApi = inject(BpmnApiService);
   private processesSignal = signal<BpmnProcess[]>(INITIAL_PROCESSES);
+  private loadingSignal = signal<boolean>(false);
+  private errorSignal = signal<string | null>(null);
+
+  constructor() {}
 
   get processes() {
     return this.processesSignal.asReadonly();
   }
 
-  saveProcess(processData: Partial<BpmnProcess> & { name: string; xml: string }): BpmnProcess {
+  get isLoading() {
+    return this.loadingSignal.asReadonly();
+  }
+
+  get error() {
+    return this.errorSignal.asReadonly();
+  }
+
+  loadProcesses(): void {
+    this.loadingSignal.set(true);
+    this.errorSignal.set(null);
+
+    this.bpmnApi.getAll().subscribe({
+      next: (data) => {
+        if (Array.isArray(data)) {
+          this.processesSignal.set(data);
+        }
+        this.loadingSignal.set(false);
+      },
+      error: (err) => {
+        console.warn('Không thể kết nối API (/bpmn-processes), fallback về dữ liệu mẫu:', err);
+        this.errorSignal.set(err?.message || 'Lỗi khi gọi API');
+        this.loadingSignal.set(false);
+      }
+    });
+  }
+
+  saveProcess(processData: Partial<BpmnProcess> & { name: string; bpmnXml?: string | null; xml?: string | null }): BpmnProcess {
     const list = this.processesSignal();
     const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 16);
 
+    const xmlContent = processData.bpmnXml !== undefined ? processData.bpmnXml : (processData.xml !== undefined ? processData.xml : null);
+
     if (processData.id) {
       // Update existing
+      const existing = list.find(i => i.id === processData.id);
+      const updatedItem: BpmnProcess = {
+        id: processData.id,
+        processKey: processData.processKey || existing?.processKey || '',
+        name: processData.name || existing?.name || '',
+        description: processData.description !== undefined ? processData.description : (existing?.description || ''),
+        category: processData.category || existing?.category || 'GENERAL',
+        version: processData.version !== undefined ? Number(processData.version) : (existing?.version || 1),
+        status: processData.status || existing?.status || 'DRAFT',
+        bpmnXml: xmlContent !== null ? xmlContent : (existing?.bpmnXml || null),
+        createdBy: existing?.createdBy || 'Admin',
+        updatedBy: 'Admin',
+        createdAt: existing?.createdAt || nowStr,
+        updatedAt: nowStr
+      };
+
+      // Gọi API cập nhật
+      this.bpmnApi.update(processData.id, updatedItem).subscribe({
+        next: (res) => {
+          if (res) {
+            this.processesSignal.set(this.processesSignal().map(i => i.id === res.id ? res : i));
+          }
+        },
+        error: (err) => console.error('Lỗi khi cập nhật BPMN qua API:', err)
+      });
+
       const updated = list.map(item => {
         if (item.id === processData.id) {
           return {
             ...item,
-            code: processData.code || item.code,
-            name: processData.name || item.name,
-            description: processData.description !== undefined ? processData.description : item.description,
-            version: processData.version || item.version,
-            status: processData.status || item.status,
-            xml: processData.xml !== undefined ? processData.xml : item.xml,
-            updatedAt: nowStr
+            ...updatedItem
           };
         }
         return item;
@@ -151,23 +218,43 @@ export class BpmnProcessService {
     } else {
       // Create new
       const newId = 'proc_' + Date.now();
-      const newCode = processData.code || ('BPMN-PROC-' + (list.length + 1).toString().padStart(2, '0'));
+      const newKey = processData.processKey || ('BPMN-PROC-' + (list.length + 1).toString().padStart(2, '0'));
       const newProc: BpmnProcess = {
         id: newId,
-        code: newCode,
+        processKey: newKey,
         name: processData.name || 'Quy trình mới',
         description: processData.description || 'Mô tả quy trình BPMN mới.',
-        version: processData.version || 'v1.0.0',
+        category: processData.category || 'GENERAL',
+        version: processData.version !== undefined ? Number(processData.version) : 1,
         status: processData.status || 'DRAFT',
-        updatedAt: nowStr,
-        xml: processData.xml
+        bpmnXml: xmlContent,
+        createdBy: 'Admin',
+        updatedBy: null,
+        createdAt: nowStr,
+        updatedAt: nowStr
       };
+
+      // Gọi API tạo mới
+      this.bpmnApi.create(newProc).subscribe({
+        next: (res) => {
+          if (res) {
+            this.processesSignal.set(this.processesSignal().map(i => i.id === newId ? res : i));
+          }
+        },
+        error: (err) => console.error('Lỗi khi tạo mới BPMN qua API:', err)
+      });
+
       this.processesSignal.set([newProc, ...list]);
       return newProc;
     }
   }
 
   deleteProcess(id: string): void {
+    // Gọi API xóa
+    this.bpmnApi.delete(id).subscribe({
+      error: (err) => console.error('Lỗi khi xóa BPMN qua API:', err)
+    });
+
     const filtered = this.processesSignal().filter(p => p.id !== id);
     this.processesSignal.set(filtered);
   }

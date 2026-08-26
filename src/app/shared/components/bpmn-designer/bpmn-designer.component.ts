@@ -80,7 +80,7 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
       this.processName.set(name);
       this.initialProcessName = name;
       if (this.bpmnModeler) {
-        const xmlToLoad = this.processData?.xml || DEFAULT_BPMN_XML;
+        const xmlToLoad = this.processData?.bpmnXml || DEFAULT_BPMN_XML;
         this.importDiagram(xmlToLoad);
       }
     }
@@ -156,7 +156,7 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
       }
     });
 
-    const initialXml = this.processData?.xml || DEFAULT_BPMN_XML;
+    const initialXml = this.processData?.bpmnXml || DEFAULT_BPMN_XML;
     const name = this.processData?.name || 'Quy trình BPMN mới';
     this.processName.set(name);
     this.initialProcessName = name;
@@ -207,7 +207,7 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
     } catch (err) {
       console.error('Lỗi khi lấy sơ đồ BPMN XML:', err);
     }
-    return this.processData?.xml || DEFAULT_BPMN_XML;
+    return this.processData?.bpmnXml || DEFAULT_BPMN_XML;
   }
 
   async onSave(): Promise<void> {

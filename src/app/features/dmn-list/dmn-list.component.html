@@ -52,21 +52,20 @@
       <section class="table-card">
         <!-- Table Toolbar -->
         <div class="table-toolbar">
-          <div class="search-box">
-            <span nz-icon nzType="search" nzTheme="outline" class="search-icon"></span>
-            <input
-              type="text"
-              class="search-input"
-              [ngModel]="searchTerm()"
-              (ngModelChange)="searchTerm.set($event)"
-              placeholder="Tìm kiếm theo mã DMN, tên bảng hoặc mô tả..."
-            />
+          <div class="toolbar-left">
+            <span class="results-badge">Tổng số: {{ decisions().length }}</span>
           </div>
 
           <div class="toolbar-right">
-            <span class="results-count"
-              >Hiển thị {{ filteredDecisions().length }} bảng quyết định</span
+            <button
+              class="btn-refresh"
+              (click)="loadDecisions()"
+              [disabled]="isLoading()"
+              title="Tải lại danh sách"
             >
+              <span nz-icon nzType="redo" nzTheme="outline" [nzSpin]="isLoading()"></span>
+              <span>Tải lại</span>
+            </button>
           </div>
         </div>
 
@@ -74,7 +73,8 @@
         <div class="table-responsive">
           <nz-table
             #decisionTable
-            [nzData]="filteredDecisions()"
+            [nzData]="decisions()"
+            [nzLoading]="isLoading()"
             [nzFrontPagination]="true"
             [nzPageSize]="pageSize()"
             [nzPageSizeOptions]="[5, 10, 20, 50]"
@@ -90,14 +90,7 @@
                 <th nzWidth="160px" [nzSortFn]="sortCode">Mã Quyết Định</th>
                 <th [nzSortFn]="sortName">Tên & Mô Tả Quyết Định</th>
                 <th nzWidth="120px" [nzSortFn]="sortVersion">Phiên Bản</th>
-                <th
-                  nzWidth="150px"
-                  [nzFilters]="statusFilterList"
-                  [nzFilterFn]="statusFilterFn"
-                  [nzSortFn]="sortStatus"
-                >
-                  Trạng Thái
-                </th>
+                <th nzWidth="150px" [nzSortFn]="sortStatus">Trạng Thái</th>
                 <th nzWidth="170px" [nzSortFn]="sortUpdatedAt">Lần Sửa Cuối</th>
                 <th nzWidth="120px" nzAlign="right">Thao Tác</th>
               </tr>

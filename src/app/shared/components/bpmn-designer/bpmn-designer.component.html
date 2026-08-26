@@ -3,7 +3,7 @@
   <app-designer-header
     type="bpmn"
     [(title)]="processName"
-    [code]="processData?.code"
+    [code]="processData?.processKey"
     [isModified]="isModified()"
     [currentZoom]="currentZoom()"
     (save)="onSave()"

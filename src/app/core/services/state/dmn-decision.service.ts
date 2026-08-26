@@ -1,5 +1,6 @@
-import { Injectable, signal } from '@angular/core';
-import { DmnDecision } from '../models/dmn-decision.model';
+import { Injectable, inject, signal } from '@angular/core';
+import { DmnDecision } from '@core/models/dmn-decision.model';
+import { DmnApiService } from '../api/dmn-api.service';
 
 const INITIAL_DECISIONS: DmnDecision[] = [
   {
@@ -197,10 +198,42 @@ const INITIAL_DECISIONS: DmnDecision[] = [
   providedIn: 'root'
 })
 export class DmnDecisionService {
+  private readonly dmnApi = inject(DmnApiService);
   private decisionsSignal = signal<DmnDecision[]>(INITIAL_DECISIONS);
+  private loadingSignal = signal<boolean>(false);
+  private errorSignal = signal<string | null>(null);
+
+  constructor() {}
 
   get decisions() {
     return this.decisionsSignal.asReadonly();
+  }
+
+  get isLoading() {
+    return this.loadingSignal.asReadonly();
+  }
+
+  get error() {
+    return this.errorSignal.asReadonly();
+  }
+
+  loadDecisions(): void {
+    this.loadingSignal.set(true);
+    this.errorSignal.set(null);
+
+    this.dmnApi.getAll().subscribe({
+      next: (data) => {
+        if (Array.isArray(data)) {
+          this.decisionsSignal.set(data);
+        }
+        this.loadingSignal.set(false);
+      },
+      error: (err) => {
+        console.warn('Không thể kết nối API (/dmn-decisions), fallback về dữ liệu mẫu:', err);
+        this.errorSignal.set(err?.message || 'Lỗi khi gọi API');
+        this.loadingSignal.set(false);
+      }
+    });
   }
 
   saveDecision(decisionData: Partial<DmnDecision> & { name: string; xml: string }): DmnDecision {
@@ -209,17 +242,32 @@ export class DmnDecisionService {
 
     if (decisionData.id) {
       // Update existing
+      const updatedItem: DmnDecision = {
+        id: decisionData.id,
+        code: decisionData.code || '',
+        name: decisionData.name || '',
+        description: decisionData.description !== undefined ? decisionData.description : '',
+        version: decisionData.version || 'v1.0.0',
+        status: decisionData.status || 'DRAFT',
+        xml: decisionData.xml !== undefined ? decisionData.xml : '',
+        updatedAt: nowStr
+      };
+
+      // Gọi API cập nhật
+      this.dmnApi.update(decisionData.id, updatedItem).subscribe({
+        next: (res) => {
+          if (res) {
+            this.decisionsSignal.set(this.decisionsSignal().map(i => i.id === res.id ? res : i));
+          }
+        },
+        error: (err) => console.error('Lỗi khi cập nhật DMN qua API:', err)
+      });
+
       const updated = list.map(item => {
         if (item.id === decisionData.id) {
           return {
             ...item,
-            code: decisionData.code || item.code,
-            name: decisionData.name || item.name,
-            description: decisionData.description !== undefined ? decisionData.description : item.description,
-            version: decisionData.version || item.version,
-            status: decisionData.status || item.status,
-            xml: decisionData.xml !== undefined ? decisionData.xml : item.xml,
-            updatedAt: nowStr
+            ...updatedItem
           };
         }
         return item;
@@ -240,13 +288,29 @@ export class DmnDecisionService {
         updatedAt: nowStr,
         xml: decisionData.xml
       };
+
+      // Gọi API tạo mới
+      this.dmnApi.create(newDmn).subscribe({
+        next: (res) => {
+          if (res) {
+            this.decisionsSignal.set(this.decisionsSignal().map(i => i.id === newId ? res : i));
+          }
+        },
+        error: (err) => console.error('Lỗi khi tạo mới DMN qua API:', err)
+      });
+
       this.decisionsSignal.set([newDmn, ...list]);
       return newDmn;
     }
   }
 
   deleteDecision(id: string): void {
-    const filtered = this.decisionsSignal().filter(d => d.id !== id);
+    // Gọi API xóa
+    this.dmnApi.delete(id).subscribe({
+      error: (err) => console.error('Lỗi khi xóa DMN qua API:', err)
+    });
+
+    const filtered = this.decisionsSignal().filter(p => p.id !== id);
     this.decisionsSignal.set(filtered);
   }
 }

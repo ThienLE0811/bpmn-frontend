@@ -1,14 +1,14 @@
-import { Component, inject, signal, computed, ViewChild } from '@angular/core';
+import { Component, inject, signal, computed, ViewChild, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { form, FormField, required, submit } from '@angular/forms/signals';
-import { NzTableModule, NzTableFilterFn } from 'ng-zorro-antd/table';
+import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzResizableModule, NzResizeEvent } from 'ng-zorro-antd/resizable';
 import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
-import { DmnDecisionService } from '@core/services/dmn-decision.service';
-import { DmnDecision, DmnDecisionStatus } from '@core/models/dmn-decision.model';
+import { DmnDecisionService } from '@core/services';
+import { DmnDecision, DmnDecisionStatus } from '@core/models';
 import { DmnDesignerComponent } from '@shared/components/dmn-designer/dmn-designer.component';
 
 @Component({
@@ -28,13 +28,20 @@ import { DmnDesignerComponent } from '@shared/components/dmn-designer/dmn-design
   templateUrl: './dmn-list.component.html',
   styleUrl: './dmn-list.component.scss',
 })
-export class DmnListComponent {
+export class DmnListComponent implements OnInit {
   @ViewChild(DmnDesignerComponent) protected designerComponent?: DmnDesignerComponent;
 
   private dmnService = inject(DmnDecisionService);
   private modal = inject(NzModalService);
 
-  protected searchTerm = signal<string>('');
+  ngOnInit(): void {
+    this.loadDecisions();
+  }
+
+  loadDecisions(): void {
+    this.dmnService.loadDecisions();
+  }
+
   protected isModalOpen = signal<boolean>(false);
   protected selectedDecision = signal<DmnDecision | null>(null);
   protected pageSize = signal<number>(10);
@@ -64,6 +71,7 @@ export class DmnListComponent {
   });
 
   protected decisions = this.dmnService.decisions;
+  protected isLoading = this.dmnService.isLoading;
 
   protected publishedCount = computed(
     () => this.decisions().filter((d) => d.status === 'PUBLISHED').length,
@@ -72,17 +80,6 @@ export class DmnListComponent {
   protected draftCount = computed(
     () => this.decisions().filter((d) => d.status === 'DRAFT').length,
   );
-
-  protected filteredDecisions = computed(() => {
-    const term = this.searchTerm().toLowerCase().trim();
-    if (!term) return this.decisions();
-    return this.decisions().filter(
-      (d) =>
-        d.name.toLowerCase().includes(term) ||
-        d.code.toLowerCase().includes(term) ||
-        d.description.toLowerCase().includes(term),
-    );
-  });
 
   // Table Sort Comparators
   protected sortCode = (a: DmnDecision, b: DmnDecision): number =>
@@ -99,17 +96,6 @@ export class DmnListComponent {
 
   protected sortUpdatedAt = (a: DmnDecision, b: DmnDecision): number =>
     a.updatedAt.localeCompare(b.updatedAt);
-
-  // Table Status Filter
-  protected statusFilterList = [
-    { text: 'Đã phát hành', value: 'PUBLISHED' },
-    { text: 'Bản nháp', value: 'DRAFT' },
-  ];
-
-  protected statusFilterFn: NzTableFilterFn<DmnDecision> = (
-    list: string[],
-    item: DmnDecision,
-  ): boolean => list.some((status) => item.status === status);
 
   onSideResize({ width }: NzResizeEvent): void {
     cancelAnimationFrame(this.resizeId);
