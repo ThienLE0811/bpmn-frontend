@@ -10,7 +10,7 @@ export type DesignerType = 'bpmn' | 'dmn';
   imports: [CommonModule, FormsModule],
   templateUrl: './designer-header.component.html',
   styleUrl: './designer-header.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DesignerHeaderComponent {
   /** Type of designer (BPMN or DMN) */
@@ -66,7 +66,7 @@ export class DesignerHeaderComponent {
 
   // Action events
   save = output<void>();
-  close = output<void>();
+  closed = output<void>();
   fileSelected = output<Event>();
   exportXml = output<void>();
   exportSvg = output<void>();

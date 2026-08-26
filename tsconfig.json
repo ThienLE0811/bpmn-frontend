@@ -16,6 +16,7 @@
     "paths": {
       "@shared/*": ["./src/app/shared/*"],
       "@shared/components": ["./src/app/shared/components/index.ts"],
+      "@shared/constants": ["./src/app/shared/constants/index.ts"],
       "@core/*": ["./src/app/core/*"],
       "@features/*": ["./src/app/features/*"],
       "@layout/*": ["./src/app/layout/*"]
