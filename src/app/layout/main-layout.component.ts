@@ -5,6 +5,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs/operators';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
+import { NzIconModule } from 'ng-zorro-antd/icon';
 
 @Component({
   selector: 'app-main-layout',
@@ -14,10 +15,11 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
     RouterOutlet,
     RouterLink,
     NzLayoutModule,
-    NzMenuModule
+    NzMenuModule,
+    NzIconModule,
   ],
   templateUrl: './main-layout.component.html',
-  styleUrl: './main-layout.component.scss'
+  styleUrl: './main-layout.component.scss',
 })
 export class MainLayoutComponent {
   private router = inject(Router);
@@ -25,10 +27,10 @@ export class MainLayoutComponent {
 
   private currentUrl = toSignal(
     this.router.events.pipe(
-      filter(e => e instanceof NavigationEnd),
-      map(e => (e as NavigationEnd).urlAfterRedirects || (e as NavigationEnd).url)
+      filter((e) => e instanceof NavigationEnd),
+      map((e) => (e as NavigationEnd).urlAfterRedirects || (e as NavigationEnd).url),
     ),
-    { initialValue: this.router.url }
+    { initialValue: this.router.url },
   );
 
   protected breadcrumb = computed(() => {
@@ -43,4 +45,3 @@ export class MainLayoutComponent {
     this.isCollapsed.set(!this.isCollapsed());
   }
 }
-

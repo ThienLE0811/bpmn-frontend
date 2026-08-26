@@ -7,18 +7,7 @@
     </div>
 
     <button class="btn btn-primary-glow" (click)="openCreateModal()">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.5"
-      >
-        <line x1="12" y1="5" x2="12" y2="19" />
-        <line x1="5" y1="12" x2="19" y2="12" />
-      </svg>
+      <span nz-icon nzType="plus" nzTheme="outline"></span>
       Tạo quy trình mới
     </button>
   </div>
@@ -30,18 +19,7 @@
       <section class="stats-grid">
         <div class="stat-card">
           <div class="stat-icon total">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-            </svg>
+            <span nz-icon nzType="file-text" nzTheme="outline"></span>
           </div>
           <div class="stat-info">
             <span class="stat-label">Tổng số Quy trình</span>
@@ -51,42 +29,21 @@
 
         <div class="stat-card">
           <div class="stat-icon published">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
+            <span nz-icon nzType="check-circle" nzTheme="outline"></span>
           </div>
           <div class="stat-info">
             <span class="stat-label">Đã phát hành</span>
-            <span class="stat-value">2</span>
+            <span class="stat-value">{{ publishedCount() }}</span>
           </div>
         </div>
 
         <div class="stat-card">
           <div class="stat-icon draft">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
+            <span nz-icon nzType="edit" nzTheme="outline"></span>
           </div>
           <div class="stat-info">
             <span class="stat-label">Bản nháp</span>
-            <span class="stat-value">1</span>
+            <span class="stat-value">{{ draftCount() }}</span>
           </div>
         </div>
       </section>
@@ -96,19 +53,7 @@
         <!-- Table Toolbar -->
         <div class="table-toolbar">
           <div class="search-box">
-            <svg
-              class="search-icon"
-              xmlns="http://www.w3.org/2000/svg"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+            <span nz-icon nzType="search" nzTheme="outline" class="search-icon"></span>
             <input
               type="text"
               class="search-input"
@@ -123,21 +68,40 @@
           </div>
         </div>
 
-        <!-- Table View -->
+        <!-- Table View with nz-table -->
         <div class="table-responsive">
-          <table class="data-table">
+          <nz-table
+            #processTable
+            [nzData]="filteredProcesses()"
+            [nzFrontPagination]="true"
+            [nzPageSize]="pageSize()"
+            [nzPageSizeOptions]="[5, 10, 20, 50]"
+            [nzShowSizeChanger]="true"
+            [nzShowTotal]="totalTemplate"
+            [nzBordered]="false"
+            [nzNoResult]="emptyTemplate"
+            nzSize="middle"
+            class="custom-nz-table"
+          >
             <thead>
               <tr>
-                <th width="140">Mã Quy Trình</th>
-                <th>Tên & Mô Tả Quy Trình</th>
-                <th width="100">Phiên Bản</th>
-                <th width="140">Trạng Thái</th>
-                <th width="160">Lần Sửa Cuối</th>
-                <th width="130" class="text-right">Thao Tác</th>
+                <th nzWidth="160px" [nzSortFn]="sortCode">Mã Quy Trình</th>
+                <th [nzSortFn]="sortName">Tên & Mô Tả Quy Trình</th>
+                <th nzWidth="120px" [nzSortFn]="sortVersion">Phiên Bản</th>
+                <th
+                  nzWidth="150px"
+                  [nzFilters]="statusFilterList"
+                  [nzFilterFn]="statusFilterFn"
+                  [nzSortFn]="sortStatus"
+                >
+                  Trạng Thái
+                </th>
+                <th nzWidth="170px" [nzSortFn]="sortUpdatedAt">Lần Sửa Cuối</th>
+                <th nzWidth="120px" nzAlign="right">Thao Tác</th>
               </tr>
             </thead>
             <tbody>
-              @for (process of filteredProcesses(); track process.id) {
+              @for (process of processTable.data; track process.id) {
                 <tr class="table-row" (click)="openEditModal(process)">
                   <td>
                     <span class="code-badge">{{ process.code }}</span>
@@ -160,75 +124,48 @@
                   <td>
                     <span class="date-text">{{ process.updatedAt }}</span>
                   </td>
-                  <td class="text-right">
-                    <div class="action-btns" (click)="$event.stopPropagation()">
+                  <td nzAlign="right" (click)="$event.stopPropagation()">
+                    <div class="action-btns">
                       <button
                         class="btn-action edit"
                         (click)="openEditModal(process)"
                         title="Mở sơ đồ quy trình"
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="15"
-                          height="15"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                        >
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
+                        <span nz-icon nzType="edit" nzTheme="outline"></span>
                       </button>
                       <button
                         class="btn-action delete"
-                        (click)="deleteProcess(process, $event)"
+                        nz-popconfirm
+                        nzPopconfirmTitle="Bạn có chắc chắn muốn xóa quy trình này không?"
+                        nzOkText="Xóa"
+                        nzCancelText="Hủy"
+                        nzOkDanger
+                        (nzOnConfirm)="deleteProcess(process)"
+                        (click)="$event.stopPropagation()"
                         title="Xóa quy trình"
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="15"
-                          height="15"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                        >
-                          <polyline points="3 6 5 6 21 6" />
-                          <path
-                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="6" class="empty-cell">
-                    <div class="empty-state">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="48"
-                        height="48"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                      >
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                      </svg>
-                      <p>Không tìm thấy quy trình BPMN nào phù hợp.</p>
-                      <button class="btn btn-secondary btn-sm" (click)="openCreateModal()">
-                        Tạo quy trình mới
+                        <span nz-icon nzType="delete" nzTheme="outline"></span>
                       </button>
                     </div>
                   </td>
                 </tr>
               }
             </tbody>
-          </table>
+          </nz-table>
+
+          <ng-template #totalTemplate let-total>
+            <span class="pagination-total">Tổng số {{ total }} quy trình</span>
+          </ng-template>
+
+          <ng-template #emptyTemplate>
+            <div class="empty-state">
+              <span nz-icon nzType="file-search" nzTheme="outline" class="empty-icon"></span>
+              <p>Không tìm thấy quy trình BPMN nào phù hợp.</p>
+              <button class="btn btn-secondary btn-sm" (click)="openCreateModal()">
+                Tạo quy trình mới
+              </button>
+            </div>
+          </ng-template>
         </div>
       </section>
     </div>

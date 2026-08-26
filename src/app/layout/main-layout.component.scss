@@ -28,12 +28,8 @@
       align-items: center;
       justify-content: center;
       color: #fff;
+      font-size: 20px;
       box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
-
-      svg {
-        width: 20px;
-        height: 20px;
-      }
     }
 
     .brand-title {
@@ -97,13 +93,9 @@
         width: 20px;
         height: 20px;
         min-width: 20px;
+        font-size: 17px;
         color: #64748b;
         transition: color 0.2s ease;
-
-        svg {
-          width: 18px;
-          height: 18px;
-        }
       }
 
       .menu-title {
@@ -208,6 +200,7 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      font-size: 16px;
       transition: all 0.2s ease;
 
       &:hover {

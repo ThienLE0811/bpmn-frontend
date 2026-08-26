@@ -17,6 +17,7 @@ import BpmnModeler from 'bpmn-js/lib/Modeler';
 import { BpmnProcess } from '@core/models/bpmn-process.model';
 import { DEFAULT_BPMN_XML } from '@shared/constants';
 import { DesignerHeaderComponent } from '../designer-header/designer-header.component';
+import { NzIconModule } from 'ng-zorro-antd/icon';
 
 export interface BpmnElementProperties {
   id: string;
@@ -28,7 +29,7 @@ export interface BpmnElementProperties {
 @Component({
   selector: 'app-bpmn-designer',
   standalone: true,
-  imports: [CommonModule, FormsModule, DesignerHeaderComponent],
+  imports: [CommonModule, FormsModule, DesignerHeaderComponent, NzIconModule],
   templateUrl: './bpmn-designer.component.html',
   styleUrl: './bpmn-designer.component.scss',
 })

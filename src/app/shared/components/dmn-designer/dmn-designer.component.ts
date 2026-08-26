@@ -17,6 +17,7 @@ import DmnModeler from 'dmn-js/lib/Modeler';
 import { DmnDecision } from '@core/models/dmn-decision.model';
 import { DEFAULT_DMN_XML } from '@shared/constants';
 import { DesignerHeaderComponent } from '../designer-header/designer-header.component';
+import { NzIconModule } from 'ng-zorro-antd/icon';
 
 export interface DmnViewItem {
   id: string;
@@ -28,7 +29,7 @@ export interface DmnViewItem {
 @Component({
   selector: 'app-dmn-designer',
   standalone: true,
-  imports: [CommonModule, FormsModule, DesignerHeaderComponent],
+  imports: [CommonModule, FormsModule, DesignerHeaderComponent, NzIconModule],
   templateUrl: './dmn-designer.component.html',
   styleUrl: './dmn-designer.component.scss',
 })

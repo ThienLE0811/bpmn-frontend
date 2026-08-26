@@ -1,13 +1,14 @@
 import { Component, ChangeDetectionStrategy, input, model, output, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { NzIconModule } from 'ng-zorro-antd/icon';
 
 export type DesignerType = 'bpmn' | 'dmn';
 
 @Component({
   selector: 'app-designer-header',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NzIconModule],
   templateUrl: './designer-header.component.html',
   styleUrl: './designer-header.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
