@@ -25,40 +25,417 @@
 
     <!-- Properties Panel Sidebar -->
     <aside class="properties-sidebar">
+      <!-- Sidebar Header -->
       <div class="sidebar-header">
-        <span nz-icon nzType="control" nzTheme="outline"></span>
-        <h3>Thuộc tính Element</h3>
-      </div>
+        <div class="header-left">
+          <span nz-icon nzType="control" nzTheme="outline" class="header-icon"></span>
+          <div class="header-titles">
+            <h3>Thuộc tính Element</h3>
+            <span class="header-sub">BPMN 2.0 Properties</span>
+          </div>
+        </div>
 
-      <div class="sidebar-content">
         @if (selectedElement(); as element) {
-          <div class="form-group">
-            <label class="form-label">ID Element</label>
-            <input type="text" class="form-input readonly-input" [value]="element.id" readonly />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Loại (Type)</label>
-            <div class="type-badge">{{ element.type }}</div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Tên hiển thị (Label)</label>
-            <input
-              type="text"
-              class="form-input"
-              [ngModel]="element.name"
-              (ngModelChange)="updateSelectedElementName($event)"
-              placeholder="Nhập tên nút quy trình..."
-            />
-          </div>
-        } @else {
-          <div class="empty-selection">
-            <span nz-icon nzType="info-circle" nzTheme="outline" class="empty-icon"></span>
-            <p>Chọn một phần tử trên sơ đồ để xem và chỉnh sửa thông tin chi tiết.</p>
+          <div class="header-badge" [style.color]="getTypeMeta(element.type).color">
+            <span nz-icon [nzType]="getTypeMeta(element.type).icon" nzTheme="outline"></span>
           </div>
         }
       </div>
+
+      @if (selectedElement(); as element) {
+        <!-- Element Quick Info Banner -->
+        <div class="element-hero-card">
+          <div class="hero-top">
+            <span
+              class="type-pill"
+              [style.backgroundColor]="getTypeMeta(element.type).color + '15'"
+              [style.color]="getTypeMeta(element.type).color"
+              [style.borderColor]="getTypeMeta(element.type).color + '30'"
+            >
+              <span nz-icon [nzType]="getTypeMeta(element.type).icon" nzTheme="outline"></span>
+              {{ getTypeMeta(element.type).label }}
+            </span>
+
+            <button
+              class="btn-copy-id"
+              (click)="copyElementId(element.id)"
+              [title]="copiedId() ? 'Đã sao chép ID' : 'Sao chép ID element'"
+            >
+              <span
+                nz-icon
+                [nzType]="copiedId() ? 'check' : 'copy'"
+                nzTheme="outline"
+                [class.copied]="copiedId()"
+              ></span>
+              <span class="id-text">{{ element.id }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Segmented Tab Navigation -->
+        <div class="sidebar-tabs-nav">
+          <button
+            class="tab-btn"
+            [class.active]="activeSidebarTab() === 'general'"
+            (click)="activeSidebarTab.set('general')"
+          >
+            <span nz-icon nzType="file-text" nzTheme="outline"></span>
+            Chung
+          </button>
+
+          @if (hasExecutionConfig(element.type)) {
+            <button
+              class="tab-btn"
+              [class.active]="activeSidebarTab() === 'execution'"
+              (click)="activeSidebarTab.set('execution')"
+            >
+              <span nz-icon nzType="setting" nzTheme="outline"></span>
+              Nghiệp vụ
+            </button>
+          }
+
+          <button
+            class="tab-btn"
+            [class.active]="activeSidebarTab() === 'advanced'"
+            (click)="activeSidebarTab.set('advanced')"
+          >
+            <span nz-icon nzType="code" nzTheme="outline"></span>
+            Nâng cao
+          </button>
+        </div>
+
+        <!-- Tab Content Body -->
+        <div class="sidebar-content">
+          <!-- TAB 1: THÔNG TIN CHUNG (GENERAL) -->
+          @if (activeSidebarTab() === 'general') {
+            <!-- Tên hiển thị (Label) -->
+            <div class="form-group">
+              <label class="form-label">
+                <span>Tên phần tử (Label)</span>
+              </label>
+              <div class="input-wrap">
+                <span nz-icon nzType="edit" nzTheme="outline" class="input-icon"></span>
+                <input
+                  type="text"
+                  class="form-input"
+                  [ngModel]="element.name"
+                  (ngModelChange)="updateSelectedElementName($event)"
+                  placeholder="Nhập tên hiển thị trên sơ đồ..."
+                />
+              </div>
+            </div>
+
+            <!-- Mã ID (chỉ đọc) -->
+            <div class="form-group">
+              <label class="form-label">
+                <span>Mã ID định danh</span>
+              </label>
+              <div class="input-wrap">
+                <span nz-icon nzType="key" nzTheme="outline" class="input-icon"></span>
+                <input
+                  type="text"
+                  class="form-input readonly-input"
+                  [value]="element.id"
+                  readonly
+                />
+              </div>
+            </div>
+
+            <!-- BPMN XML Type -->
+            <div class="form-group">
+              <label class="form-label">
+                <span>Loại đối tượng BPMN</span>
+              </label>
+              <div class="type-code-box">
+                <code>{{ element.type }}</code>
+              </div>
+            </div>
+
+            <!-- Mô tả / Hướng dẫn thực hiện (Documentation) -->
+            <div class="form-group">
+              <label class="form-label">
+                <span>Mô tả & Hướng dẫn (Documentation)</span>
+              </label>
+              <textarea
+                class="form-textarea"
+                rows="4"
+                [ngModel]="element.documentation"
+                (ngModelChange)="updateSelectedElementDocumentation($event)"
+                placeholder="Nhập ghi chú, quy định hoặc hướng dẫn thực hiện cho bước này..."
+              ></textarea>
+            </div>
+          }
+
+          <!-- TAB 2: NGHIỆP VỤ & THỰC THI (EXECUTION) -->
+          @if (activeSidebarTab() === 'execution') {
+            <!-- Form dành cho User Task / Manual Task -->
+            @if (isUserOrTask(element.type)) {
+              <div class="section-card">
+                <div class="section-title">
+                  <span nz-icon nzType="user" nzTheme="outline"></span>
+                  <span>Phân công & Người thực hiện</span>
+                </div>
+
+                <!-- Người thực hiện (Assignee) -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Người thực hiện (Assignee)</span>
+                  </label>
+                  <div class="input-wrap">
+                    <span nz-icon nzType="user" nzTheme="outline" class="input-icon"></span>
+                    <input
+                      type="text"
+                      class="form-input"
+                      [ngModel]="element.assignee"
+                      (ngModelChange)="updateSelectedElementProperty('assignee', $event)"
+                      [placeholder]="'VD: admin hoặc ${initiator}'"
+                    />
+                  </div>
+                  <span class="field-hint">Tên đăng nhập hoặc biến user xử lý</span>
+                </div>
+
+                <!-- Nhóm / Phòng ban ứng viên (Candidate Groups) -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Nhóm / Vai trò ứng viên (Candidate Groups)</span>
+                  </label>
+                  <div class="input-wrap">
+                    <span nz-icon nzType="team" nzTheme="outline" class="input-icon"></span>
+                    <input
+                      type="text"
+                      class="form-input"
+                      [ngModel]="element.candidateGroups"
+                      (ngModelChange)="updateSelectedElementProperty('candidateGroups', $event)"
+                      placeholder="VD: KE_TOAN, TRUONG_PHONG, HR"
+                    />
+                  </div>
+                  <span class="field-hint">Phân cách các nhóm bằng dấu phẩy</span>
+                </div>
+
+                <!-- Người dùng ứng viên (Candidate Users) -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Người dùng ứng viên (Candidate Users)</span>
+                  </label>
+                  <div class="input-wrap">
+                    <span nz-icon nzType="usergroup-add" nzTheme="outline" class="input-icon"></span>
+                    <input
+                      type="text"
+                      class="form-input"
+                      [ngModel]="element.candidateUsers"
+                      (ngModelChange)="updateSelectedElementProperty('candidateUsers', $event)"
+                      placeholder="VD: user1, user2, user3"
+                    />
+                  </div>
+                </div>
+
+                <div class="form-row-2col">
+                  <!-- Thời hạn hoàn thành (Due Date) -->
+                  <div class="form-group">
+                    <label class="form-label">
+                      <span>Hạn xử lý (Due Date)</span>
+                    </label>
+                    <div class="input-wrap">
+                      <span nz-icon nzType="calendar" nzTheme="outline" class="input-icon"></span>
+                      <input
+                        type="text"
+                        class="form-input"
+                        [ngModel]="element.dueDate"
+                        (ngModelChange)="updateSelectedElementProperty('dueDate', $event)"
+                        placeholder="VD: P2D (2 ngày)"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Mức độ ưu tiên (Priority) -->
+                  <div class="form-group">
+                    <label class="form-label">
+                      <span>Mức ưu tiên</span>
+                    </label>
+                    <div class="select-wrapper">
+                      <select
+                        class="form-input form-select"
+                        [ngModel]="element.priority || ''"
+                        (ngModelChange)="updateSelectedElementProperty('priority', $event)"
+                      >
+                        <option value="">Mặc định (50)</option>
+                        <option value="25">Thấp (25)</option>
+                        <option value="50">Bình thường (50)</option>
+                        <option value="75">Cao (75)</option>
+                        <option value="100">Khẩn cấp (100)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- Form dành cho Sequence Flow -->
+            @if (isSequenceFlow(element.type)) {
+              <div class="section-card">
+                <div class="section-title">
+                  <span nz-icon nzType="branches" nzTheme="outline"></span>
+                  <span>Biểu thức điều kiện rẽ nhánh</span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Điều kiện (Condition Expression)</span>
+                  </label>
+                  <textarea
+                    class="form-textarea code-textarea"
+                    rows="4"
+                    [ngModel]="element.conditionExpression"
+                    (ngModelChange)="updateSelectedElementProperty('conditionExpression', $event)"
+                    [placeholder]="'VD: ${approved == true && amount > 50000000}'"
+                  ></textarea>
+                  <span class="field-hint">Hỗ trợ cú pháp JUEL / Spring Expression hoặc JavaScript</span>
+                </div>
+              </div>
+            }
+
+            <!-- Form dành cho Service Task / Script Task -->
+            @if (isServiceOrScript(element.type)) {
+              <div class="section-card">
+                <div class="section-title">
+                  <span nz-icon nzType="api" nzTheme="outline"></span>
+                  <span>Cấu hình Tự động & Tích hợp</span>
+                </div>
+
+                <!-- Topic Name cho External Worker -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Topic Name (External Worker)</span>
+                  </label>
+                  <div class="input-wrap">
+                    <span nz-icon nzType="thunderbolt" nzTheme="outline" class="input-icon"></span>
+                    <input
+                      type="text"
+                      class="form-input"
+                      [ngModel]="element.topic"
+                      (ngModelChange)="updateSelectedElementProperty('topic', $event)"
+                      placeholder="VD: process-payment-worker"
+                    />
+                  </div>
+                  <span class="field-hint">Tên topic để các External Task Client đăng ký lắng nghe</span>
+                </div>
+
+                <!-- Delegate Expression -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Delegate Expression</span>
+                  </label>
+                  <div class="input-wrap">
+                    <span nz-icon nzType="code" nzTheme="outline" class="input-icon"></span>
+                    <input
+                      type="text"
+                      class="form-input"
+                      [ngModel]="element.delegateExpression"
+                      (ngModelChange)="updateSelectedElementProperty('delegateExpression', $event)"
+                      [placeholder]="'VD: ${notificationServiceDelegate}'"
+                    />
+                  </div>
+                </div>
+
+                <!-- Java Class -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Java Class</span>
+                  </label>
+                  <div class="input-wrap">
+                    <span nz-icon nzType="file-done" nzTheme="outline" class="input-icon"></span>
+                    <input
+                      type="text"
+                      class="form-input"
+                      [ngModel]="element.javaClass"
+                      (ngModelChange)="updateSelectedElementProperty('javaClass', $event)"
+                      placeholder="VD: com.company.workflow.SendNotification"
+                    />
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- Form dành cho Call Activity -->
+            @if (isCallActivity(element.type)) {
+              <div class="section-card">
+                <div class="section-title">
+                  <span nz-icon nzType="apartment" nzTheme="outline"></span>
+                  <span>Quy trình con gọi đến</span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Mã quy trình gọi đến (Called Element)</span>
+                  </label>
+                  <div class="input-wrap">
+                    <span nz-icon nzType="partition" nzTheme="outline" class="input-icon"></span>
+                    <input
+                      type="text"
+                      class="form-input"
+                      [ngModel]="element.calledElement"
+                      (ngModelChange)="updateSelectedElementProperty('calledElement', $event)"
+                      placeholder="VD: SUB-PROC-PAYMENT"
+                    />
+                  </div>
+                  <span class="field-hint">Mã định danh quy trình con sẽ được khởi chạy tại bước này</span>
+                </div>
+              </div>
+            }
+          }
+
+          <!-- TAB 3: NÂNG CAO (ADVANCED) -->
+          @if (activeSidebarTab() === 'advanced') {
+            <div class="advanced-summary-card">
+              <div class="advanced-title">
+                <span nz-icon nzType="database" nzTheme="outline"></span>
+                <span>Thông số XML Raw</span>
+              </div>
+              <div class="raw-meta-grid">
+                <div class="raw-item">
+                  <span class="k">Element ID</span>
+                  <span class="v code-val">{{ element.id }}</span>
+                </div>
+                <div class="raw-item">
+                  <span class="k">BPMN Type</span>
+                  <span class="v code-val">{{ element.type }}</span>
+                </div>
+                <div class="raw-item">
+                  <span class="k">Category</span>
+                  <span class="v">{{ getTypeMeta(element.type).category }}</span>
+                </div>
+                @if (element.assignee) {
+                  <div class="raw-item">
+                    <span class="k">Assignee</span>
+                    <span class="v">{{ element.assignee }}</span>
+                  </div>
+                }
+                @if (element.conditionExpression) {
+                  <div class="raw-item">
+                    <span class="k">Condition</span>
+                    <span class="v code-val">{{ element.conditionExpression }}</span>
+                  </div>
+                }
+                @if (element.topic) {
+                  <div class="raw-item">
+                    <span class="k">Topic</span>
+                    <span class="v">{{ element.topic }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <!-- Empty Selection Placeholder -->
+        <div class="empty-selection">
+          <div class="empty-icon-wrap">
+            <span nz-icon nzType="info-circle" nzTheme="outline" class="empty-icon"></span>
+          </div>
+          <h4>Chưa chọn phần tử</h4>
+          <p>Nhấp chuột vào bất kỳ Task, Gateway, Event hoặc Luồng kết nối trên sơ đồ để xem và chỉnh sửa thuộc tính chi tiết.</p>
+        </div>
+      }
     </aside>
   </div>
 </div>

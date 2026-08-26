@@ -2,13 +2,15 @@ import { Component, ChangeDetectionStrategy, input, model, output, computed } fr
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NzIconModule } from 'ng-zorro-antd/icon';
+import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
+import { NzMenuModule } from 'ng-zorro-antd/menu';
 
 export type DesignerType = 'bpmn' | 'dmn';
 
 @Component({
   selector: 'app-designer-header',
   standalone: true,
-  imports: [CommonModule, FormsModule, NzIconModule],
+  imports: [CommonModule, FormsModule, NzIconModule, NzDropdownModule, NzMenuModule],
   templateUrl: './designer-header.component.html',
   styleUrl: './designer-header.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -79,5 +81,9 @@ export class DesignerHeaderComponent {
 
   onFileChange(event: Event): void {
     this.fileSelected.emit(event);
+    const target = event.target as HTMLInputElement;
+    if (target) {
+      target.value = '';
+    }
   }
 }

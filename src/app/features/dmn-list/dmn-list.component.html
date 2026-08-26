@@ -64,7 +64,9 @@
           </div>
 
           <div class="toolbar-right">
-            <span class="results-count">Hiển thị {{ filteredDecisions().length }} bảng quyết định</span>
+            <span class="results-count"
+              >Hiển thị {{ filteredDecisions().length }} bảng quyết định</span
+            >
           </div>
         </div>
 
@@ -172,15 +174,215 @@
   </main>
 </div>
 
-<!-- Modal Container chứa DmnDesignerComponent -->
+<!-- Modal Container chứa DMN Designer (2/3) và Signal Form Thông tin bảng quyết định (1/3) -->
 @if (isModalOpen()) {
-  <div class="modal-backdrop" (click)="closeModal()">
+  <div class="modal-backdrop">
     <div class="modal-wrapper" (click)="$event.stopPropagation()">
-      <app-dmn-designer
-        [decisionData]="selectedDecision()"
-        (save)="onSaveFromModal($event)"
-        (cancel)="closeModal()"
-      ></app-dmn-designer>
+      <div class="modal-split-container">
+        <!-- 2/3 Độ rộng (có thể tùy chỉnh kéo giãn bằng NzResizable): DMN Designer -->
+        <div
+          class="designer-column"
+          nz-resizable
+          [nzMinWidth]="360"
+          [nzMaxWidth]="1450"
+          (nzResize)="onSideResize($event)"
+          [style.width.px]="designerWidth()"
+          [style.flex]="designerWidth() ? '0 0 ' + designerWidth() + 'px' : '2'"
+        >
+          <nz-resize-handle nzDirection="right" nzCursorType="grid">
+            <div class="resize-handle-wrapper">
+              <div class="resize-handle-rail"></div>
+              <div class="resize-handle-knob" title="Kéo để điều chỉnh độ rộng khung">
+                <span class="grip-line"></span>
+                <span class="grip-line"></span>
+              </div>
+            </div>
+          </nz-resize-handle>
+
+          <app-dmn-designer
+            [decisionData]="selectedDecision()"
+            (save)="onSaveFromModal($event)"
+            (closed)="closeModal()"
+          ></app-dmn-designer>
+        </div>
+
+        <!-- 1/3 Độ rộng: Signal Form Thông tin bảng quyết định -->
+        <aside class="process-info-sidebar">
+          <!-- Header -->
+          <div class="info-sidebar-header">
+            <div class="header-main">
+              <div class="icon-wrap">
+                <span nz-icon nzType="table" nzTheme="outline"></span>
+              </div>
+              <div class="header-titles">
+                <div class="header-top-row">
+                  <h3>Thông tin Bảng Quyết định</h3>
+                  <span class="status-badge" [class]="decisionForm.status().value().toLowerCase()">
+                    <span class="status-dot"></span>
+                    @switch (decisionForm.status().value()) {
+                      @case ('PUBLISHED') {
+                        Đã phát hành
+                      }
+                      @case ('ARCHIVED') {
+                        Lưu trữ
+                      }
+                      @default {
+                        Bản nháp
+                      }
+                    }
+                  </span>
+                </div>
+                <p>Thiết lập thông số và quy tắc quyết định DMN</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Body Form Content -->
+          <div class="info-sidebar-body">
+            <div class="process-signal-form">
+              <!-- Mã bảng quyết định -->
+              <div
+                class="form-group"
+                [class.has-error]="decisionForm.code().invalid() && decisionForm.code().touched()"
+              >
+                <label class="form-label">
+                  <span>Mã quyết định</span>
+                  <span class="required-star">*</span>
+                </label>
+                <div class="input-with-icon">
+                  <span nz-icon nzType="code" nzTheme="outline" class="input-icon"></span>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [formField]="decisionForm.code"
+                    placeholder="VD: DMN-DEC-01"
+                  />
+                </div>
+                @if (decisionForm.code().invalid() && decisionForm.code().touched()) {
+                  @for (error of decisionForm.code().errors(); track error.kind) {
+                    <div class="form-error-msg">
+                      <span nz-icon nzType="info-circle" nzTheme="outline"></span>
+                      <span>{{ error.message }}</span>
+                    </div>
+                  }
+                }
+              </div>
+
+              <!-- Tên bảng quyết định -->
+              <div
+                class="form-group"
+                [class.has-error]="decisionForm.name().invalid() && decisionForm.name().touched()"
+              >
+                <label class="form-label">
+                  <span>Tên bảng quyết định</span>
+                  <span class="required-star">*</span>
+                </label>
+                <div class="input-with-icon">
+                  <span nz-icon nzType="edit" nzTheme="outline" class="input-icon"></span>
+                  <input
+                    type="text"
+                    class="form-control"
+                    [formField]="decisionForm.name"
+                    placeholder="Nhập tên bảng quyết định..."
+                  />
+                </div>
+                @if (decisionForm.name().invalid() && decisionForm.name().touched()) {
+                  @for (error of decisionForm.name().errors(); track error.kind) {
+                    <div class="form-error-msg">
+                      <span nz-icon nzType="info-circle" nzTheme="outline"></span>
+                      <span>{{ error.message }}</span>
+                    </div>
+                  }
+                }
+              </div>
+
+              <!-- Form Row: Phiên bản & Trạng thái -->
+              <div class="form-row-2col">
+                <!-- Phiên bản -->
+                <div
+                  class="form-group"
+                  [class.has-error]="
+                    decisionForm.version().invalid() && decisionForm.version().touched()
+                  "
+                >
+                  <label class="form-label">
+                    <span>Phiên bản</span>
+                    <span class="required-star">*</span>
+                  </label>
+                  <div class="input-with-icon">
+                    <span nz-icon nzType="tag" nzTheme="outline" class="input-icon"></span>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [formField]="decisionForm.version"
+                      placeholder="v1.0.0"
+                    />
+                  </div>
+                  @if (decisionForm.version().invalid() && decisionForm.version().touched()) {
+                    @for (error of decisionForm.version().errors(); track error.kind) {
+                      <div class="form-error-msg">
+                        <span nz-icon nzType="info-circle" nzTheme="outline"></span>
+                        <span>{{ error.message }}</span>
+                      </div>
+                    }
+                  }
+                </div>
+
+                <!-- Trạng thái -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Trạng thái</span>
+                  </label>
+                  <div class="select-wrapper">
+                    <select class="form-control form-select" [formField]="decisionForm.status">
+                      <option value="DRAFT">Bản nháp</option>
+                      <option value="PUBLISHED">Đã phát hành</option>
+                      <option value="ARCHIVED">Lưu trữ</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Mô tả bảng quyết định -->
+              <div class="form-group">
+                <label class="form-label">
+                  <span>Mô tả bảng quyết định</span>
+                </label>
+                <textarea
+                  class="form-control form-textarea"
+                  rows="4"
+                  [formField]="decisionForm.description"
+                  placeholder="Mô tả logic quyết định, đầu vào và bảng kết quả..."
+                ></textarea>
+              </div>
+
+              <!-- Metadata Summary Card -->
+              <div class="metadata-card">
+                <div class="metadata-card-header">
+                  <span nz-icon nzType="info-circle" nzTheme="outline"></span>
+                  <span>Siêu dữ liệu hệ thống</span>
+                </div>
+                <div class="metadata-grid">
+                  <div class="meta-item">
+                    <span class="meta-label">Mã ID hệ thống:</span>
+                    <span class="meta-value">{{ selectedDecision()?.id || 'Tạo mới' }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-label">Lần sửa cuối:</span>
+                    <span class="meta-value">{{
+                      selectedDecision()?.updatedAt || 'Vừa khởi tạo'
+                    }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-label">Định dạng sơ đồ:</span>
+                    <span class="meta-value badge-xml">OMG DMN 1.3 XML</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
     </div>
   </div>
 }

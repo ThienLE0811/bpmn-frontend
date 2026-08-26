@@ -38,20 +38,29 @@ export class DmnDesignerComponent implements AfterViewInit, OnDestroy, OnChanges
 
   @Input() decisionData: DmnDecision | null = null;
   @Output() save = new EventEmitter<{ name: string; xml: string }>();
-  @Output() cancel = new EventEmitter<void>();
+  @Output() closed = new EventEmitter<void>();
 
   protected dmnModeler: any;
   protected decisionName = signal<string>('Bảng quyết định DMN mới');
-  protected isModified = signal<boolean>(false);
+  readonly isModified = signal<boolean>(false);
   protected currentZoom = signal<number>(100);
   protected views = signal<DmnViewItem[]>([]);
   protected activeViewId = signal<string>('');
+  private initialDecisionName = '';
+  private boundViewers = new WeakSet<any>();
+
+  hasChanges(): boolean {
+    const isTitleChanged = this.decisionName().trim() !== this.initialDecisionName.trim();
+    return this.isModified() || isTitleChanged;
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['decisionData'] && this.decisionData) {
-      this.decisionName.set(this.decisionData.name || 'Bảng quyết định DMN');
+    if (changes['decisionData']) {
+      const name = this.decisionData?.name || 'Bảng quyết định DMN mới';
+      this.decisionName.set(name);
+      this.initialDecisionName = name;
       if (this.dmnModeler) {
-        const xmlToLoad = this.decisionData.xml || DEFAULT_DMN_XML;
+        const xmlToLoad = this.decisionData?.xml || DEFAULT_DMN_XML;
         this.importDiagram(xmlToLoad);
       }
     }
@@ -69,18 +78,25 @@ export class DmnDesignerComponent implements AfterViewInit, OnDestroy, OnChanges
       this.updateViewsList(views);
     });
 
-    this.dmnModeler.on('view.open', ({ view }: any) => {
+    this.dmnModeler.on('viewer.created', ({ viewer }: any) => {
+      this.bindViewerEvents(viewer);
+    });
+
+    this.dmnModeler.on('import.render.complete', ({ view }: any) => {
       if (view?.element) {
         this.activeViewId.set(view.element.id);
       }
       this.updateZoomLevel();
-      this.bindCommandStackChanges();
+      const activeViewer = this.dmnModeler.getActiveViewer();
+      if (activeViewer) {
+        this.bindViewerEvents(activeViewer);
+      }
     });
 
     const initialXml = this.decisionData?.xml || DEFAULT_DMN_XML;
-    if (this.decisionData?.name) {
-      this.decisionName.set(this.decisionData.name);
-    }
+    const name = this.decisionData?.name || 'Bảng quyết định DMN mới';
+    this.decisionName.set(name);
+    this.initialDecisionName = name;
     this.importDiagram(initialXml);
   }
 
@@ -90,19 +106,23 @@ export class DmnDesignerComponent implements AfterViewInit, OnDestroy, OnChanges
     }
   }
 
-  private bindCommandStackChanges(): void {
+  private bindViewerEvents(viewer: any): void {
+    if (!viewer || this.boundViewers.has(viewer)) return;
+    this.boundViewers.add(viewer);
+
     try {
-      const activeViewer = this.dmnModeler.getActiveViewer();
-      if (activeViewer) {
-        const commandStack = activeViewer.get('commandStack', false);
-        if (commandStack) {
-          activeViewer.on('commandStack.changed', () => {
-            this.isModified.set(true);
-          });
-        }
-      }
-    } catch {
-      // Viewer might not have commandStack in all sub-modes
+      const onModified = () => {
+        this.isModified.set(true);
+      };
+
+      viewer.on('commandStack.changed', onModified);
+      viewer.on('commandStack.executed', onModified);
+      viewer.on('commandStack.reverted', onModified);
+      viewer.on('elements.changed', onModified);
+      viewer.on('element.changed', onModified);
+      viewer.on('root.added', onModified);
+    } catch (err) {
+      console.warn('Could not bind viewer events:', err);
     }
   }
 
@@ -128,6 +148,11 @@ export class DmnDesignerComponent implements AfterViewInit, OnDestroy, OnChanges
       const target = rawViews.find((v: any) => (v.element?.id || v.id) === viewItem.id);
       if (target) {
         await this.dmnModeler.open(target);
+        const activeViewer = this.dmnModeler.getActiveViewer();
+        if (activeViewer) {
+          this.bindViewerEvents(activeViewer);
+        }
+        this.updateZoomLevel();
       }
     } catch (err) {
       console.error('Lỗi khi chuyển view DMN:', err);
@@ -140,6 +165,10 @@ export class DmnDesignerComponent implements AfterViewInit, OnDestroy, OnChanges
       const views = this.dmnModeler.getViews();
       this.updateViewsList(views);
       this.updateZoomLevel();
+      const activeViewer = this.dmnModeler.getActiveViewer();
+      if (activeViewer) {
+        this.bindViewerEvents(activeViewer);
+      }
       this.isModified.set(false);
     } catch (err) {
       console.error('Lỗi khi tải sơ đồ DMN:', err);
@@ -154,11 +183,25 @@ export class DmnDesignerComponent implements AfterViewInit, OnDestroy, OnChanges
       reader.onload = (e: ProgressEvent<FileReader>) => {
         const xml = e.target?.result as string;
         if (xml) {
-          this.importDiagram(xml);
+          this.importDiagram(xml).then(() => {
+            this.isModified.set(true);
+          });
         }
       };
       reader.readAsText(file);
     }
+  }
+
+  async getDiagramXml(): Promise<string> {
+    try {
+      if (this.dmnModeler) {
+        const { xml } = await this.dmnModeler.saveXML({ format: true });
+        return xml || '';
+      }
+    } catch (err) {
+      console.error('Lỗi khi lấy sơ đồ DMN XML:', err);
+    }
+    return this.decisionData?.xml || DEFAULT_DMN_XML;
   }
 
   async onSave(): Promise<void> {
@@ -170,6 +213,7 @@ export class DmnDesignerComponent implements AfterViewInit, OnDestroy, OnChanges
           xml,
         });
         this.isModified.set(false);
+        this.initialDecisionName = this.decisionName();
       }
     } catch (err) {
       console.error('Lỗi khi lưu DMN:', err);
@@ -177,7 +221,7 @@ export class DmnDesignerComponent implements AfterViewInit, OnDestroy, OnChanges
   }
 
   onClose(): void {
-    this.cancel.emit();
+    this.closed.emit();
   }
 
   async exportXml(): Promise<void> {

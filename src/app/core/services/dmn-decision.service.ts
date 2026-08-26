@@ -213,9 +213,12 @@ export class DmnDecisionService {
         if (item.id === decisionData.id) {
           return {
             ...item,
+            code: decisionData.code || item.code,
             name: decisionData.name || item.name,
-            description: decisionData.description ?? item.description,
-            xml: decisionData.xml,
+            description: decisionData.description !== undefined ? decisionData.description : item.description,
+            version: decisionData.version || item.version,
+            status: decisionData.status || item.status,
+            xml: decisionData.xml !== undefined ? decisionData.xml : item.xml,
             updatedAt: nowStr
           };
         }
@@ -226,14 +229,14 @@ export class DmnDecisionService {
     } else {
       // Create new
       const newId = 'dmn_' + Date.now();
-      const newCode = 'DMN-DEC-' + (list.length + 1).toString().padStart(2, '0');
+      const newCode = decisionData.code || ('DMN-DEC-' + (list.length + 1).toString().padStart(2, '0'));
       const newDmn: DmnDecision = {
         id: newId,
         code: newCode,
         name: decisionData.name || 'Bảng quyết định mới',
         description: decisionData.description || 'Mô tả bảng quyết định DMN mới.',
-        version: 'v1.0.0',
-        status: 'DRAFT',
+        version: decisionData.version || 'v1.0.0',
+        status: decisionData.status || 'DRAFT',
         updatedAt: nowStr,
         xml: decisionData.xml
       };

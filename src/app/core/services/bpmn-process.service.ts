@@ -135,9 +135,12 @@ export class BpmnProcessService {
         if (item.id === processData.id) {
           return {
             ...item,
+            code: processData.code || item.code,
             name: processData.name || item.name,
-            description: processData.description ?? item.description,
-            xml: processData.xml,
+            description: processData.description !== undefined ? processData.description : item.description,
+            version: processData.version || item.version,
+            status: processData.status || item.status,
+            xml: processData.xml !== undefined ? processData.xml : item.xml,
             updatedAt: nowStr
           };
         }
@@ -148,14 +151,14 @@ export class BpmnProcessService {
     } else {
       // Create new
       const newId = 'proc_' + Date.now();
-      const newCode = 'BPMN-PROC-' + (list.length + 1).toString().padStart(2, '0');
+      const newCode = processData.code || ('BPMN-PROC-' + (list.length + 1).toString().padStart(2, '0'));
       const newProc: BpmnProcess = {
         id: newId,
         code: newCode,
         name: processData.name || 'Quy trình mới',
         description: processData.description || 'Mô tả quy trình BPMN mới.',
-        version: 'v1.0.0',
-        status: 'DRAFT',
+        version: processData.version || 'v1.0.0',
+        status: processData.status || 'DRAFT',
         updatedAt: nowStr,
         xml: processData.xml
       };

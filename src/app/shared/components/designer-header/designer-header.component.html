@@ -1,11 +1,7 @@
 <header class="designer-header">
   <div class="brand-section">
     <div class="brand-logo" [class.dmn-logo]="type() === 'dmn'">
-      <span
-        nz-icon
-        [nzType]="type() === 'dmn' ? 'table' : 'branches'"
-        nzTheme="outline"
-      ></span>
+      <span nz-icon [nzType]="type() === 'dmn' ? 'table' : 'branches'" nzTheme="outline"></span>
     </div>
     <div class="brand-info">
       <input
@@ -43,28 +39,48 @@
 
     <div class="divider"></div>
 
-    <!-- File Import/Export -->
+    <!-- File Actions Dropdown -->
     <div class="btn-group">
-      <label class="btn btn-secondary" title="Mở tệp từ máy tính">
-        <span nz-icon nzType="upload" nzTheme="outline"></span>
-        Nhập file
-        <input
-          type="file"
-          (change)="onFileChange($event)"
-          [accept]="effectiveAccept()"
-          style="display: none"
-        />
-      </label>
-
-      <button class="btn btn-secondary" (click)="exportXml.emit()" title="Tải xuống XML">
-        <span nz-icon nzType="download" nzTheme="outline"></span>
-        Xuất XML
+      <button
+        class="btn btn-secondary dropdown-btn"
+        nz-dropdown
+        [nzDropdownMenu]="fileMenu"
+        nzTrigger="hover"
+        nzPlacement="bottomLeft"
+        nzOverlayClassName="designer-dropdown-overlay"
+        title="Thao tác tệp"
+      >
+        <span nz-icon nzType="file-text" nzTheme="outline"></span>
+        <span>Tệp</span>
+        <span nz-icon nzType="down" nzTheme="outline" class="dropdown-icon"></span>
       </button>
 
-      <button class="btn btn-secondary" (click)="exportSvg.emit()" [title]="effectiveSvgTitle()">
-        <span nz-icon nzType="file-image" nzTheme="outline"></span>
-        Xuất SVG
-      </button>
+      <nz-dropdown-menu #fileMenu="nzDropdownMenu">
+        <ul nz-menu>
+          <li nz-menu-item (click)="fileInput.click()" title="Mở tệp từ máy tính">
+            <span nz-icon nzType="upload" nzTheme="outline" class="dropdown-menu-icon"></span>
+            <span>Nhập file</span>
+          </li>
+          <li nz-menu-divider></li>
+          <li nz-menu-item (click)="exportXml.emit()" title="Tải xuống XML">
+            <span nz-icon nzType="download" nzTheme="outline" class="dropdown-menu-icon"></span>
+            <span>Xuất XML</span>
+          </li>
+          <li nz-menu-item (click)="exportSvg.emit()" [title]="effectiveSvgTitle()">
+            <span nz-icon nzType="file-image" nzTheme="outline" class="dropdown-menu-icon"></span>
+            <span>Xuất SVG</span>
+          </li>
+        </ul>
+      </nz-dropdown-menu>
+
+      <input
+        #fileInput
+        type="file"
+        (change)="onFileChange($event)"
+        (cancel)="$event.stopPropagation()"
+        [accept]="effectiveAccept()"
+        style="display: none"
+      />
     </div>
 
     <div class="divider"></div>
