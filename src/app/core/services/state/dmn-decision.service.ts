@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { DmnDecision } from '@core/models/dmn-decision.model';
+import { ApiErrorHandlerService } from '@shared/services';
 import { DmnApiService } from '../api/dmn-api.service';
 
 const INITIAL_DECISIONS: DmnDecision[] = [
@@ -199,6 +200,7 @@ const INITIAL_DECISIONS: DmnDecision[] = [
 })
 export class DmnDecisionService {
   private readonly dmnApi = inject(DmnApiService);
+  private readonly errorHandler = inject(ApiErrorHandlerService);
   private decisionsSignal = signal<DmnDecision[]>(INITIAL_DECISIONS);
   private loadingSignal = signal<boolean>(false);
   private errorSignal = signal<string | null>(null);
@@ -230,9 +232,10 @@ export class DmnDecisionService {
       },
       error: (err) => {
         console.warn('Không thể kết nối API (/dmn-decisions), fallback về dữ liệu mẫu:', err);
-        this.errorSignal.set(err?.message || 'Lỗi khi gọi API');
+        const errorText = this.errorHandler.handleError(err, 'Lỗi khi tải danh sách quyết định DMN từ máy chủ.');
+        this.errorSignal.set(errorText);
         this.loadingSignal.set(false);
-      }
+      },
     });
   }
 
@@ -250,34 +253,38 @@ export class DmnDecisionService {
         version: decisionData.version || 'v1.0.0',
         status: decisionData.status || 'DRAFT',
         xml: decisionData.xml !== undefined ? decisionData.xml : '',
-        updatedAt: nowStr
+        updatedAt: nowStr,
       };
 
       // Gọi API cập nhật
       this.dmnApi.update(decisionData.id, updatedItem).subscribe({
         next: (res) => {
           if (res) {
-            this.decisionsSignal.set(this.decisionsSignal().map(i => i.id === res.id ? res : i));
+            this.decisionsSignal.set(this.decisionsSignal().map((i) => (i.id === res.id ? res : i)));
           }
         },
-        error: (err) => console.error('Lỗi khi cập nhật DMN qua API:', err)
+        error: (err) => {
+          console.error('Lỗi khi cập nhật DMN qua API:', err);
+          const errorText = this.errorHandler.handleError(err, 'Lỗi khi cập nhật bảng quyết định DMN qua API.');
+          this.errorSignal.set(errorText);
+        },
       });
 
-      const updated = list.map(item => {
+      const updated = list.map((item) => {
         if (item.id === decisionData.id) {
           return {
             ...item,
-            ...updatedItem
+            ...updatedItem,
           };
         }
         return item;
       });
       this.decisionsSignal.set(updated);
-      return updated.find(i => i.id === decisionData.id)!;
+      return updated.find((i) => i.id === decisionData.id)!;
     } else {
       // Create new
       const newId = 'dmn_' + Date.now();
-      const newCode = decisionData.code || ('DMN-DEC-' + (list.length + 1).toString().padStart(2, '0'));
+      const newCode = decisionData.code || 'DMN-DEC-' + (list.length + 1).toString().padStart(2, '0');
       const newDmn: DmnDecision = {
         id: newId,
         code: newCode,
@@ -286,17 +293,21 @@ export class DmnDecisionService {
         version: decisionData.version || 'v1.0.0',
         status: decisionData.status || 'DRAFT',
         updatedAt: nowStr,
-        xml: decisionData.xml
+        xml: decisionData.xml,
       };
 
       // Gọi API tạo mới
       this.dmnApi.create(newDmn).subscribe({
         next: (res) => {
           if (res) {
-            this.decisionsSignal.set(this.decisionsSignal().map(i => i.id === newId ? res : i));
+            this.decisionsSignal.set(this.decisionsSignal().map((i) => (i.id === newId ? res : i)));
           }
         },
-        error: (err) => console.error('Lỗi khi tạo mới DMN qua API:', err)
+        error: (err) => {
+          console.error('Lỗi khi tạo mới DMN qua API:', err);
+          const errorText = this.errorHandler.handleError(err, 'Lỗi khi tạo mới bảng quyết định DMN qua API.');
+          this.errorSignal.set(errorText);
+        },
       });
 
       this.decisionsSignal.set([newDmn, ...list]);
@@ -307,10 +318,14 @@ export class DmnDecisionService {
   deleteDecision(id: string): void {
     // Gọi API xóa
     this.dmnApi.delete(id).subscribe({
-      error: (err) => console.error('Lỗi khi xóa DMN qua API:', err)
+      error: (err) => {
+        console.error('Lỗi khi xóa DMN qua API:', err);
+        const errorText = this.errorHandler.handleError(err, 'Lỗi khi xóa bảng quyết định DMN qua API.');
+        this.errorSignal.set(errorText);
+      },
     });
 
-    const filtered = this.decisionsSignal().filter(p => p.id !== id);
+    const filtered = this.decisionsSignal().filter((p) => p.id !== id);
     this.decisionsSignal.set(filtered);
   }
 }

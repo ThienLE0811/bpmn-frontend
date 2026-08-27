@@ -17,6 +17,8 @@
       "@shared/*": ["./src/app/shared/*"],
       "@shared/components": ["./src/app/shared/components/index.ts"],
       "@shared/constants": ["./src/app/shared/constants/index.ts"],
+      "@shared/utils": ["./src/app/shared/utils/index.ts"],
+      "@shared/services": ["./src/app/shared/services/index.ts"],
       "@core/*": ["./src/app/core/*"],
       "@core/services": ["./src/app/core/services/index.ts"],
       "@core/models": ["./src/app/core/models/index.ts"],
