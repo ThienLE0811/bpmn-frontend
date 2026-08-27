@@ -166,7 +166,10 @@ export class BpmnProcessService {
       },
       error: (err) => {
         console.warn('Không thể kết nối API (/bpmn-processes), fallback về dữ liệu mẫu:', err);
-        const errorText = this.errorHandler.handleError(err, 'Lỗi khi tải danh sách quy trình BPMN từ máy chủ.');
+        const errorText = this.errorHandler.handleError(
+          err,
+          'Lỗi khi tải danh sách quy trình BPMN từ máy chủ.',
+        );
         this.errorSignal.set(errorText);
         this.loadingSignal.set(false);
       },
@@ -223,7 +226,10 @@ export class BpmnProcessService {
         },
         error: (err) => {
           console.error('Lỗi khi cập nhật BPMN qua API:', err);
-          const errorText = this.errorHandler.handleError(err, 'Lỗi khi cập nhật quy trình BPMN qua API.');
+          const errorText = this.errorHandler.handleError(
+            err,
+            'Lỗi khi cập nhật quy trình BPMN qua API.',
+          );
           this.errorSignal.set(errorText);
         },
       });
@@ -268,7 +274,10 @@ export class BpmnProcessService {
         },
         error: (err) => {
           console.error('Lỗi khi tạo mới BPMN qua API:', err);
-          const errorText = this.errorHandler.handleError(err, 'Lỗi khi tạo mới quy trình BPMN qua API.');
+          const errorText = this.errorHandler.handleError(
+            err,
+            'Lỗi khi tạo mới quy trình BPMN qua API.',
+          );
           this.errorSignal.set(errorText);
         },
       });
@@ -292,4 +301,3 @@ export class BpmnProcessService {
     this.processesSignal.set(filtered);
   }
 }
-

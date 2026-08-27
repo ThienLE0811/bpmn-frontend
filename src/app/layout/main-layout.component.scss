@@ -9,6 +9,12 @@
   background: #ffffff !important;
   border-right: 1px solid #e2e8f0;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.02);
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  overflow-y: auto;
 
   .sider-brand {
     height: 64px;
@@ -168,6 +174,9 @@
 /* Inner Layout */
 .inner-layout {
   background: #f8fafc;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Header */

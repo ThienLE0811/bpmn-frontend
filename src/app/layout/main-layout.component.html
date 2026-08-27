@@ -22,6 +22,15 @@
 
     <ul nz-menu nzMode="inline" [nzInlineCollapsed]="isCollapsed()" class="sider-menu">
       <li nz-menu-item nzMatchRouter>
+        <a routerLink="/dashboard">
+          <span class="menu-icon">
+            <span nz-icon nzType="dashboard" nzTheme="outline"></span>
+          </span>
+          <span class="menu-title">Tổng quan & Thống kê</span>
+        </a>
+      </li>
+
+      <li nz-menu-item nzMatchRouter>
         <a routerLink="/processes">
           <span class="menu-icon">
             <span nz-icon nzType="branches" nzTheme="outline"></span>
@@ -37,13 +46,6 @@
           </span>
           <span class="menu-title">Bảng quyết định DMN</span>
         </a>
-      </li>
-
-      <li nz-menu-item nzDisabled>
-        <span class="menu-icon">
-          <span nz-icon nzType="dashboard" nzTheme="outline"></span>
-        </span>
-        <span class="menu-title">Giám sát quy trình</span>
       </li>
 
       <li nz-menu-item nzDisabled>

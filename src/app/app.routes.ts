@@ -10,8 +10,15 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        redirectTo: 'processes',
+        redirectTo: 'dashboard',
         pathMatch: 'full',
+      },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/dashboard/dashboard.component').then(
+            (m) => m.DashboardComponent,
+          ),
       },
       {
         path: 'processes',

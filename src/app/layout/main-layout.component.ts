@@ -35,6 +35,9 @@ export class MainLayoutComponent {
 
   protected breadcrumb = computed(() => {
     const url = this.currentUrl();
+    if (url.includes('/dashboard')) {
+      return 'BPMN & DMN Platform / Tổng quan & Thống kê';
+    }
     if (url.includes('/decisions') || url.includes('/dmn')) {
       return 'BPMN & DMN Platform / Bảng Quyết định DMN';
     }

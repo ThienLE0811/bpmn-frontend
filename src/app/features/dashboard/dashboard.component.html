@@ -1,0 +1,308 @@
+<div class="dashboard-container">
+  <!-- Top Welcome & Actions Header -->
+  <div class="dashboard-header">
+    <div class="header-info">
+      <div class="title-row">
+        <h1 class="page-title">Tổng quan & Thống kê Hệ thống</h1>
+        <nz-tag nzColor="processing" class="live-badge">
+          <span nz-icon nzType="sync" [nzSpin]="isLoading()"></span>
+          Dữ liệu thời gian thực
+        </nz-tag>
+      </div>
+      <p class="page-subtitle">
+        Theo dõi số lượng, trạng thái phát hành và tiến độ triển khai của các Quy trình BPMN và Bảng quyết định DMN.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button nz-button nzType="default" (click)="refreshData()" class="action-btn refresh-btn">
+        <span nz-icon nzType="reload"></span>
+        <span>Làm mới</span>
+      </button>
+
+      <a nz-button nzType="primary" routerLink="/processes" class="action-btn bpmn-btn">
+        <span nz-icon nzType="branches"></span>
+        <span>Quản lý BPMN</span>
+      </a>
+
+      <a nz-button nzType="primary" routerLink="/decisions" class="action-btn dmn-btn">
+        <span nz-icon nzType="table"></span>
+        <span>Quản lý DMN</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- KPI Stat Cards Row -->
+  <div nz-row [nzGutter]="[20, 20]" class="kpi-grid">
+    <!-- Card 1: BPMN Total -->
+    <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+      <div class="kpi-card bpmn-card">
+        <div class="kpi-content">
+          <div class="kpi-meta">
+            <span class="kpi-label">Quy trình BPMN</span>
+            <div class="kpi-value-row">
+              <span class="kpi-number">{{ bpmnTotal() }}</span>
+              <span class="kpi-unit">quy trình</span>
+            </div>
+          </div>
+          <div class="kpi-icon-wrap bpmn-icon">
+            <span nz-icon nzType="branches" nzTheme="outline"></span>
+          </div>
+        </div>
+
+        <div class="kpi-footer">
+          <div class="status-chips">
+            <span class="chip published" nz-tooltip nzTooltipTitle="Đã xuất bản">
+              <i class="dot"></i> {{ bpmnPublished() }} Hoạt động
+            </span>
+            <span class="chip draft" nz-tooltip nzTooltipTitle="Bản nháp">
+              <i class="dot"></i> {{ bpmnDraft() }} Nháp
+            </span>
+            @if (bpmnArchived() > 0) {
+              <span class="chip archived" nz-tooltip nzTooltipTitle="Đã lưu trữ">
+                <i class="dot"></i> {{ bpmnArchived() }} Lưu trữ
+              </span>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: DMN Total -->
+    <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+      <div class="kpi-card dmn-card">
+        <div class="kpi-content">
+          <div class="kpi-meta">
+            <span class="kpi-label">Bảng Quyết định DMN</span>
+            <div class="kpi-value-row">
+              <span class="kpi-number">{{ dmnTotal() }}</span>
+              <span class="kpi-unit">bảng quy tắc</span>
+            </div>
+          </div>
+          <div class="kpi-icon-wrap dmn-icon">
+            <span nz-icon nzType="table" nzTheme="outline"></span>
+          </div>
+        </div>
+
+        <div class="kpi-footer">
+          <div class="status-chips">
+            <span class="chip published" nz-tooltip nzTooltipTitle="Đã xuất bản">
+              <i class="dot"></i> {{ dmnPublished() }} Hoạt động
+            </span>
+            <span class="chip draft" nz-tooltip nzTooltipTitle="Bản nháp">
+              <i class="dot"></i> {{ dmnDraft() }} Nháp
+            </span>
+            @if (dmnArchived() > 0) {
+              <span class="chip archived" nz-tooltip nzTooltipTitle="Đã lưu trữ">
+                <i class="dot"></i> {{ dmnArchived() }} Lưu trữ
+              </span>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Total Assets -->
+    <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+      <div class="kpi-card total-card">
+        <div class="kpi-content">
+          <div class="kpi-meta">
+            <span class="kpi-label">Tổng Tài nguyên Số</span>
+            <div class="kpi-value-row">
+              <span class="kpi-number">{{ grandTotal() }}</span>
+              <span class="kpi-unit">mục</span>
+            </div>
+          </div>
+          <div class="kpi-icon-wrap total-icon">
+            <span nz-icon nzType="appstore" nzTheme="outline"></span>
+          </div>
+        </div>
+
+        <div class="kpi-footer">
+          <div class="progress-bar-wrap">
+            <div class="progress-info">
+              <span>Đã phát hành</span>
+              <span class="progress-pct">{{ publishedRate() }}%</span>
+            </div>
+            <nz-progress
+              [nzPercent]="publishedRate()"
+              [nzShowInfo]="false"
+              nzStrokeColor="linear-gradient(90deg, #2563eb 0%, #10b981 100%)"
+              [nzStrokeWidth]="6"
+            ></nz-progress>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4: Published & Active Rate -->
+    <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+      <div class="kpi-card rate-card">
+        <div class="kpi-content">
+          <div class="kpi-meta">
+            <span class="kpi-label">Tỷ lệ Sẵn sàng (Production)</span>
+            <div class="kpi-value-row">
+              <span class="kpi-number highlight">{{ totalPublished() }} / {{ grandTotal() }}</span>
+            </div>
+          </div>
+          <div class="kpi-icon-wrap rate-icon">
+            <span nz-icon nzType="safety-certificate" nzTheme="outline"></span>
+          </div>
+        </div>
+
+        <div class="kpi-footer">
+          <div class="mini-stat-tags">
+            <span class="tag-success">
+              <span nz-icon nzType="check-circle" nzTheme="fill"></span>
+              {{ totalPublished() }} Đã triển khai
+            </span>
+            <span class="tag-warning">
+              <span nz-icon nzType="clock-circle" nzTheme="fill"></span>
+              {{ totalDraft() }} Đang soạn thảo
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Visual Charts Section -->
+  <div nz-row [nzGutter]="[20, 20]" class="charts-row">
+    <!-- Chart 1: Grouped Column Comparison -->
+    <div nz-col [nzXs]="24" [nzLg]="15">
+      <div class="dashboard-panel chart-panel">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <h2 class="panel-title">So sánh Quy mô BPMN & DMN theo Trạng thái</h2>
+            <p class="panel-desc">Số lượng các quy trình và bảng quyết định phân bổ theo từng giai đoạn vòng đời.</p>
+          </div>
+          <div class="panel-badge">
+            <nz-tag nzColor="blue">So sánh BPMN & DMN</nz-tag>
+          </div>
+        </div>
+
+        <div class="panel-body chart-body">
+          @if (grandTotal() > 0) {
+            <apx-chart
+              [series]="columnChartSeries()"
+              [chart]="columnChartOptions.chart"
+              [xaxis]="columnChartOptions.xaxis"
+              [yaxis]="columnChartOptions.yaxis"
+              [colors]="columnChartOptions.colors"
+              [plotOptions]="columnChartOptions.plotOptions"
+              [dataLabels]="columnChartOptions.dataLabels"
+              [stroke]="columnChartOptions.stroke"
+              [legend]="columnChartOptions.legend"
+              [grid]="columnChartOptions.grid"
+              [tooltip]="columnChartOptions.tooltip"
+              [responsive]="columnChartOptions.responsive"
+            ></apx-chart>
+          } @else {
+            <nz-empty nzNotFoundImage="simple" nzNotFoundContent="Chưa có dữ liệu thống kê"></nz-empty>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart 2: Status Breakdown Donut -->
+    <div nz-col [nzXs]="24" [nzLg]="9">
+      <div class="dashboard-panel chart-panel">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <h2 class="panel-title">Tỷ lệ Trạng thái Toàn hệ thống</h2>
+            <p class="panel-desc">Cơ cấu tỷ lệ phần trăm phân bố giữa các trạng thái.</p>
+          </div>
+          <div class="panel-badge">
+            <nz-tag nzColor="green">Cơ cấu Trạng thái</nz-tag>
+          </div>
+        </div>
+
+        <div class="panel-body chart-body donut-body">
+          @if (grandTotal() > 0) {
+            <apx-chart
+              [series]="statusDonutSeries()"
+              [chart]="statusDonutOptions.chart"
+              [labels]="statusDonutOptions.labels"
+              [colors]="statusDonutOptions.colors"
+              [plotOptions]="statusDonutOptions.plotOptions"
+              [dataLabels]="statusDonutOptions.dataLabels"
+              [legend]="statusDonutOptions.legend"
+              [stroke]="statusDonutOptions.stroke"
+              [tooltip]="statusDonutOptions.tooltip"
+              [responsive]="statusDonutOptions.responsive"
+            ></apx-chart>
+          } @else {
+            <nz-empty nzNotFoundImage="simple" nzNotFoundContent="Chưa có dữ liệu thống kê"></nz-empty>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Secondary Charts Section (Categories & Readiness) -->
+  <div nz-row [nzGutter]="[20, 20]" class="charts-row">
+    <!-- Chart 3: BPMN Categories Breakdown -->
+    <div nz-col [nzXs]="24" [nzLg]="12">
+      <div class="dashboard-panel chart-panel">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <h2 class="panel-title">Phân bố BPMN theo Lĩnh vực Nghiệp vụ</h2>
+            <p class="panel-desc">Số lượng quy trình phân bổ theo các phân hệ chức năng.</p>
+          </div>
+          <div class="panel-badge">
+            <nz-tag nzColor="cyan">Phân hệ Nghiệp vụ</nz-tag>
+          </div>
+        </div>
+
+        <div class="panel-body chart-body">
+          @if (categoriesData().categories.length > 0) {
+            <apx-chart
+              [series]="categoryChartSeries()"
+              [chart]="categoryChartOptions().chart"
+              [plotOptions]="categoryChartOptions().plotOptions"
+              [colors]="categoryChartOptions().colors"
+              [dataLabels]="categoryChartOptions().dataLabels"
+              [xaxis]="categoryChartOptions().xaxis"
+              [yaxis]="categoryChartOptions().yaxis"
+              [grid]="categoryChartOptions().grid"
+              [legend]="categoryChartOptions().legend"
+              [tooltip]="categoryChartOptions().tooltip"
+            ></apx-chart>
+          } @else {
+            <nz-empty nzNotFoundImage="simple" nzNotFoundContent="Chưa có danh mục quy trình"></nz-empty>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart 4: Readiness & Health RadialBar -->
+    <div nz-col [nzXs]="24" [nzLg]="12">
+      <div class="dashboard-panel chart-panel">
+        <div class="panel-header">
+          <div class="panel-title-wrap">
+            <h2 class="panel-title">Mức độ Sẵn sàng Hoạt động (Production Ready)</h2>
+            <p class="panel-desc">Tỷ lệ hoàn thiện và phát hành của BPMN và DMN.</p>
+          </div>
+          <div class="panel-badge">
+            <nz-tag nzColor="purple">Chỉ số Hoàn thiện</nz-tag>
+          </div>
+        </div>
+
+        <div class="panel-body chart-body radial-body">
+          @if (grandTotal() > 0) {
+            <apx-chart
+              [series]="readinessRadialSeries()"
+              [chart]="readinessRadialOptions.chart"
+              [plotOptions]="readinessRadialOptions.plotOptions"
+              [colors]="readinessRadialOptions.colors"
+              [labels]="readinessRadialOptions.labels"
+              [legend]="readinessRadialOptions.legend"
+              [stroke]="readinessRadialOptions.stroke"
+            ></apx-chart>
+          } @else {
+            <nz-empty nzNotFoundImage="simple" nzNotFoundContent="Chưa có dữ liệu sẵn sàng"></nz-empty>
+          }
+        </div>
+      </div>
+  </div>
+</div>
