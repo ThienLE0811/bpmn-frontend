@@ -1,0 +1,668 @@
+<div class="users-list-layout">
+  <!-- Page Header Title Area -->
+  <div class="page-title-bar">
+    <div class="title-info">
+      <h2>Quản lý Danh sách Người dùng</h2>
+      <p>Quản lý tài khoản, vai trò và phân quyền người dùng trong nền tảng BPMN & DMN.</p>
+    </div>
+
+    <div class="title-actions">
+      <button
+        class="btn btn-outline-stats"
+        [class.active]="isStatsOpen()"
+        (click)="toggleStats()"
+        title="Xem thống kê tổng quan"
+      >
+        <span nz-icon [nzType]="isStatsOpen() ? 'eye-invisible' : 'dashboard'" nzTheme="outline"></span>
+        <span>{{ isStatsOpen() ? 'Ẩn thống kê' : 'Xem thống kê' }}</span>
+      </button>
+
+      <button class="btn btn-user-glow" (click)="openCreateModal()">
+        <span nz-icon nzType="user-add" nzTheme="outline"></span>
+        <span>Thêm người dùng</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content View -->
+  <main class="main-content">
+    <div class="content-container">
+      <!-- Overview Stat Cards (Collapsible) -->
+      @if (isStatsOpen()) {
+        <section class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon total">
+              <span nz-icon nzType="team" nzTheme="outline"></span>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Tổng số Người dùng</span>
+              <span class="stat-value">{{ totalCount() }}</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon active-users">
+              <span nz-icon nzType="check-circle" nzTheme="outline"></span>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Đang hoạt động</span>
+              <span class="stat-value">{{ activeCount() }}</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon inactive-users">
+              <span nz-icon nzType="stop" nzTheme="outline"></span>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Tạm khóa / Ngừng</span>
+              <span class="stat-value">{{ inactiveCount() }}</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon admin-users">
+              <span nz-icon nzType="safety-certificate" nzTheme="outline"></span>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Quản trị viên (Admin)</span>
+              <span class="stat-value">{{ adminCount() }}</span>
+            </div>
+          </div>
+        </section>
+      }
+
+      <!-- Table Section Card -->
+      <section class="table-card">
+        <!-- Main Quick Toolbar -->
+        <div class="table-toolbar">
+          <div class="toolbar-left">
+            <!-- Quick Search Input -->
+            <div class="filter-field quick-search">
+              <nz-input-wrapper [nzAllowClear]="true">
+                <span nzInputPrefix>
+                  <span nz-icon nzType="search" class="filter-icon"></span>
+                </span>
+                <input
+                  type="text"
+                  nz-input
+                  placeholder="Tìm theo tên, username, email..."
+                  [ngModel]="filterModel().search"
+                  (ngModelChange)="filterModel.update((m) => ({ ...m, search: $event }))"
+                  (keyup.enter)="search()"
+                />
+              </nz-input-wrapper>
+            </div>
+
+            <!-- Quick Filter by Vai trò -->
+            <div class="filter-field quick-role">
+              <nz-select
+                [ngModel]="filterModel().role"
+                (ngModelChange)="onRoleFilterChange($event)"
+                class="filter-select"
+                nzPlaceHolder="Vai trò"
+              >
+                <nz-option nzValue="ALL" nzLabel="Tất cả vai trò"></nz-option>
+                <nz-option nzValue="ADMIN" nzLabel="Quản trị viên (Admin)"></nz-option>
+                <nz-option nzValue="MANAGER" nzLabel="Quản lý (Manager)"></nz-option>
+                <nz-option nzValue="DESIGNER" nzLabel="Thiết kế quy trình (Designer)"></nz-option>
+                <nz-option nzValue="VIEWER" nzLabel="Người xem (Viewer)"></nz-option>
+              </nz-select>
+            </div>
+
+            <!-- Quick Filter by Trạng thái -->
+            <div class="filter-field quick-status">
+              <nz-select
+                [ngModel]="filterModel().status"
+                (ngModelChange)="onStatusFilterChange($event)"
+                class="filter-select status-select"
+                nzPlaceHolder="Trạng thái"
+              >
+                <nz-option nzValue="ALL" nzLabel="Tất cả trạng thái"></nz-option>
+                <nz-option nzValue="ACTIVE" nzLabel="Đang hoạt động"></nz-option>
+                <nz-option nzValue="INACTIVE" nzLabel="Tạm dừng"></nz-option>
+                <nz-option nzValue="LOCKED" nzLabel="Đã khóa"></nz-option>
+              </nz-select>
+            </div>
+
+            <!-- Nút Toggle Bộ lọc nâng cao -->
+            <button
+              class="btn-toggle-advanced"
+              [class.active]="isAdvancedFilterOpen() || isFiltered()"
+              (click)="toggleAdvancedFilter()"
+              title="Mở/đóng bộ lọc nâng cao"
+            >
+              <span nz-icon nzType="filter" nzTheme="outline"></span>
+              <span>Nâng cao</span>
+              @if (activeFilterCount() > 0) {
+                <span class="filter-badge">{{ activeFilterCount() }}</span>
+              }
+              <span
+                nz-icon
+                [nzType]="isAdvancedFilterOpen() ? 'up' : 'down'"
+                class="toggle-arrow"
+              ></span>
+            </button>
+
+            <!-- Nút Tìm kiếm trigger -->
+            <button
+              class="btn-search-trigger"
+              (click)="search()"
+              [disabled]="isLoading()"
+              title="Tìm kiếm"
+            >
+              <span nz-icon nzType="search" nzTheme="outline"></span>
+              <span>Tìm kiếm</span>
+            </button>
+
+            <!-- Nút Đặt lại nhanh -->
+            @if (isFiltered()) {
+              <button
+                class="btn-reset-filter"
+                (click)="resetFilters()"
+                [disabled]="isLoading()"
+                title="Xóa tất cả bộ lọc"
+              >
+                <span nz-icon nzType="clear" nzTheme="outline"></span>
+                <span>Đặt lại</span>
+              </button>
+            }
+          </div>
+
+          <div class="toolbar-right">
+            <button
+              class="btn-refresh"
+              (click)="loadUsers()"
+              [disabled]="isLoading()"
+              title="Tải lại danh sách"
+            >
+              <span nz-icon nzType="reload" [nzSpin]="isLoading()"></span>
+              <span>Làm mới</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Advanced Filter Expandable Box -->
+        @if (isAdvancedFilterOpen()) {
+          <div class="advanced-filter-box">
+            <div class="adv-grid">
+              <div class="adv-item">
+                <label>Phòng ban / Đơn vị</label>
+                <nz-select
+                  [ngModel]="filterModel().department"
+                  (ngModelChange)="onDepartmentFilterChange($event)"
+                  class="filter-select"
+                  nzPlaceHolder="Chọn phòng ban"
+                >
+                  <nz-option nzValue="ALL" nzLabel="Tất cả phòng ban"></nz-option>
+                  @for (dept of departments; track dept) {
+                    <nz-option [nzValue]="dept" [nzLabel]="dept"></nz-option>
+                  }
+                </nz-select>
+              </div>
+
+              <div class="adv-item">
+                <label>Số điện thoại</label>
+                <input
+                  type="text"
+                  nz-input
+                  placeholder="Nhập số điện thoại..."
+                  [ngModel]="filterModel().phone"
+                  (ngModelChange)="filterModel.update((m) => ({ ...m, phone: $event }))"
+                  (keyup.enter)="search()"
+                />
+              </div>
+            </div>
+
+            <div class="adv-actions">
+              <button class="btn btn-outline" (click)="resetFilters()">Xóa lọc</button>
+              <button class="btn btn-primary" (click)="search()">Áp dụng bộ lọc</button>
+            </div>
+          </div>
+        }
+
+        <!-- Data Table Area -->
+        <div class="table-wrapper">
+          <nz-table
+            #userTable
+            [nzData]="users()"
+            [nzLoading]="isLoading()"
+            [nzPageSize]="pageSize()"
+            (nzPageSizeChange)="pageSize.set($event)"
+            [nzShowSizeChanger]="true"
+            [nzPageSizeOptions]="[10, 20, 50]"
+            [nzBordered]="false"
+            [nzShowTotal]="totalTemplate"
+            class="custom-users-table"
+          >
+            <thead>
+              <tr>
+                <th [nzSortFn]="sortFullName" nzWidth="260px">Người dùng</th>
+                <th [nzSortFn]="sortEmail" nzWidth="220px">Liên hệ (Email / Phone)</th>
+                <th [nzSortFn]="sortDepartment" nzWidth="200px">Phòng ban</th>
+                <th [nzSortFn]="sortRole" nzWidth="160px">Vai trò</th>
+                <th [nzSortFn]="sortStatus" nzWidth="130px" nzAlign="center">Trạng thái</th>
+                <th [nzSortFn]="sortLastLogin" nzWidth="150px">Đăng nhập cuối</th>
+                <th nzWidth="140px" nzAlign="center">Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (user of userTable.data; track user.id) {
+                <tr class="table-row" (click)="openDetailDrawer(user)">
+                  <!-- User Name & Avatar -->
+                  <td>
+                    <div class="user-cell">
+                      <div class="user-avatar" [style.background]="getAvatarColor(user.fullName)">
+                        {{ user.avatar || user.fullName.substring(0, 2).toUpperCase() }}
+                      </div>
+                      <div class="user-meta">
+                        <span class="user-fullname" [title]="user.fullName">{{ user.fullName }}</span>
+                        <span class="user-username">@{{ user.username }}</span>
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- Contact: Email & Phone -->
+                  <td>
+                    <div class="contact-cell">
+                      <div class="email-row" [title]="user.email">
+                        <span nz-icon nzType="mail" nzTheme="outline" class="contact-icon"></span>
+                        <span class="email-text">{{ user.email }}</span>
+                      </div>
+                      @if (user.phone) {
+                        <div class="phone-row">
+                          <span nz-icon nzType="phone" nzTheme="outline" class="contact-icon"></span>
+                          <span class="phone-text">{{ user.phone }}</span>
+                        </div>
+                      }
+                    </div>
+                  </td>
+
+                  <!-- Department -->
+                  <td>
+                    <span class="dept-badge">{{ user.department }}</span>
+                  </td>
+
+                  <!-- Role Badge -->
+                  <td>
+                    @let roleInfo = getRoleBadgeInfo(user.role);
+                    <div [class]="roleInfo.class">
+                      <span nz-icon [nzType]="roleInfo.icon" nzTheme="outline"></span>
+                      <span>{{ roleInfo.label }}</span>
+                    </div>
+                  </td>
+
+                  <!-- Status Tag -->
+                  <td nzAlign="center">
+                    @let statusInfo = getStatusBadgeInfo(user.status);
+                    <div [class]="statusInfo.class">
+                      <span class="status-dot"></span>
+                      <span>{{ statusInfo.label }}</span>
+                    </div>
+                  </td>
+
+                  <!-- Last Login -->
+                  <td>
+                    <div class="time-cell">
+                      <span nz-icon nzType="clock-circle" nzTheme="outline" class="time-icon"></span>
+                      <span>{{ user.lastLogin || 'Chưa đăng nhập' }}</span>
+                    </div>
+                  </td>
+
+                  <!-- Actions Cell -->
+                  <td nzAlign="center" (click)="$event.stopPropagation()">
+                    <div class="actions-group">
+                      <!-- Edit button -->
+                      <button
+                        class="action-btn edit-btn"
+                        nz-tooltip
+                        nzTooltipTitle="Chỉnh sửa tài khoản"
+                        (click)="openEditModal(user, $event)"
+                      >
+                        <span nz-icon nzType="edit" nzTheme="outline"></span>
+                      </button>
+
+                      <!-- Action Dropdown for Status, Reset PW, Delete -->
+                      <button
+                        class="action-btn more-btn"
+                        nz-dropdown
+                        [nzDropdownMenu]="actionMenu"
+                        nzTrigger="click"
+                        nzPlacement="bottomRight"
+                      >
+                        <span nz-icon nzType="more" nzTheme="outline"></span>
+                      </button>
+
+                      <nz-dropdown-menu #actionMenu="nzDropdownMenu">
+                        <ul nz-menu class="custom-dropdown-menu">
+                          <li nz-menu-item (click)="openDetailDrawer(user)">
+                            <span nz-icon nzType="eye" nzTheme="outline" class="menu-action-icon"></span>
+                            <span>Xem thông tin chi tiết</span>
+                          </li>
+
+                          <li nz-menu-item (click)="openEditModal(user, $event)">
+                            <span nz-icon nzType="form" nzTheme="outline" class="menu-action-icon"></span>
+                            <span>Cập nhật thông tin</span>
+                          </li>
+
+                          <li nz-menu-divider></li>
+
+                          @if (user.status !== 'ACTIVE') {
+                            <li nz-menu-item (click)="toggleStatus(user, 'ACTIVE', $event)">
+                              <span nz-icon nzType="check-circle" nzTheme="outline" class="menu-action-icon success"></span>
+                              <span>Kích hoạt tài khoản</span>
+                            </li>
+                          }
+
+                          @if (user.status !== 'INACTIVE') {
+                            <li nz-menu-item (click)="toggleStatus(user, 'INACTIVE', $event)">
+                              <span nz-icon nzType="pause-circle" nzTheme="outline" class="menu-action-icon warning"></span>
+                              <span>Tạm dừng tài khoản</span>
+                            </li>
+                          }
+
+                          @if (user.status !== 'LOCKED') {
+                            <li nz-menu-item (click)="toggleStatus(user, 'LOCKED', $event)">
+                              <span nz-icon nzType="lock" nzTheme="outline" class="menu-action-icon danger"></span>
+                              <span>Khóa quyền truy cập</span>
+                            </li>
+                          }
+
+                          <li nz-menu-item (click)="resetPassword(user, $event)">
+                            <span nz-icon nzType="key" nzTheme="outline" class="menu-action-icon"></span>
+                            <span>Đặt lại mật khẩu</span>
+                          </li>
+
+                          <li nz-menu-divider></li>
+
+                          <li
+                            nz-menu-item
+                            nzDanger
+                            nz-popconfirm
+                            nzPopconfirmTitle="Bạn có chắc chắn muốn xóa tài khoản này không?"
+                            nzOkText="Xóa tài khoản"
+                            nzOkDanger
+                            nzCancelText="Hủy"
+                            nzPopconfirmPlacement="left"
+                            (nzOnConfirm)="deleteUser(user)"
+                          >
+                            <span nz-icon nzType="delete" nzTheme="outline" class="menu-action-icon danger"></span>
+                            <span>Xóa tài khoản</span>
+                          </li>
+                        </ul>
+                      </nz-dropdown-menu>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </nz-table>
+
+          <ng-template #totalTemplate let-total>
+            <span class="table-total-count">Tổng cộng <strong>{{ total }}</strong> người dùng</span>
+          </ng-template>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Create / Edit User Modal -->
+  <nz-modal
+    [nzVisible]="isModalOpen()"
+    [nzTitle]="modalTitleTemplate"
+    [nzContent]="modalContentTemplate"
+    [nzFooter]="modalFooterTemplate"
+    (nzOnCancel)="closeModal()"
+    [nzWidth]="640"
+    [nzCentered]="true"
+  >
+    <ng-template #modalTitleTemplate>
+      <div class="modal-header-custom">
+        <span nz-icon [nzType]="selectedUser() ? 'edit' : 'user-add'" nzTheme="outline"></span>
+        <span>{{ selectedUser() ? 'Cập nhật Thông tin Người dùng' : 'Thêm Người dùng Mới' }}</span>
+      </div>
+    </ng-template>
+
+    <ng-template #modalContentTemplate>
+      <div class="user-form-container">
+        <div class="form-row two-cols">
+          <div class="form-group">
+            <label class="form-label required">Tên đăng nhập (Username)</label>
+            <nz-input-wrapper>
+              <span nzInputPrefix><span nz-icon nzType="user"></span></span>
+              <input
+                type="text"
+                nz-input
+                placeholder="vd: an.nguyen"
+                [readOnly]="!!selectedUser()"
+                [formField]="userForm.username"
+              />
+            </nz-input-wrapper>
+            @if (userForm.username().touched() && userForm.username().invalid()) {
+              <div class="form-error-msg">
+                @for (err of userForm.username().errors(); track err.message) {
+                  <span>{{ err.message }}</span>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label class="form-label required">Họ và tên</label>
+            <nz-input-wrapper>
+              <span nzInputPrefix><span nz-icon nzType="idcard"></span></span>
+              <input
+                type="text"
+                nz-input
+                placeholder="vd: Nguyễn Văn An"
+                [formField]="userForm.fullName"
+              />
+            </nz-input-wrapper>
+            @if (userForm.fullName().touched() && userForm.fullName().invalid()) {
+              <div class="form-error-msg">
+                @for (err of userForm.fullName().errors(); track err.message) {
+                  <span>{{ err.message }}</span>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="form-row two-cols">
+          <div class="form-group">
+            <label class="form-label required">Email</label>
+            <nz-input-wrapper>
+              <span nzInputPrefix><span nz-icon nzType="mail"></span></span>
+              <input
+                type="email"
+                nz-input
+                placeholder="vd: an.nguyen@enterprise.vn"
+                [formField]="userForm.email"
+              />
+            </nz-input-wrapper>
+            @if (userForm.email().touched() && userForm.email().invalid()) {
+              <div class="form-error-msg">
+                @for (err of userForm.email().errors(); track err.message) {
+                  <span>{{ err.message }}</span>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Số điện thoại</label>
+            <nz-input-wrapper>
+              <span nzInputPrefix><span nz-icon nzType="phone"></span></span>
+              <input
+                type="text"
+                nz-input
+                placeholder="vd: 0901 234 567"
+                [formField]="userForm.phone"
+              />
+            </nz-input-wrapper>
+          </div>
+        </div>
+
+        <div class="form-row two-cols">
+          <div class="form-group">
+            <label class="form-label required">Vai trò hệ thống</label>
+            <nz-select [formField]="userForm.role" class="form-select">
+              <nz-option nzValue="ADMIN" nzLabel="Quản trị viên (ADMIN)"></nz-option>
+              <nz-option nzValue="MANAGER" nzLabel="Quản lý (MANAGER)"></nz-option>
+              <nz-option nzValue="DESIGNER" nzLabel="Thiết kế quy trình (DESIGNER)"></nz-option>
+              <nz-option nzValue="VIEWER" nzLabel="Người xem (VIEWER)"></nz-option>
+            </nz-select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label required">Trạng thái tài khoản</label>
+            <nz-select [formField]="userForm.status" class="form-select">
+              <nz-option nzValue="ACTIVE" nzLabel="Đang hoạt động (ACTIVE)"></nz-option>
+              <nz-option nzValue="INACTIVE" nzLabel="Tạm dừng (INACTIVE)"></nz-option>
+              <nz-option nzValue="LOCKED" nzLabel="Đã khóa (LOCKED)"></nz-option>
+            </nz-select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label required">Phòng ban / Khối cơ quan</label>
+          <nz-select [formField]="userForm.department" class="form-select">
+            @for (dept of departments; track dept) {
+              <nz-option [nzValue]="dept" [nzLabel]="dept"></nz-option>
+            }
+          </nz-select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Ghi chú / Mô tả công tác</label>
+          <textarea
+            nz-input
+            rows="3"
+            placeholder="Nhập ghi chú hoặc phạm vi quyền hạn của tài khoản này..."
+            [formField]="userForm.notes"
+          ></textarea>
+        </div>
+      </div>
+    </ng-template>
+
+    <ng-template #modalFooterTemplate>
+      <div class="modal-footer-custom">
+        <button class="btn btn-outline" (click)="closeModal()">Hủy bỏ</button>
+        <button class="btn btn-primary" (click)="saveUser()">
+          <span nz-icon nzType="save" nzTheme="outline"></span>
+          <span>{{ selectedUser() ? 'Lưu thay đổi' : 'Tạo người dùng' }}</span>
+        </button>
+      </div>
+    </ng-template>
+  </nz-modal>
+
+  <!-- User Detail Drawer -->
+  <nz-drawer
+    [nzVisible]="isDetailDrawerOpen()"
+    nzPlacement="right"
+    [nzWidth]="420"
+    nzTitle="Hồ sơ Chi tiết Người dùng"
+    (nzOnClose)="closeDetailDrawer()"
+  >
+    <ng-container *nzDrawerContent>
+      @if (detailUser(); as user) {
+        <div class="user-drawer-content">
+          <!-- Profile Card -->
+          <div class="drawer-profile-card">
+            <div class="drawer-avatar" [style.background]="getAvatarColor(user.fullName)">
+              {{ user.avatar || user.fullName.substring(0, 2).toUpperCase() }}
+            </div>
+            <h3 class="drawer-name">{{ user.fullName }}</h3>
+            <span class="drawer-username">@{{ user.username }}</span>
+
+            <div class="drawer-badges">
+              @let roleInfo = getRoleBadgeInfo(user.role);
+              <div [class]="roleInfo.class">
+                <span nz-icon [nzType]="roleInfo.icon" nzTheme="outline"></span>
+                <span>{{ roleInfo.label }}</span>
+              </div>
+
+              @let statusInfo = getStatusBadgeInfo(user.status);
+              <div [class]="statusInfo.class">
+                <span class="status-dot"></span>
+                <span>{{ statusInfo.label }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Info Details List -->
+          <div class="drawer-section">
+            <h4 class="section-title">Thông tin liên hệ & Tổ chức</h4>
+
+            <div class="info-item">
+              <span class="info-label">
+                <span nz-icon nzType="mail"></span> Email:
+              </span>
+              <span class="info-value">{{ user.email }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">
+                <span nz-icon nzType="phone"></span> Số điện thoại:
+              </span>
+              <span class="info-value">{{ user.phone || 'Chưa cập nhật' }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">
+                <span nz-icon nzType="apartment"></span> Phòng ban:
+              </span>
+              <span class="info-value">{{ user.department }}</span>
+            </div>
+          </div>
+
+          <!-- System Details -->
+          <div class="drawer-section">
+            <h4 class="section-title">Nhật ký & Thời gian</h4>
+
+            <div class="info-item">
+              <span class="info-label">
+                <span nz-icon nzType="clock-circle"></span> Đăng nhập cuối:
+              </span>
+              <span class="info-value">{{ user.lastLogin || 'Chưa đăng nhập' }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">
+                <span nz-icon nzType="calendar"></span> Ngày tạo tài khoản:
+              </span>
+              <span class="info-value">{{ user.createdAt }}</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">
+                <span nz-icon nzType="sync"></span> Cập nhật lần cuối:
+              </span>
+              <span class="info-value">{{ user.updatedAt }}</span>
+            </div>
+          </div>
+
+          @if (user.notes) {
+            <div class="drawer-section">
+              <h4 class="section-title">Ghi chú</h4>
+              <p class="notes-text">{{ user.notes }}</p>
+            </div>
+          }
+
+          <!-- Drawer Actions -->
+          <div class="drawer-footer-actions">
+            <button class="btn btn-outline full-width" (click)="openEditModal(user)">
+              <span nz-icon nzType="edit"></span>
+              <span>Chỉnh sửa thông tin</span>
+            </button>
+
+            <button class="btn btn-secondary full-width" (click)="resetPassword(user)">
+              <span nz-icon nzType="key"></span>
+              <span>Đặt lại mật khẩu</span>
+            </button>
+          </div>
+        </div>
+      }
+    </ng-container>
+  </nz-drawer>
+</div>

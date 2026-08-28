@@ -41,6 +41,9 @@ export class MainLayoutComponent {
     if (url.includes('/decisions') || url.includes('/dmn')) {
       return 'BPMN & DMN Platform / Bảng Quyết định DMN';
     }
+    if (url.includes('/users')) {
+      return 'BPMN & DMN Platform / Quản lý Người dùng';
+    }
     return 'BPMN & DMN Platform / Quản lý Quy trình BPMN';
   });
 

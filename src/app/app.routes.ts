@@ -39,6 +39,13 @@ export const routes: Routes = [
         redirectTo: 'decisions',
         pathMatch: 'full',
       },
+      {
+        path: 'users',
+        loadComponent: () =>
+          import('./features/users-list/users-list.component').then(
+            (m) => m.UsersListComponent,
+          ),
+      },
     ],
   },
 ];
