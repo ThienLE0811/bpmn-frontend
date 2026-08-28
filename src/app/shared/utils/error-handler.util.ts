@@ -13,10 +13,33 @@ export function getApiErrorMessage(
       return 'Không thể kết nối tới máy chủ. Vui lòng kiểm tra lại kết nối mạng hoặc server backend.';
     }
 
-    const serverMsg =
-      typeof err.error === 'string'
-        ? err.error
-        : err.error?.message || err.error?.title || err.error?.error;
+    let serverMsg = '';
+    if (typeof err.error === 'string') {
+      serverMsg = err.error;
+    } else if (err.error && typeof err.error === 'object') {
+      const errObj = err.error as Record<string, unknown>;
+      const errorField = errObj['errors'];
+
+      if (typeof errorField === 'string') {
+        serverMsg = errorField;
+      } else if (errorField && typeof errorField === 'object' && !Array.isArray(errorField)) {
+        const detail = errorField as { errorCode?: string | number; message?: string };
+        if (detail.message && detail.message.trim().length > 0) {
+          serverMsg = detail.message.trim();
+        } else if (detail.errorCode !== undefined) {
+          serverMsg = `Mã lỗi: ${detail.errorCode}`;
+        }
+      } else if (Array.isArray(errorField)) {
+        serverMsg = errorField.filter(Boolean).join(', ');
+      } else if (typeof errObj['message'] === 'string') {
+        serverMsg = errObj['message'];
+      } else if (typeof errObj['title'] === 'string') {
+        serverMsg = errObj['title'];
+      } else if (typeof errObj['error'] === 'string') {
+        serverMsg = errObj['error'];
+      }
+    }
+
 
     switch (err.status) {
       case 400:

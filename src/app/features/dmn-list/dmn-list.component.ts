@@ -48,24 +48,28 @@ export class DmnListComponent implements OnInit {
   protected designerWidth = signal<number | null>(null);
   private resizeId = -1;
   private initialFormModel: {
-    code: string;
+    decisionKey: string;
     name: string;
     description: string;
-    version: string;
-    status: DmnDecisionStatus;
+    hitPolicy: string;
+    category: string;
+    version: number;
+    status: string;
   } | null = null;
 
   // Signal Form for Decision Information
   protected readonly decisionFormModel = signal({
-    code: '',
+    decisionKey: '',
     name: '',
     description: '',
-    version: 'v1.0.0',
-    status: 'DRAFT' as DmnDecisionStatus,
+    hitPolicy: 'FIRST',
+    category: 'GENERAL',
+    version: 1,
+    status: 'DRAFT',
   });
 
   protected readonly decisionForm = form(this.decisionFormModel, (schema) => {
-    required(schema.code, { message: 'Mã bảng quyết định không được để trống' });
+    required(schema.decisionKey, { message: 'Mã bảng quyết định không được để trống' });
     required(schema.name, { message: 'Tên bảng quyết định không được để trống' });
     required(schema.version, { message: 'Phiên bản không được để trống' });
   });
@@ -82,20 +86,20 @@ export class DmnListComponent implements OnInit {
   );
 
   // Table Sort Comparators
-  protected sortCode = (a: DmnDecision, b: DmnDecision): number =>
-    a.code.localeCompare(b.code);
+  protected sortDecisionKey = (a: DmnDecision, b: DmnDecision): number =>
+    (a.decisionKey || '').localeCompare(b.decisionKey || '');
 
   protected sortName = (a: DmnDecision, b: DmnDecision): number =>
-    a.name.localeCompare(b.name);
+    (a.name || '').localeCompare(b.name || '');
 
   protected sortVersion = (a: DmnDecision, b: DmnDecision): number =>
-    a.version.localeCompare(b.version);
+    (a.version || 0) - (b.version || 0);
 
   protected sortStatus = (a: DmnDecision, b: DmnDecision): number =>
-    a.status.localeCompare(b.status);
+    (a.status || '').localeCompare(b.status || '');
 
   protected sortUpdatedAt = (a: DmnDecision, b: DmnDecision): number =>
-    a.updatedAt.localeCompare(b.updatedAt);
+    (a.updatedAt || '').localeCompare(b.updatedAt || '');
 
   onSideResize({ width }: NzResizeEvent): void {
     cancelAnimationFrame(this.resizeId);
@@ -107,13 +111,15 @@ export class DmnListComponent implements OnInit {
   }
 
   openCreateModal(): void {
-    const nextCode = 'DMN-DEC-' + (this.decisions().length + 1).toString().padStart(2, '0');
+    const nextKey = 'DMN-DEC-' + (this.decisions().length + 1).toString().padStart(2, '0');
     const initial = {
-      code: nextCode,
+      decisionKey: nextKey,
       name: 'Bảng quyết định mới',
       description: '',
-      version: 'v1.0.0',
-      status: 'DRAFT' as DmnDecisionStatus,
+      hitPolicy: 'FIRST',
+      category: 'GENERAL',
+      version: 1,
+      status: 'DRAFT',
     };
     this.selectedDecision.set(null);
     this.decisionFormModel.set({ ...initial });
@@ -123,10 +129,12 @@ export class DmnListComponent implements OnInit {
 
   openEditModal(decision: DmnDecision): void {
     const initial = {
-      code: decision.code,
+      decisionKey: decision.decisionKey,
       name: decision.name,
       description: decision.description || '',
-      version: decision.version || 'v1.0.0',
+      hitPolicy: decision.hitPolicy || 'FIRST',
+      category: decision.category || 'GENERAL',
+      version: typeof decision.version === 'number' ? decision.version : 1,
       status: decision.status,
     };
     this.selectedDecision.set(decision);
@@ -145,9 +153,11 @@ export class DmnListComponent implements OnInit {
     if (!this.initialFormModel) return false;
     const current = this.decisionFormModel();
     return (
-      current.code !== this.initialFormModel.code ||
+      current.decisionKey !== this.initialFormModel.decisionKey ||
       current.name !== this.initialFormModel.name ||
       current.description !== this.initialFormModel.description ||
+      current.hitPolicy !== this.initialFormModel.hitPolicy ||
+      current.category !== this.initialFormModel.category ||
       current.version !== this.initialFormModel.version ||
       current.status !== this.initialFormModel.status
     );
@@ -184,12 +194,14 @@ export class DmnListComponent implements OnInit {
       const formVal = this.decisionFormModel();
       this.dmnService.saveDecision({
         id: current?.id,
-        code: formVal.code,
+        decisionKey: formVal.decisionKey,
         name: formVal.name.trim() || event.name,
         description: formVal.description,
-        version: formVal.version,
+        hitPolicy: formVal.hitPolicy,
+        category: formVal.category,
+        version: Number(formVal.version) || 1,
         status: formVal.status,
-        xml: event.xml,
+        dmnXml: event.xml,
       });
 
       this.forceCloseModal();

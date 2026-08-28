@@ -3,7 +3,7 @@
   <app-designer-header
     type="dmn"
     [(title)]="decisionName"
-    [code]="decisionData?.code"
+    [code]="decisionData?.decisionKey"
     [isModified]="isModified()"
     [currentZoom]="currentZoom()"
     (save)="onSave()"

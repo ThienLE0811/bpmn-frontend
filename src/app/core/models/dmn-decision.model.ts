@@ -2,11 +2,16 @@ export type DmnDecisionStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 
 export interface DmnDecision {
   id: string;
-  code: string;
+  decisionKey: string;
   name: string;
   description: string;
-  version: string;
-  status: DmnDecisionStatus;
+  hitPolicy: string;
+  category: string;
+  version: number;
+  dmnXml: string;
+  status: string;
+  createdBy: string;
+  updatedBy: string;
+  createdAt: string;
   updatedAt: string;
-  xml: string;
 }

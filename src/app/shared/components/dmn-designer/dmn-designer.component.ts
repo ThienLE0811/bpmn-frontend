@@ -60,7 +60,7 @@ export class DmnDesignerComponent implements AfterViewInit, OnDestroy, OnChanges
       this.decisionName.set(name);
       this.initialDecisionName = name;
       if (this.dmnModeler) {
-        const xmlToLoad = this.decisionData?.xml || DEFAULT_DMN_XML;
+        const xmlToLoad = this.decisionData?.dmnXml || DEFAULT_DMN_XML;
         this.importDiagram(xmlToLoad);
       }
     }
@@ -93,7 +93,7 @@ export class DmnDesignerComponent implements AfterViewInit, OnDestroy, OnChanges
       }
     });
 
-    const initialXml = this.decisionData?.xml || DEFAULT_DMN_XML;
+    const initialXml = this.decisionData?.dmnXml || DEFAULT_DMN_XML;
     const name = this.decisionData?.name || 'Bảng quyết định DMN mới';
     this.decisionName.set(name);
     this.initialDecisionName = name;
@@ -201,7 +201,7 @@ export class DmnDesignerComponent implements AfterViewInit, OnDestroy, OnChanges
     } catch (err) {
       console.error('Lỗi khi lấy sơ đồ DMN XML:', err);
     }
-    return this.decisionData?.xml || DEFAULT_DMN_XML;
+    return this.decisionData?.dmnXml || DEFAULT_DMN_XML;
   }
 
   async onSave(): Promise<void> {
