@@ -37,6 +37,12 @@ export class BpmnApiService {
       if (params['status'] && params['status'] !== 'ALL') {
         cleanParams['status'] = String(params['status']).trim();
       }
+      if (params['version'] !== undefined && params['version'] !== null && String(params['version']).trim() !== '') {
+        cleanParams['version'] = Number(params['version']);
+      }
+      if (params['createdBy'] && String(params['createdBy']).trim()) {
+        cleanParams['createdBy'] = String(params['createdBy']).trim();
+      }
       if (params['page'] !== undefined && params['page'] !== null) {
         cleanParams['page'] = params['page'];
       }

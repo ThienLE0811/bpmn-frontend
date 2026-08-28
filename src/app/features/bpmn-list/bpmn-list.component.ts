@@ -43,6 +43,7 @@ export class BpmnListComponent implements OnInit {
   }
 
   protected isModalOpen = signal<boolean>(false);
+  protected isStatsOpen = signal<boolean>(false);
   protected selectedProcess = signal<BpmnProcess | null>(null);
   protected pageSize = signal<number>(10);
   protected designerWidth = signal<number | null>(null);
@@ -56,23 +57,39 @@ export class BpmnListComponent implements OnInit {
     status: string;
   } | null = null;
 
-  // Filter Model for Server-side API query
+  toggleStats(): void {
+    this.isStatsOpen.update((v) => !v);
+  }
+
+  // Filter State for Server-side API query
+  protected isAdvancedFilterOpen = signal<boolean>(false);
+
   protected readonly filterModel = signal({
     processKey: '',
     name: '',
     category: 'ALL',
     status: 'ALL',
+    version: '' as string | number,
+    createdBy: '',
   });
 
-  protected readonly isFiltered = computed(() => {
+  protected readonly activeFilterCount = computed(() => {
     const m = this.filterModel();
-    return (
-      m.processKey.trim() !== '' ||
-      m.name.trim() !== '' ||
-      m.category !== 'ALL' ||
-      m.status !== 'ALL'
-    );
+    let count = 0;
+    if (m.processKey.trim()) count++;
+    if (m.name.trim()) count++;
+    if (m.category !== 'ALL') count++;
+    if (m.status !== 'ALL') count++;
+    if (m.version !== '' && m.version !== null && m.version !== undefined) count++;
+    if (m.createdBy.trim()) count++;
+    return count;
   });
+
+  protected readonly isFiltered = computed(() => this.activeFilterCount() > 0);
+
+  toggleAdvancedFilter(): void {
+    this.isAdvancedFilterOpen.update((v) => !v);
+  }
 
   // Signal Form for Process Information
   protected readonly processFormModel = signal({
@@ -125,6 +142,8 @@ export class BpmnListComponent implements OnInit {
       name: m.name,
       category: m.category,
       status: m.status,
+      version: m.version !== '' && m.version !== null ? Number(m.version) : undefined,
+      createdBy: m.createdBy,
     });
   }
 
@@ -134,6 +153,8 @@ export class BpmnListComponent implements OnInit {
       name: '',
       category: 'ALL',
       status: 'ALL',
+      version: '',
+      createdBy: '',
     });
     this.search();
   }

@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { DmnDecision } from '@core/models/dmn-decision.model';
 import { ApiErrorHandlerService } from '@shared/services';
-import { DmnApiService } from '../api/dmn-api.service';
+import { DmnApiService, DmnQueryParams } from '../api/dmn-api.service';
 
 @Injectable({
   providedIn: 'root',
@@ -27,11 +27,11 @@ export class DmnDecisionService {
     return this.errorSignal.asReadonly();
   }
 
-  loadDecisions(): void {
+  loadDecisions(params?: DmnQueryParams): void {
     this.loadingSignal.set(true);
     this.errorSignal.set(null);
 
-    this.dmnApi.getAll().subscribe({
+    this.dmnApi.getAll(params).subscribe({
       next: (data) => {
         if (Array.isArray(data)) {
           this.decisionsSignal.set(data);

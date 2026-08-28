@@ -5,6 +5,8 @@ import { form, FormField, required, submit } from '@angular/forms/signals';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzIconModule } from 'ng-zorro-antd/icon';
+import { NzInputModule } from 'ng-zorro-antd/input';
+import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzResizableModule, NzResizeEvent } from 'ng-zorro-antd/resizable';
 import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
 import { DmnDecisionService } from '@core/services';
@@ -21,6 +23,8 @@ import { DmnDesignerComponent } from '@shared/components/dmn-designer/dmn-design
     NzTableModule,
     NzPopconfirmModule,
     NzIconModule,
+    NzInputModule,
+    NzSelectModule,
     NzResizableModule,
     NzModalModule,
     DmnDesignerComponent,
@@ -35,14 +39,12 @@ export class DmnListComponent implements OnInit {
   private modal = inject(NzModalService);
 
   ngOnInit(): void {
-    this.loadDecisions();
-  }
-
-  loadDecisions(): void {
-    this.dmnService.loadDecisions();
+    this.search();
   }
 
   protected isModalOpen = signal<boolean>(false);
+  protected isStatsOpen = signal<boolean>(false);
+  protected isAdvancedFilterOpen = signal<boolean>(false);
   protected selectedDecision = signal<DmnDecision | null>(null);
   protected pageSize = signal<number>(10);
   protected designerWidth = signal<number | null>(null);
@@ -56,6 +58,40 @@ export class DmnListComponent implements OnInit {
     version: number;
     status: string;
   } | null = null;
+
+  // Filter State for Server-side API query
+  protected readonly filterModel = signal({
+    decisionKey: '',
+    name: '',
+    category: 'ALL',
+    hitPolicy: 'ALL',
+    status: 'ALL',
+    version: '' as string | number,
+    createdBy: '',
+  });
+
+  protected readonly activeFilterCount = computed(() => {
+    const m = this.filterModel();
+    let count = 0;
+    if (m.decisionKey.trim()) count++;
+    if (m.name.trim()) count++;
+    if (m.category !== 'ALL') count++;
+    if (m.hitPolicy !== 'ALL') count++;
+    if (m.status !== 'ALL') count++;
+    if (m.version !== '' && m.version !== null && m.version !== undefined) count++;
+    if (m.createdBy.trim()) count++;
+    return count;
+  });
+
+  protected readonly isFiltered = computed(() => this.activeFilterCount() > 0);
+
+  toggleStats(): void {
+    this.isStatsOpen.update((v) => !v);
+  }
+
+  toggleAdvancedFilter(): void {
+    this.isAdvancedFilterOpen.update((v) => !v);
+  }
 
   // Signal Form for Decision Information
   protected readonly decisionFormModel = signal({
@@ -84,6 +120,51 @@ export class DmnListComponent implements OnInit {
   protected draftCount = computed(
     () => this.decisions().filter((d) => d.status === 'DRAFT').length,
   );
+
+  search(): void {
+    const m = this.filterModel();
+    this.dmnService.loadDecisions({
+      decisionKey: m.decisionKey,
+      name: m.name,
+      category: m.category,
+      hitPolicy: m.hitPolicy,
+      status: m.status,
+      version: m.version !== '' && m.version !== null ? Number(m.version) : undefined,
+      createdBy: m.createdBy,
+    });
+  }
+
+  resetFilters(): void {
+    this.filterModel.set({
+      decisionKey: '',
+      name: '',
+      category: 'ALL',
+      hitPolicy: 'ALL',
+      status: 'ALL',
+      version: '',
+      createdBy: '',
+    });
+    this.search();
+  }
+
+  onCategoryChange(category: string): void {
+    this.filterModel.update((m) => ({ ...m, category }));
+    this.search();
+  }
+
+  onHitPolicyChange(hitPolicy: string): void {
+    this.filterModel.update((m) => ({ ...m, hitPolicy }));
+    this.search();
+  }
+
+  onStatusChange(status: string): void {
+    this.filterModel.update((m) => ({ ...m, status }));
+    this.search();
+  }
+
+  loadDecisions(): void {
+    this.search();
+  }
 
   // Table Sort Comparators
   protected sortDecisionKey = (a: DmnDecision, b: DmnDecision): number =>

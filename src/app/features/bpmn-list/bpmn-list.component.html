@@ -6,72 +6,69 @@
       <p>Quản lý, tạo mới và chỉnh sửa các sơ đồ quy trình nghiệp vụ (BPMN 2.0).</p>
     </div>
 
-    <button class="btn btn-primary-glow" (click)="openCreateModal()">
-      <span nz-icon nzType="plus" nzTheme="outline"></span>
-      Tạo quy trình mới
-    </button>
+    <div class="title-actions">
+      <button
+        class="btn btn-outline-stats"
+        [class.active]="isStatsOpen()"
+        (click)="toggleStats()"
+        title="Xem thống kê tổng quan"
+      >
+        <span nz-icon [nzType]="isStatsOpen() ? 'eye-invisible' : 'dashboard'" nzTheme="outline"></span>
+        <span>{{ isStatsOpen() ? 'Ẩn thống kê' : 'Xem thống kê' }}</span>
+      </button>
+
+      <button class="btn btn-primary-glow" (click)="openCreateModal()">
+        <span nz-icon nzType="plus" nzTheme="outline"></span>
+        <span>Tạo quy trình mới</span>
+      </button>
+    </div>
   </div>
 
   <!-- Main Dashboard View -->
   <main class="main-content">
     <div class="content-container">
-      <!-- Overview Stat Cards -->
-      <section class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon total">
-            <span nz-icon nzType="file-text" nzTheme="outline"></span>
+      <!-- Overview Stat Cards (Collapsible) -->
+      @if (isStatsOpen()) {
+        <section class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon total">
+              <span nz-icon nzType="file-text" nzTheme="outline"></span>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Tổng số Quy trình</span>
+              <span class="stat-value">{{ processes().length }}</span>
+            </div>
           </div>
-          <div class="stat-info">
-            <span class="stat-label">Tổng số Quy trình</span>
-            <span class="stat-value">{{ processes().length }}</span>
-          </div>
-        </div>
 
-        <div class="stat-card">
-          <div class="stat-icon published">
-            <span nz-icon nzType="check-circle" nzTheme="outline"></span>
+          <div class="stat-card">
+            <div class="stat-icon published">
+              <span nz-icon nzType="check-circle" nzTheme="outline"></span>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Đã phát hành</span>
+              <span class="stat-value">{{ publishedCount() }}</span>
+            </div>
           </div>
-          <div class="stat-info">
-            <span class="stat-label">Đã phát hành</span>
-            <span class="stat-value">{{ publishedCount() }}</span>
-          </div>
-        </div>
 
-        <div class="stat-card">
-          <div class="stat-icon draft">
-            <span nz-icon nzType="edit" nzTheme="outline"></span>
+          <div class="stat-card">
+            <div class="stat-icon draft">
+              <span nz-icon nzType="edit" nzTheme="outline"></span>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Bản nháp</span>
+              <span class="stat-value">{{ draftCount() }}</span>
+            </div>
           </div>
-          <div class="stat-info">
-            <span class="stat-label">Bản nháp</span>
-            <span class="stat-value">{{ draftCount() }}</span>
-          </div>
-        </div>
-      </section>
+        </section>
+      }
 
       <!-- Table Section -->
       <section class="table-card">
-        <!-- Table Toolbar with Multi-Field Server Filters -->
+        <!-- Main Quick Toolbar -->
         <div class="table-toolbar">
           <div class="toolbar-left">
-            <!-- Filter by Mã quy trình (processKey) -->
-            <div class="filter-field field-key">
-              <nz-input-wrapper [nzAllowClear]="true">
-                <span nzInputPrefix>
-                  <span nz-icon nzType="barcode" class="filter-icon"></span>
-                </span>
-                <input
-                  type="text"
-                  nz-input
-                  placeholder="Mã quy trình..."
-                  [ngModel]="filterModel().processKey"
-                  (ngModelChange)="filterModel.update((m) => ({ ...m, processKey: $event }))"
-                  (keyup.enter)="search()"
-                />
-              </nz-input-wrapper>
-            </div>
-
-            <!-- Filter by Tên quy trình (name) -->
-            <div class="filter-field field-name">
+            <!-- Quick Search by Tên quy trình -->
+            <div class="filter-field quick-search">
               <nz-input-wrapper [nzAllowClear]="true">
                 <span nzInputPrefix>
                   <span nz-icon nzType="search" class="filter-icon"></span>
@@ -79,7 +76,7 @@
                 <input
                   type="text"
                   nz-input
-                  placeholder="Tên quy trình..."
+                  placeholder="Tìm theo tên quy trình..."
                   [ngModel]="filterModel().name"
                   (ngModelChange)="filterModel.update((m) => ({ ...m, name: $event }))"
                   (keyup.enter)="search()"
@@ -87,26 +84,8 @@
               </nz-input-wrapper>
             </div>
 
-            <!-- Filter by Danh mục (category) -->
-            <div class="filter-field field-select">
-              <nz-select
-                [ngModel]="filterModel().category"
-                (ngModelChange)="onCategoryChange($event)"
-                class="filter-select category-select"
-                nzPlaceHolder="Danh mục"
-              >
-                <nz-option nzValue="ALL" nzLabel="Tất cả danh mục"></nz-option>
-                <nz-option nzValue="GENERAL" nzLabel="GENERAL"></nz-option>
-                <nz-option nzValue="HR" nzLabel="HR"></nz-option>
-                <nz-option nzValue="FINANCE" nzLabel="FINANCE"></nz-option>
-                <nz-option nzValue="SALES" nzLabel="SALES"></nz-option>
-                <nz-option nzValue="IT" nzLabel="IT"></nz-option>
-                <nz-option nzValue="LEGAL" nzLabel="LEGAL"></nz-option>
-              </nz-select>
-            </div>
-
-            <!-- Filter by Trạng thái (status) -->
-            <div class="filter-field field-select">
+            <!-- Quick Filter by Trạng thái -->
+            <div class="filter-field quick-status">
               <nz-select
                 [ngModel]="filterModel().status"
                 (ngModelChange)="onStatusChange($event)"
@@ -120,24 +99,43 @@
               </nz-select>
             </div>
 
-            <!-- Nút Tìm kiếm -->
+            <!-- Nút Toggle Bộ lọc nâng cao -->
+            <button
+              class="btn-toggle-advanced"
+              [class.active]="isAdvancedFilterOpen() || isFiltered()"
+              (click)="toggleAdvancedFilter()"
+              title="Mở/đóng bộ lọc nâng cao"
+            >
+              <span nz-icon nzType="filter" nzTheme="outline"></span>
+              <span>Bộ lọc nâng cao</span>
+              @if (activeFilterCount() > 0) {
+                <span class="filter-badge">{{ activeFilterCount() }}</span>
+              }
+              <span
+                nz-icon
+                [nzType]="isAdvancedFilterOpen() ? 'up' : 'down'"
+                class="toggle-arrow"
+              ></span>
+            </button>
+
+            <!-- Nút Tìm kiếm nhanh -->
             <button
               class="btn-search-trigger"
               (click)="search()"
               [disabled]="isLoading()"
-              title="Tìm kiếm theo bộ lọc"
+              title="Tìm kiếm"
             >
               <span nz-icon nzType="search" nzTheme="outline"></span>
               <span>Tìm kiếm</span>
             </button>
 
-            <!-- Nút Đặt lại -->
+            <!-- Nút Đặt lại nhanh -->
             @if (isFiltered()) {
               <button
                 class="btn-reset-filter"
                 (click)="resetFilters()"
                 [disabled]="isLoading()"
-                title="Xóa bộ lọc"
+                title="Xóa tất cả bộ lọc"
               >
                 <span nz-icon nzType="clear" nzTheme="outline"></span>
                 <span>Đặt lại</span>
@@ -157,6 +155,169 @@
             </button>
           </div>
         </div>
+
+        <!-- Collapsible Advanced Filter Panel -->
+        @if (isAdvancedFilterOpen()) {
+          <div class="advanced-filter-panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span nz-icon nzType="control" nzTheme="outline"></span>
+                <span>Bộ lọc chi tiết</span>
+              </div>
+              <button
+                class="btn-close-panel"
+                (click)="toggleAdvancedFilter()"
+                title="Thu gọn bộ lọc"
+              >
+                <span nz-icon nzType="close" nzTheme="outline"></span>
+              </button>
+            </div>
+
+            <!-- Form Grid 3-4 Cột -->
+            <div class="advanced-filter-grid">
+              <!-- Field 1: Mã quy trình -->
+              <div class="grid-form-item">
+                <label class="form-label">Mã quy trình</label>
+                <nz-input-wrapper [nzAllowClear]="true">
+                  <span nzInputPrefix>
+                    <span nz-icon nzType="barcode" class="filter-icon"></span>
+                  </span>
+                  <input
+                    type="text"
+                    nz-input
+                    placeholder="VD: BPMN-PROC-01..."
+                    [ngModel]="filterModel().processKey"
+                    (ngModelChange)="filterModel.update((m) => ({ ...m, processKey: $event }))"
+                    (keyup.enter)="search()"
+                  />
+                </nz-input-wrapper>
+              </div>
+
+              <!-- Field 2: Tên quy trình -->
+              <div class="grid-form-item">
+                <label class="form-label">Tên quy trình</label>
+                <nz-input-wrapper [nzAllowClear]="true">
+                  <span nzInputPrefix>
+                    <span nz-icon nzType="file-text" class="filter-icon"></span>
+                  </span>
+                  <input
+                    type="text"
+                    nz-input
+                    placeholder="Nhập tên quy trình..."
+                    [ngModel]="filterModel().name"
+                    (ngModelChange)="filterModel.update((m) => ({ ...m, name: $event }))"
+                    (keyup.enter)="search()"
+                  />
+                </nz-input-wrapper>
+              </div>
+
+              <!-- Field 3: Danh mục -->
+              <div class="grid-form-item">
+                <label class="form-label">Danh mục</label>
+                <nz-select
+                  [ngModel]="filterModel().category"
+                  (ngModelChange)="filterModel.update((m) => ({ ...m, category: $event }))"
+                  class="filter-select"
+                  nzPlaceHolder="Chọn danh mục"
+                >
+                  <nz-option nzValue="ALL" nzLabel="Tất cả danh mục"></nz-option>
+                  <nz-option nzValue="GENERAL" nzLabel="GENERAL - Chung"></nz-option>
+                  <nz-option nzValue="HR" nzLabel="HR - Nhân sự"></nz-option>
+                  <nz-option nzValue="FINANCE" nzLabel="FINANCE - Tài chính"></nz-option>
+                  <nz-option nzValue="SALES" nzLabel="SALES - Bán hàng"></nz-option>
+                  <nz-option nzValue="IT" nzLabel="IT - Công nghệ thông tin"></nz-option>
+                  <nz-option nzValue="LEGAL" nzLabel="LEGAL - Pháp lý"></nz-option>
+                </nz-select>
+              </div>
+
+              <!-- Field 4: Trạng thái -->
+              <div class="grid-form-item">
+                <label class="form-label">Trạng thái phát hành</label>
+                <nz-select
+                  [ngModel]="filterModel().status"
+                  (ngModelChange)="filterModel.update((m) => ({ ...m, status: $event }))"
+                  class="filter-select"
+                  nzPlaceHolder="Chọn trạng thái"
+                >
+                  <nz-option nzValue="ALL" nzLabel="Tất cả trạng thái"></nz-option>
+                  <nz-option nzValue="PUBLISHED" nzLabel="Đã phát hành"></nz-option>
+                  <nz-option nzValue="DRAFT" nzLabel="Bản nháp"></nz-option>
+                  <nz-option nzValue="ARCHIVED" nzLabel="Lưu trữ"></nz-option>
+                </nz-select>
+              </div>
+
+              <!-- Field 5: Phiên bản -->
+              <div class="grid-form-item">
+                <label class="form-label">Phiên bản</label>
+                <nz-input-wrapper [nzAllowClear]="true">
+                  <span nzInputPrefix>
+                    <span nz-icon nzType="number" class="filter-icon"></span>
+                  </span>
+                  <input
+                    type="number"
+                    nz-input
+                    placeholder="VD: 1, 2..."
+                    [ngModel]="filterModel().version"
+                    (ngModelChange)="filterModel.update((m) => ({ ...m, version: $event }))"
+                    (keyup.enter)="search()"
+                  />
+                </nz-input-wrapper>
+              </div>
+
+              <!-- Field 6: Người tạo -->
+              <div class="grid-form-item">
+                <label class="form-label">Người tạo</label>
+                <nz-input-wrapper [nzAllowClear]="true">
+                  <span nzInputPrefix>
+                    <span nz-icon nzType="user" class="filter-icon"></span>
+                  </span>
+                  <input
+                    type="text"
+                    nz-input
+                    placeholder="Nhập tên người tạo..."
+                    [ngModel]="filterModel().createdBy"
+                    (ngModelChange)="filterModel.update((m) => ({ ...m, createdBy: $event }))"
+                    (keyup.enter)="search()"
+                  />
+                </nz-input-wrapper>
+              </div>
+            </div>
+
+            <!-- Action Buttons Footer inside Panel -->
+            <div class="panel-actions">
+              <button
+                class="btn-panel-search"
+                (click)="search()"
+                [disabled]="isLoading()"
+                title="Áp dụng bộ lọc"
+              >
+                <span nz-icon nzType="search" nzTheme="outline"></span>
+                <span>Áp dụng bộ lọc</span>
+              </button>
+
+              @if (isFiltered()) {
+                <button
+                  class="btn-panel-reset"
+                  (click)="resetFilters()"
+                  [disabled]="isLoading()"
+                  title="Xóa tất cả bộ lọc"
+                >
+                  <span nz-icon nzType="clear" nzTheme="outline"></span>
+                  <span>Đặt lại mặc định</span>
+                </button>
+              }
+
+              <button
+                class="btn-panel-collapse"
+                (click)="toggleAdvancedFilter()"
+                title="Thu gọn panel"
+              >
+                <span nz-icon nzType="up" nzTheme="outline"></span>
+                <span>Thu gọn</span>
+              </button>
+            </div>
+          </div>
+        }
 
         <!-- Table View with nz-table -->
         <div class="table-responsive">
