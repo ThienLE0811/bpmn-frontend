@@ -231,6 +231,7 @@
 .table-responsive {
   width: 100%;
   overflow-x: auto;
+  padding: 8px;
 
   :host ::ng-deep {
     .custom-nz-table {

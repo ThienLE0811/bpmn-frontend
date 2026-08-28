@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { BpmnProcess } from '@core/models/bpmn-process.model';
 import { ApiErrorHandlerService } from '@shared/services';
-import { BpmnApiService } from '../api/bpmn-api.service';
+import { BpmnApiService, BpmnQueryParams } from '../api/bpmn-api.service';
 
 @Injectable({
   providedIn: 'root',
@@ -27,11 +27,11 @@ export class BpmnProcessService {
     return this.errorSignal.asReadonly();
   }
 
-  loadProcesses(): void {
+  loadProcesses(params?: BpmnQueryParams): void {
     this.loadingSignal.set(true);
     this.errorSignal.set(null);
 
-    this.bpmnApi.getAll().subscribe({
+    this.bpmnApi.getAll(params).subscribe({
       next: (data) => {
         if (Array.isArray(data)) {
           this.processesSignal.set(data);
@@ -162,16 +162,17 @@ export class BpmnProcessService {
   }
 
   deleteProcess(id: string): void {
-    // Gọi API xóa
+    // Gọi API xóa, chỉ cập nhật state khi API phản hồi thành công
     this.bpmnApi.delete(id).subscribe({
+      next: () => {
+        const filtered = this.processesSignal().filter((p) => p.id !== id);
+        this.processesSignal.set(filtered);
+      },
       error: (err) => {
         console.error('Lỗi khi xóa BPMN qua API:', err);
         const errorText = this.errorHandler.handleError(err, 'Lỗi khi xóa quy trình BPMN qua API.');
         this.errorSignal.set(errorText);
       },
     });
-
-    const filtered = this.processesSignal().filter((p) => p.id !== id);
-    this.processesSignal.set(filtered);
   }
 }

@@ -161,8 +161,12 @@ export class DmnDecisionService {
   }
 
   deleteDecision(id: string): void {
-    // Gọi API xóa
+    // Gọi API xóa, chỉ cập nhật state khi API phản hồi thành công
     this.dmnApi.delete(id).subscribe({
+      next: () => {
+        const filtered = this.decisionsSignal().filter((p) => p.id !== id);
+        this.decisionsSignal.set(filtered);
+      },
       error: (err) => {
         console.error('Lỗi khi xóa DMN qua API:', err);
         const errorText = this.errorHandler.handleError(
@@ -172,8 +176,5 @@ export class DmnDecisionService {
         this.errorSignal.set(errorText);
       },
     });
-
-    const filtered = this.decisionsSignal().filter((p) => p.id !== id);
-    this.decisionsSignal.set(filtered);
   }
 }

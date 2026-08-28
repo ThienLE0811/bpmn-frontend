@@ -5,6 +5,8 @@ import { form, FormField, required, submit } from '@angular/forms/signals';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzIconModule } from 'ng-zorro-antd/icon';
+import { NzInputModule } from 'ng-zorro-antd/input';
+import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzResizableModule, NzResizeEvent } from 'ng-zorro-antd/resizable';
 import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
 import { BpmnProcessService } from '@core/services';
@@ -21,6 +23,8 @@ import { BpmnDesignerComponent } from '@shared/components/bpmn-designer/bpmn-des
     NzTableModule,
     NzPopconfirmModule,
     NzIconModule,
+    NzInputModule,
+    NzSelectModule,
     NzResizableModule,
     NzModalModule,
     BpmnDesignerComponent,
@@ -35,7 +39,7 @@ export class BpmnListComponent implements OnInit {
   private modal = inject(NzModalService);
 
   ngOnInit(): void {
-    this.loadProcesses();
+    this.search();
   }
 
   protected isModalOpen = signal<boolean>(false);
@@ -51,6 +55,24 @@ export class BpmnListComponent implements OnInit {
     version: number;
     status: string;
   } | null = null;
+
+  // Filter Model for Server-side API query
+  protected readonly filterModel = signal({
+    processKey: '',
+    name: '',
+    category: 'ALL',
+    status: 'ALL',
+  });
+
+  protected readonly isFiltered = computed(() => {
+    const m = this.filterModel();
+    return (
+      m.processKey.trim() !== '' ||
+      m.name.trim() !== '' ||
+      m.category !== 'ALL' ||
+      m.status !== 'ALL'
+    );
+  });
 
   // Signal Form for Process Information
   protected readonly processFormModel = signal({
@@ -96,8 +118,38 @@ export class BpmnListComponent implements OnInit {
   protected sortUpdatedAt = (a: BpmnProcess, b: BpmnProcess): number =>
     a.updatedAt.localeCompare(b.updatedAt);
 
-  loadProcesses() {
-    return this.bpmnService.loadProcesses();
+  search(): void {
+    const m = this.filterModel();
+    this.bpmnService.loadProcesses({
+      processKey: m.processKey,
+      name: m.name,
+      category: m.category,
+      status: m.status,
+    });
+  }
+
+  resetFilters(): void {
+    this.filterModel.set({
+      processKey: '',
+      name: '',
+      category: 'ALL',
+      status: 'ALL',
+    });
+    this.search();
+  }
+
+  onCategoryChange(category: string): void {
+    this.filterModel.update((m) => ({ ...m, category }));
+    this.search();
+  }
+
+  onStatusChange(status: string): void {
+    this.filterModel.update((m) => ({ ...m, status }));
+    this.search();
+  }
+
+  loadProcesses(): void {
+    this.search();
   }
 
   onSideResize({ width }: NzResizeEvent): void {

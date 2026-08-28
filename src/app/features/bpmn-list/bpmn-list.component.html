@@ -50,10 +50,99 @@
 
       <!-- Table Section -->
       <section class="table-card">
-        <!-- Table Toolbar -->
+        <!-- Table Toolbar with Multi-Field Server Filters -->
         <div class="table-toolbar">
           <div class="toolbar-left">
-            <span class="results-badge">Tổng số: {{ processes().length }}</span>
+            <!-- Filter by Mã quy trình (processKey) -->
+            <div class="filter-field field-key">
+              <nz-input-wrapper [nzAllowClear]="true">
+                <span nzInputPrefix>
+                  <span nz-icon nzType="barcode" class="filter-icon"></span>
+                </span>
+                <input
+                  type="text"
+                  nz-input
+                  placeholder="Mã quy trình..."
+                  [ngModel]="filterModel().processKey"
+                  (ngModelChange)="filterModel.update((m) => ({ ...m, processKey: $event }))"
+                  (keyup.enter)="search()"
+                />
+              </nz-input-wrapper>
+            </div>
+
+            <!-- Filter by Tên quy trình (name) -->
+            <div class="filter-field field-name">
+              <nz-input-wrapper [nzAllowClear]="true">
+                <span nzInputPrefix>
+                  <span nz-icon nzType="search" class="filter-icon"></span>
+                </span>
+                <input
+                  type="text"
+                  nz-input
+                  placeholder="Tên quy trình..."
+                  [ngModel]="filterModel().name"
+                  (ngModelChange)="filterModel.update((m) => ({ ...m, name: $event }))"
+                  (keyup.enter)="search()"
+                />
+              </nz-input-wrapper>
+            </div>
+
+            <!-- Filter by Danh mục (category) -->
+            <div class="filter-field field-select">
+              <nz-select
+                [ngModel]="filterModel().category"
+                (ngModelChange)="onCategoryChange($event)"
+                class="filter-select category-select"
+                nzPlaceHolder="Danh mục"
+              >
+                <nz-option nzValue="ALL" nzLabel="Tất cả danh mục"></nz-option>
+                <nz-option nzValue="GENERAL" nzLabel="GENERAL"></nz-option>
+                <nz-option nzValue="HR" nzLabel="HR"></nz-option>
+                <nz-option nzValue="FINANCE" nzLabel="FINANCE"></nz-option>
+                <nz-option nzValue="SALES" nzLabel="SALES"></nz-option>
+                <nz-option nzValue="IT" nzLabel="IT"></nz-option>
+                <nz-option nzValue="LEGAL" nzLabel="LEGAL"></nz-option>
+              </nz-select>
+            </div>
+
+            <!-- Filter by Trạng thái (status) -->
+            <div class="filter-field field-select">
+              <nz-select
+                [ngModel]="filterModel().status"
+                (ngModelChange)="onStatusChange($event)"
+                class="filter-select status-select"
+                nzPlaceHolder="Trạng thái"
+              >
+                <nz-option nzValue="ALL" nzLabel="Tất cả trạng thái"></nz-option>
+                <nz-option nzValue="PUBLISHED" nzLabel="Đã phát hành"></nz-option>
+                <nz-option nzValue="DRAFT" nzLabel="Bản nháp"></nz-option>
+                <nz-option nzValue="ARCHIVED" nzLabel="Lưu trữ"></nz-option>
+              </nz-select>
+            </div>
+
+            <!-- Nút Tìm kiếm -->
+            <button
+              class="btn-search-trigger"
+              (click)="search()"
+              [disabled]="isLoading()"
+              title="Tìm kiếm theo bộ lọc"
+            >
+              <span nz-icon nzType="search" nzTheme="outline"></span>
+              <span>Tìm kiếm</span>
+            </button>
+
+            <!-- Nút Đặt lại -->
+            @if (isFiltered()) {
+              <button
+                class="btn-reset-filter"
+                (click)="resetFilters()"
+                [disabled]="isLoading()"
+                title="Xóa bộ lọc"
+              >
+                <span nz-icon nzType="clear" nzTheme="outline"></span>
+                <span>Đặt lại</span>
+              </button>
+            }
           </div>
 
           <div class="toolbar-right">

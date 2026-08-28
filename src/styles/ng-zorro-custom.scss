@@ -1,0 +1,489 @@
+/* ==========================================================================
+   NG-ZORRO CUSTOM OVERRIDES & ENHANCEMENTS
+   Centralized styling for NG-ZORRO components (Modals, Messages, Pagination, etc.)
+   ========================================================================== */
+
+/* ==========================================================================
+   1. Modal Custom Styling (Buttons, Borders, Padding, Shadows)
+   ========================================================================== */
+.ant-modal {
+  .ant-modal-content {
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow:
+      0 20px 40px -15px rgba(0, 0, 0, 0.2),
+      0 0 0 1px rgba(0, 0, 0, 0.05);
+  }
+
+  .ant-modal-header {
+    border-bottom: 1px solid #f1f5f9;
+    padding: 16px 24px;
+
+    .ant-modal-title {
+      font-weight: 600;
+      color: #0f172a;
+      font-size: 15px;
+    }
+  }
+
+  .ant-modal-body {
+    padding: 4px;
+    color: #334155;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .ant-modal-footer,
+  .ant-modal-confirm-btns {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 14px 24px;
+    border-top: 1px solid #f1f5f9;
+    background-color: #fafafa;
+    margin-top: 0;
+
+    .ant-btn {
+      margin: 0 !important;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 18px !important;
+      height: 38px !important;
+      border-radius: 8px !important;
+      font-size: 13.5px;
+      font-weight: 500;
+      border: 1px solid #cbd5e1 !important;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+
+      /* Default / Cancel Button */
+      &.ant-btn-default,
+      &:not(.ant-btn-primary):not(.ant-btn-dangerous):not(.ant-btn-danger) {
+        background-color: #ffffff !important;
+        border-color: #cbd5e1 !important;
+        color: #334155 !important;
+
+        &:hover {
+          background-color: #f8fafc !important;
+          border-color: #94a3b8 !important;
+          color: #0f172a !important;
+        }
+
+        &:active {
+          background-color: #f1f5f9 !important;
+        }
+      }
+
+      /* Primary Button */
+      &.ant-btn-primary:not(.ant-btn-dangerous):not(.ant-btn-danger) {
+        background: #2563eb !important;
+        border-color: #2563eb !important;
+        color: #ffffff !important;
+
+        &:hover {
+          background: #1d4ed8 !important;
+          border-color: #1d4ed8 !important;
+          color: #ffffff !important;
+          box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+        }
+
+        &:active {
+          background: #1e40af !important;
+          border-color: #1e40af !important;
+        }
+      }
+
+      /* Danger / Dangerous Button (e.g. nzOkDanger: true) */
+      &.ant-btn-dangerous,
+      &.ant-btn-danger,
+      &.ant-btn-primary.ant-btn-dangerous {
+        background: #ef4444 !important;
+        border-color: #ef4444 !important;
+        color: #ffffff !important;
+
+        &:hover {
+          background: #dc2626 !important;
+          border-color: #dc2626 !important;
+          color: #ffffff !important;
+          box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+        }
+
+        &:active {
+          background: #b91c1c !important;
+          border-color: #b91c1c !important;
+        }
+      }
+    }
+  }
+
+  /* Specific styles for confirm modal (modal.confirm) */
+  &.ant-modal-confirm {
+    .ant-modal-confirm-body {
+      padding: 24px 24px 18px 24px;
+
+      .ant-modal-confirm-title {
+        color: #0f172a;
+        font-weight: 600;
+        font-size: 16px;
+      }
+
+      .ant-modal-confirm-content {
+        color: #475569;
+        font-size: 14px;
+        line-height: 1.5;
+        margin-top: 8px;
+      }
+    }
+
+    .ant-modal-confirm-btns {
+      border-top: none;
+      background-color: transparent;
+      padding: 0 24px 20px 24px;
+    }
+  }
+}
+
+/* ==========================================================================
+   2. Message Custom Styling (Toasts / Notifications)
+   ========================================================================== */
+.ant-message {
+  top: 24px;
+
+  .ant-message-notice {
+    padding: 6px 12px;
+
+    .ant-message-notice-content {
+      padding: 11px 20px;
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      box-shadow:
+        0 10px 25px -4px rgba(15, 23, 42, 0.12),
+        0 4px 10px -2px rgba(15, 23, 42, 0.04);
+      pointer-events: all;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+  }
+
+  .ant-message-custom-content,
+  .ant-message-notice-content {
+    font-family:
+      'Inter',
+      system-ui,
+      -apple-system,
+      sans-serif;
+    font-size: 14.5px;
+    font-weight: 500;
+    color: #1e293b;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+    display: inline-flex;
+    align-items: center;
+
+    .anticon {
+      font-size: 18px;
+      margin-right: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+      position: relative;
+      top: 0;
+    }
+  }
+
+  /* Specific message types icon colors */
+  .ant-message-success .anticon {
+    color: #10b981;
+  }
+
+  .ant-message-error .anticon {
+    color: #ef4444;
+  }
+
+  .ant-message-warning .anticon {
+    color: #f59e0b;
+  }
+
+  .ant-message-info .anticon {
+    color: #3b82f6;
+  }
+
+  .ant-message-loading .anticon {
+    color: #6366f1;
+  }
+}
+
+/* ==========================================================================
+   3. Pagination Custom Styling (nz-table & Standalone nz-pagination)
+   ========================================================================== */
+.ant-pagination {
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  /* Mini pagination variant */
+  &.ant-pagination-mini {
+    .ant-pagination-item,
+    .ant-pagination-prev,
+    .ant-pagination-next,
+    .ant-pagination-prev .ant-pagination-item-link,
+    .ant-pagination-next .ant-pagination-item-link {
+      min-width: 28px;
+      height: 28px;
+      line-height: 26px;
+      border-radius: 6px;
+    }
+
+    .ant-pagination-options .ant-pagination-options-size-changer.ant-select .ant-select-selector {
+      height: 28px !important;
+      border-radius: 6px !important;
+    }
+  }
+
+  /* Total Text */
+  .ant-pagination-total-text {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #64748b;
+    margin-right: auto;
+    height: 34px;
+    line-height: 34px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Page Number Items */
+  .ant-pagination-item {
+    min-width: 34px;
+    height: 34px;
+    line-height: 32px;
+    margin: 0;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #475569;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    a {
+      color: #475569;
+      font-weight: 500;
+      padding: 0 4px;
+      line-height: 1;
+      transition: color 0.15s ease;
+    }
+
+    &:hover {
+      border-color: #cbd5e1;
+      background-color: #f8fafc;
+      transform: translateY(-1px);
+
+      a {
+        color: #0f172a;
+      }
+    }
+
+    &:active {
+      transform: translateY(0);
+      background-color: #f1f5f9;
+    }
+
+    /* Active Page Item */
+    &.ant-pagination-item-active {
+      background: #2563eb !important;
+      border-color: #2563eb !important;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+
+      a {
+        color: #ffffff !important;
+        font-weight: 600;
+      }
+
+      &:hover {
+        background: #1d4ed8 !important;
+        border-color: #1d4ed8 !important;
+
+        a {
+          color: #ffffff !important;
+        }
+      }
+    }
+  }
+
+  /* Prev / Next Buttons */
+  .ant-pagination-prev,
+  .ant-pagination-next {
+    min-width: 34px;
+    height: 34px;
+    line-height: 32px;
+    margin: 0;
+    font-family: inherit;
+
+    .ant-pagination-item-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      background-color: #ffffff;
+      color: #475569;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+      .anticon {
+        font-size: 12px;
+        color: #64748b;
+        transition: color 0.15s ease;
+      }
+    }
+
+    &:hover:not(.ant-pagination-disabled) .ant-pagination-item-link {
+      border-color: #cbd5e1;
+      background-color: #f8fafc;
+      color: #0f172a;
+      transform: translateY(-1px);
+
+      .anticon {
+        color: #0f172a;
+      }
+    }
+
+    &:active:not(.ant-pagination-disabled) .ant-pagination-item-link {
+      transform: translateY(0);
+      background-color: #f1f5f9;
+    }
+
+    &.ant-pagination-disabled .ant-pagination-item-link {
+      border-color: #f1f5f9;
+      background-color: #f8fafc;
+      color: #cbd5e1;
+      cursor: not-allowed;
+      opacity: 0.6;
+      box-shadow: none;
+
+      .anticon {
+        color: #cbd5e1;
+      }
+    }
+  }
+
+  /* Jump Prev / Jump Next (Ellipsis) */
+  .ant-pagination-jump-prev,
+  .ant-pagination-jump-next {
+    min-width: 34px;
+    height: 34px;
+    line-height: 32px;
+    margin: 0;
+
+    .ant-pagination-item-container {
+      .ant-pagination-item-ellipsis {
+        color: #94a3b8;
+        font-weight: 700;
+        letter-spacing: 2px;
+        line-height: 32px;
+      }
+
+      .ant-pagination-item-link-icon {
+        color: #2563eb;
+        font-size: 12px;
+      }
+    }
+  }
+
+  /* Size Changer (e.g., 10 / trang) */
+  .ant-pagination-options {
+    margin-left: 6px;
+
+    .ant-pagination-options-size-changer.ant-select {
+      margin: 0;
+
+      .ant-select-selector {
+        height: 34px !important;
+        padding: 0 10px !important;
+        border-radius: 8px !important;
+        border: 1px solid #e2e8f0 !important;
+        background-color: #ffffff !important;
+        display: flex !important;
+        align-items: center !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        color: #334155 !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+        transition: all 0.2s ease;
+
+        .ant-select-selection-item {
+          line-height: 32px !important;
+          color: #334155;
+        }
+      }
+
+      &:hover .ant-select-selector {
+        border-color: #cbd5e1 !important;
+        background-color: #f8fafc !important;
+      }
+
+      &.ant-select-focused .ant-select-selector,
+      &.ant-select-open .ant-select-selector {
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+      }
+
+      .ant-select-arrow {
+        color: #64748b;
+        font-size: 11px;
+        right: 8px;
+      }
+    }
+
+    /* Quick Jumper */
+    .ant-pagination-options-quick-jumper {
+      height: 34px;
+      line-height: 34px;
+      font-size: 13px;
+      color: #64748b;
+      font-weight: 500;
+      margin-left: 8px;
+
+      input {
+        height: 34px;
+        margin: 0 6px;
+        padding: 4px 10px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        font-size: 13px;
+        font-weight: 500;
+        color: #1e293b;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+        transition: all 0.2s ease;
+
+        &:hover {
+          border-color: #cbd5e1;
+        }
+
+        &:focus {
+          border-color: #2563eb;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+          outline: none;
+        }
+      }
+    }
+  }
+}
