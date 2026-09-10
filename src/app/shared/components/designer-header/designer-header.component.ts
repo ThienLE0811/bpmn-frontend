@@ -6,6 +6,7 @@ import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
 
 export type DesignerType = 'bpmn' | 'dmn';
+export type DesignerMode = 'design' | 'xml';
 
 @Component({
   selector: 'app-designer-header',
@@ -18,6 +19,12 @@ export type DesignerType = 'bpmn' | 'dmn';
 export class DesignerHeaderComponent {
   /** Type of designer (BPMN or DMN) */
   type = input<DesignerType>('bpmn');
+
+  /** Whether to show mode switch buttons (Sơ đồ / Mã XML) */
+  showModeSwitch = input<boolean>(false);
+
+  /** Active mode for designing (design / xml) */
+  activeMode = model<DesignerMode>('design');
 
   /** Item name / title (two-way binding support) */
   title = model<string>('');
@@ -46,6 +53,9 @@ export class DesignerHeaderComponent {
   /** Title tooltip for SVG export */
   svgTitle = input<string>();
 
+  /** Whether designer is in read-only mode */
+  readOnly = input<boolean>(false);
+
   // Computed properties
   effectivePlaceholder = computed(() => {
     if (this.placeholder()) return this.placeholder()!;
@@ -71,6 +81,7 @@ export class DesignerHeaderComponent {
   save = output<void>();
   closed = output<void>();
   fileSelected = output<Event>();
+  pasteXml = output<void>();
   exportXml = output<void>();
   exportSvg = output<void>();
   undo = output<void>();
@@ -78,6 +89,10 @@ export class DesignerHeaderComponent {
   zoomIn = output<void>();
   zoomOut = output<void>();
   zoomReset = output<void>();
+
+  setMode(mode: DesignerMode): void {
+    this.activeMode.set(mode);
+  }
 
   onFileChange(event: Event): void {
     this.fileSelected.emit(event);

@@ -37,6 +37,8 @@ export class DmnDesignerComponent implements AfterViewInit, OnDestroy, OnChanges
   @ViewChild('dmnContainer', { static: true }) private dmnContainerRef!: ElementRef<HTMLDivElement>;
 
   @Input() decisionData: DmnDecision | null = null;
+  @Input() readOnly = false;
+  @Input() saveLabel?: string;
   @Output() save = new EventEmitter<{ name: string; xml: string }>();
   @Output() closed = new EventEmitter<void>();
 

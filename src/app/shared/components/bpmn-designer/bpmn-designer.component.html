@@ -6,6 +6,12 @@
     [code]="processData?.processKey"
     [isModified]="isModified()"
     [currentZoom]="currentZoom()"
+    [readOnly]="readOnly"
+    [saveLabel]="saveLabel"
+    [showModeSwitch]="true"
+    [activeMode]="viewMode()"
+    (activeModeChange)="setMode($event)"
+    (pasteXml)="pasteFromClipboard()"
     (save)="onSave()"
     (closed)="onClose()"
     (fileSelected)="onFileSelected($event)"
@@ -19,12 +25,22 @@
   />
 
   <!-- Main Canvas & Sidebar Container -->
-  <div class="designer-body">
-    <!-- Canvas Area -->
-    <div class="canvas-container" #canvas></div>
+  <div
+    class="designer-body"
+    [class.mode-design]="viewMode() === 'design'"
+    [class.mode-xml]="viewMode() === 'xml'"
+  >
+    <!-- Canvas Area (kept in DOM across all modes to preserve bpmn-js instance) -->
+    <div
+      class="canvas-container"
+      [class.readonly]="readOnly"
+      [class.hidden-canvas]="viewMode() === 'xml'"
+      #canvas
+    ></div>
 
-    <!-- Properties Panel Sidebar -->
-    <aside class="properties-sidebar">
+    <!-- Properties Panel Sidebar (shown in Visual Design mode) -->
+    @if (viewMode() === 'design') {
+      <aside class="properties-sidebar">
       <!-- Sidebar Header -->
       <div class="sidebar-header">
         <div class="header-left">
@@ -437,5 +453,184 @@
         </div>
       }
     </aside>
+  }
+
+    <!-- XML Editor Pane (shown in XML mode) -->
+    @if (viewMode() === 'xml') {
+      <div class="xml-editor-container">
+        <!-- XML Editor Toolbar -->
+        <div class="xml-toolbar">
+          <div class="toolbar-left">
+            <button
+              type="button"
+              class="xml-tool-btn primary-glow"
+              (click)="pasteFromClipboard()"
+              title="Dán nhanh mã BPMN 2.0 XML từ Clipboard (Ctrl+V)"
+            >
+              <span nz-icon nzType="snippets" nzTheme="outline"></span>
+              <span>Dán từ Clipboard</span>
+            </button>
+
+            <label class="xml-tool-btn file-upload-btn" title="Mở file .bpmn hoặc .xml từ máy tính">
+              <span nz-icon nzType="upload" nzTheme="outline"></span>
+              <span>Tải tệp XML</span>
+              <input
+                type="file"
+                accept=".bpmn,.xml"
+                (change)="onFileSelected($event)"
+                style="display: none"
+              />
+            </label>
+
+            <button
+              type="button"
+              class="xml-tool-btn"
+              (click)="formatXml()"
+              title="Căn chỉnh thụt lề và định dạng XML đẹp mắt"
+            >
+              <span nz-icon nzType="align-left" nzTheme="outline"></span>
+              <span>Định dạng XML</span>
+            </button>
+
+            <button
+              type="button"
+              class="xml-tool-btn"
+              (click)="copyXmlToClipboard()"
+              [title]="copiedXml() ? 'Đã sao chép!' : 'Sao chép toàn bộ mã XML'"
+            >
+              <span
+                nz-icon
+                [nzType]="copiedXml() ? 'check' : 'copy'"
+                nzTheme="outline"
+                [class.text-success]="copiedXml()"
+              ></span>
+              <span>{{ copiedXml() ? 'Đã chép' : 'Sao chép' }}</span>
+            </button>
+
+            <button
+              type="button"
+              class="xml-tool-btn danger-soft"
+              (click)="resetToDefaultXml()"
+              title="Khôi phục mẫu XML BPMN 2.0 mặc định"
+            >
+              <span nz-icon nzType="redo" nzTheme="outline"></span>
+              <span>Mẫu mặc định</span>
+            </button>
+          </div>
+
+          <div class="toolbar-right">
+            <button
+              type="button"
+              class="xml-tool-btn sync-toggle"
+              [class.active]="isAutoSync()"
+              (click)="toggleAutoSync()"
+              title="Tự động đồng bộ sơ đồ khi gõ XML"
+            >
+              <span
+                nz-icon
+                [nzType]="isAutoSync() ? 'sync' : 'pause'"
+                nzTheme="outline"
+                [nzSpin]="isSyncing()"
+              ></span>
+              <span>Tự động đồng bộ: {{ isAutoSync() ? 'BẬT' : 'TẮT' }}</span>
+            </button>
+
+            @if (!isAutoSync()) {
+              <button
+                type="button"
+                class="xml-tool-btn apply-btn"
+                (click)="applyXmlToModeler(undefined, true)"
+                title="Áp dụng mã XML hiện tại lên sơ đồ"
+              >
+                <span nz-icon nzType="play-circle" nzTheme="outline"></span>
+                <span>Áp dụng lên sơ đồ</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- XML Error Warning Banner -->
+        @if (xmlError()) {
+          <div class="xml-error-banner">
+            <div class="error-content">
+              <span nz-icon nzType="warning" nzTheme="outline" class="error-icon"></span>
+              <div class="error-text">
+                <strong>Phát hiện lỗi cú pháp XML:</strong>
+                <p>{{ xmlError() }}</p>
+              </div>
+            </div>
+            <button class="btn-close-error" (click)="xmlError.set(null)" title="Ẩn thông báo">
+              <span nz-icon nzType="close" nzTheme="outline"></span>
+            </button>
+          </div>
+        }
+
+        <!-- Code Editor Area with Line Numbers -->
+        <div class="code-editor-wrapper">
+          <!-- Line Numbers Gutter -->
+          <div class="code-gutter" #xmlGutter>
+            @for (lineNum of lineNumbersArray(); track lineNum) {
+              <div class="line-number">{{ lineNum }}</div>
+            }
+          </div>
+
+          <!-- XML Code Input Area -->
+          <textarea
+            #xmlTextarea
+            class="code-textarea"
+            [ngModel]="xmlContent()"
+            (ngModelChange)="onXmlInput($event)"
+            (scroll)="onEditorScroll($event)"
+            placeholder="Dán mã BPMN 2.0 XML tại đây hoặc gõ chỉnh sửa..."
+            spellcheck="false"
+            wrap="off"
+            [readonly]="readOnly"
+          ></textarea>
+        </div>
+
+        <!-- XML Status Bar -->
+        <div class="xml-status-bar">
+          <div class="status-left">
+            @if (xmlError()) {
+              <span class="status-badge error">
+                <span nz-icon nzType="close-circle" nzTheme="outline"></span>
+                <span>Lỗi cú pháp</span>
+              </span>
+            } @else {
+              <span class="status-badge valid">
+                <span nz-icon nzType="check-circle" nzTheme="outline"></span>
+                <span>BPMN 2.0 XML Hợp lệ</span>
+              </span>
+            }
+
+            <span class="status-meta">
+              <span class="dot-separator">•</span>
+              <span>Dòng: <strong>{{ xmlStats().lines }}</strong></span>
+              <span class="dot-separator">•</span>
+              <span>Ký tự: <strong>{{ xmlStats().chars }}</strong></span>
+              <span class="dot-separator">•</span>
+              <span>Kích thước: <strong>{{ xmlStats().sizeKb }} KB</strong></span>
+              @if (xmlStats().elements > 0) {
+                <span class="dot-separator">•</span>
+                <span>Phần tử BPMN: <strong>{{ xmlStats().elements }}</strong></span>
+              }
+            </span>
+          </div>
+
+          <div class="status-right">
+            <span class="sync-indicator" [class.syncing]="isSyncing()">
+              <span
+                nz-icon
+                nzType="swap"
+                nzTheme="outline"
+                class="sync-icon"
+                [nzSpin]="isSyncing()"
+              ></span>
+              <span>Đồng bộ 2 chiều: {{ isSyncing() ? 'Đang nạp...' : 'Sẵn sàng' }}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    }
   </div>
 </div>

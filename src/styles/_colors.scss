@@ -1,0 +1,105 @@
+/* ==========================================================================
+   BẢNG MÀU RÚT GỌN TẬP TRUNG (src/styles/_colors.scss)
+   Tối giản hóa chỉ còn các màu cốt lõi, dễ nhớ, dễ dùng cho toàn bộ dự án
+   ========================================================================== */
+
+// 1. MÀU CHỦ ĐẠO (PRIMARY / BRAND)
+$primary:        #2563eb; // Xanh dương chủ đạo (nút chính, active, icon chính)
+$primary-hover:  #1d4ed8; // Xanh đậm hơn khi hover
+$primary-light:  #eff6ff; // Nền xanh nhạt (tag, badge, highlight)
+
+// 2. MÀU CẢNH BÁO & NGUY HIỂM (DANGER / ERROR)
+$danger:         #ef4444; // Đỏ (nút xóa, lỗi, cảnh báo)
+$danger-hover:   #dc2626; // Đỏ đậm khi hover
+$danger-light:   #fff1f2; // Nền đỏ nhạt (badge xóa, viền cảnh báo)
+
+// 3. MÀU THÀNH CÔNG (SUCCESS)
+$success:        #10b981; // Xanh lá (thành công, xuất bản)
+$success-light:  #ecfdf5; // Nền xanh lá nhạt
+
+// 4. MÀU LƯU Ý (WARNING)
+$warning:        #f59e0b; // Vàng cam (cảnh báo, bản nháp)
+$warning-light:  #fffbeb; // Nền vàng nhạt
+
+// 5. MÀU VĂN BẢN (TYPOGRAPHY)
+$text:           #0f172a; // Chữ đậm chính (tiêu đề, heading, nội dung chính)
+$text-muted:     #64748b; // Chữ phụ (mô tả, nhãn, gợi ý, placeholder)
+
+// 6. VIỀN & PHÂN CÁCH (BORDER & DIVIDER)
+$border:         #e2e8f0; // Viền bảng, viền card, đường phân cách dùng chung
+
+// 7. MÀU NỀN (BACKGROUND)
+$bg-page:        #f8fafc; // Nền trang web, nền xám nhẹ, nền hover
+$white:          #ffffff; // Màu trắng (nền card, popup, modal, chữ nút)
+$black:          #000000; // Đen thuần
+
+// 8. ĐỔ BÓNG (SHADOWS)
+$shadow-primary: rgba(37, 99, 235, 0.25);
+$shadow-danger:  rgba(239, 68, 68, 0.25);
+$shadow-card:    rgba(15, 23, 42, 0.08);
+
+// 9. MÀU DMN (DECISION / TÍM ĐẶC TRƯNG)
+$dmn:            #7c3aed; // Tím DMN chủ đạo
+$dmn-hover:      #6d28d9; // Tím đậm khi hover
+$dmn-light:      #f5f3ff; // Nền tím nhạt (badge, highlight DMN)
+$shadow-dmn:     rgba(124, 58, 237, 0.25);
+
+// -----------------------------------------------------------------------------
+// TƯƠNG THÍCH NGƯỢC (Aliases tương thích với các tệp dùng tiền tố $color-...)
+// -----------------------------------------------------------------------------
+$color-primary:        $primary;
+$color-primary-hover:  $primary-hover;
+$color-primary-active: $primary-hover;
+$color-primary-bg:     $primary-light;
+$color-primary-border: $primary-light;
+
+$color-danger:               $danger;
+$color-danger-hover:         $danger-hover;
+$color-danger-active:        $danger-hover;
+$color-danger-bg:            $danger-light;
+$color-danger-border:        $danger-light;
+$color-danger-bg-subtle:     $danger-light;
+$color-danger-border-subtle: #fecdd3;
+$color-danger-border-hover:  #fda4af;
+$color-danger-text:          $danger;
+$color-danger-text-hover:    $danger-hover;
+
+$color-success:        $success;
+$color-success-hover:  $success;
+$color-success-active: $success;
+$color-success-bg:     $success-light;
+$color-success-border: $success-light;
+$color-success-600:    $success;
+$color-success-700:    #059669;
+$color-success-800:    #047857;
+
+$color-warning:        $warning;
+$color-warning-hover:  $warning;
+$color-warning-active: $warning;
+$color-warning-bg:     $warning-light;
+
+$color-info:           $primary;
+$color-info-hover:     $primary-hover;
+$color-info-bg:        $primary-light;
+$color-info-border:    $primary-light;
+
+$color-text-title:       $text;
+$color-text-main:        $text;
+$color-text-body:        $text;
+$color-text-secondary:   $text-muted;
+$color-text-muted:       $text-muted;
+$color-text-placeholder: $text-muted;
+
+$color-border-subtle:  $border;
+$color-border-default: $border;
+$color-border-medium:  $border;
+$color-border-strong:  $border;
+
+$color-bg-page:        $bg-page;
+$color-bg-card:        $white;
+$color-bg-alt:         $bg-page;
+$color-bg-hover:       $border;
+$color-bg-active:      $border;
+
+$color-white:          $white;
+$color-black:          $black;

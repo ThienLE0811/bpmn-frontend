@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { Observable, tap } from 'rxjs';
 import { User, UserQueryParams, UserRole, UserStatus } from '@core/models/user.model';
 import { ApiErrorHandlerService } from '@shared/services';
 import { formatDateTime, generateTempPassword } from '@shared/utils';
@@ -52,6 +53,114 @@ export class UserService {
     });
   }
 
+  getUserById(id: string): Observable<User> {
+    return this.userApi.getById(id).pipe(
+      tap({
+        next: (user) => {
+          if (user) {
+            this.allUsers = this.allUsers.map((u) => (u.id === user.id ? { ...u, ...user } : u));
+            this.usersSignal.set(this.allUsers);
+          }
+        },
+        error: (err) => {
+          console.error(`Lỗi khi tải chi tiết người dùng (${id}) qua API:`, err);
+        },
+      }),
+    );
+  }
+
+  createUser(userData: {
+    username: string;
+    fullName: string;
+    email: string;
+    role: UserRole;
+    status: UserStatus;
+  }): Observable<User> {
+    const cleanPayload: Partial<User> = {
+      username: userData.username.trim(),
+      fullName: userData.fullName.trim(),
+      email: userData.email.trim(),
+      role: userData.role || 'DEVELOPER',
+      status: userData.status || 'ACTIVE',
+    };
+
+    return this.userApi.create(cleanPayload).pipe(
+      tap({
+        next: (created) => {
+          const fallbackUser: User = {
+            id: created?.id || 'u-' + Date.now(),
+            username: created?.username || cleanPayload.username!,
+            fullName: created?.fullName || cleanPayload.fullName!,
+            email: created?.email || cleanPayload.email!,
+            role: created?.role || cleanPayload.role || 'DEVELOPER',
+            status: created?.status || cleanPayload.status || 'ACTIVE',
+            createdAt: created?.createdAt || formatDateTime(),
+            updatedAt: created?.updatedAt || formatDateTime(),
+          };
+          const finalUser = created?.id ? created : fallbackUser;
+
+          this.allUsers = [finalUser, ...this.allUsers.filter((u) => u.id !== finalUser.id)];
+          this.usersSignal.set(this.allUsers);
+          this.message.success(`Đã tạo tài khoản người dùng "${finalUser.fullName}" thành công.`);
+        },
+        error: (err) => {
+          console.error('Lỗi khi tạo mới người dùng qua API (POST /api/users):', err);
+          const errorMsg = this.errorHandler.handleError(err, 'Lỗi khi tạo mới người dùng.');
+          this.errorSignal.set(errorMsg);
+        },
+      }),
+    );
+  }
+
+  updateUser(
+    id: string,
+    userData: {
+      username?: string;
+      fullName: string;
+      email: string;
+      role: UserRole;
+      status: UserStatus;
+    },
+  ): Observable<User> {
+    const cleanPayload: Partial<User> = {
+      ...(userData.username ? { username: userData.username.trim() } : {}),
+      fullName: userData.fullName.trim(),
+      email: userData.email.trim(),
+      role: userData.role,
+      status: userData.status,
+    };
+
+    return this.userApi.update(id, cleanPayload).pipe(
+      tap({
+        next: (updated) => {
+          const nowStr = formatDateTime();
+          const target = this.allUsers.find((u) => u.id === id);
+          const finalUser: User = {
+            ...(target || {}),
+            ...(updated || {}),
+            id,
+            username: updated?.username || target?.username || userData.username || '',
+            fullName: updated?.fullName || cleanPayload.fullName || target?.fullName || '',
+            email: updated?.email || cleanPayload.email || target?.email || '',
+            role: updated?.role || cleanPayload.role || target?.role || 'DEVELOPER',
+            status: updated?.status || cleanPayload.status || target?.status || 'ACTIVE',
+            createdAt: updated?.createdAt || target?.createdAt || nowStr,
+            updatedAt: updated?.updatedAt || nowStr,
+          };
+
+          this.allUsers = this.allUsers.map((u) => (u.id === id ? finalUser : u));
+          this.usersSignal.set(this.allUsers);
+          this.message.success(`Đã cập nhật thông tin người dùng "${finalUser.fullName}" thành công.`);
+        },
+        error: (err) => {
+          console.error(`Lỗi khi cập nhật người dùng qua API (PUT /api/users/${id}):`, err);
+          const errorMsg = this.errorHandler.handleError(err, 'Lỗi khi cập nhật thông tin người dùng.');
+          this.errorSignal.set(errorMsg);
+        },
+      }),
+    );
+  }
+
   saveUser(userData: {
     id?: string;
     username: string;
@@ -59,98 +168,36 @@ export class UserService {
     email: string;
     role: UserRole;
     status: UserStatus;
-  }): User {
-    const list = this.allUsers;
-    const nowStr = formatDateTime();
-
+  }): Observable<User> {
     if (userData.id) {
-      // Update
-      const existing = list.find((u) => u.id === userData.id);
-      const updatedItem: User = {
-        id: userData.id,
-        username: userData.username.trim(),
-        fullName: userData.fullName.trim(),
-        email: userData.email.trim(),
-        role: userData.role || existing?.role || 'DEVELOPER',
-        status: userData.status || existing?.status || 'ACTIVE',
-        createdAt: existing?.createdAt || nowStr,
-        updatedAt: nowStr,
-      };
-
-      this.userApi.update(userData.id, updatedItem).subscribe({
-        next: (res) => {
-          if (res) {
-            this.allUsers = this.allUsers.map((u) => (u.id === res.id ? res : u));
-            this.usersSignal.set(this.usersSignal().map((u) => (u.id === res.id ? res : u)));
-          }
-        },
-        error: (err) => {
-          console.warn('API update failed, updating local state:', err);
-          this.errorHandler.handleError(err);
-        },
-      });
-
-      this.allUsers = this.allUsers.map((u) => (u.id === userData.id ? updatedItem : u));
-      this.usersSignal.set(this.usersSignal().map((u) => (u.id === userData.id ? updatedItem : u)));
-      this.message.success(`Đã cập nhật thông tin người dùng "${updatedItem.fullName}" thành công.`);
-      return updatedItem;
+      return this.updateUser(userData.id, userData);
     } else {
-      // Create new
-      const newId = 'u-' + String(Date.now()).slice(-4);
-      const newUser: User = {
-        id: newId,
-        username: userData.username.trim(),
-        fullName: userData.fullName.trim(),
-        email: userData.email.trim(),
-        role: userData.role || 'DEVELOPER',
-        status: userData.status || 'ACTIVE',
-        createdAt: nowStr,
-        updatedAt: nowStr,
-      };
-
-      this.userApi.create(newUser).subscribe({
-        next: (res) => {
-          if (res) {
-            this.allUsers = [res, ...this.allUsers.filter((u) => u.id !== newId)];
-            this.usersSignal.set([res, ...this.usersSignal().filter((u) => u.id !== newId)]);
-          }
-        },
-        error: (err) => {
-          console.warn('API create failed, updating local state:', err);
-          this.errorHandler.handleError(err);
-        },
-      });
-
-      this.allUsers = [newUser, ...this.allUsers];
-      this.usersSignal.set([newUser, ...this.usersSignal()]);
-      this.message.success(`Đã tạo tài khoản người dùng "${newUser.fullName}" thành công.`);
-      return newUser;
+      return this.createUser(userData);
     }
   }
 
-  deleteUser(id: string): void {
+  deleteUser(id: string): Observable<void> {
     const target = this.allUsers.find((u) => u.id === id);
     const targetName = target ? target.fullName : 'Người dùng';
 
-    this.userApi.delete(id).subscribe({
-      next: () => {
-        this.allUsers = this.allUsers.filter((u) => u.id !== id);
-        this.usersSignal.set(this.usersSignal().filter((u) => u.id !== id));
-        this.message.success(`Đã xóa tài khoản "${targetName}".`);
-      },
-      error: (err) => {
-        console.warn('API delete failed, updating local state:', err);
-        this.allUsers = this.allUsers.filter((u) => u.id !== id);
-        this.usersSignal.set(this.usersSignal().filter((u) => u.id !== id));
-        this.message.success(`Đã xóa tài khoản "${targetName}".`);
-      },
-    });
+    return this.userApi.delete(id).pipe(
+      tap({
+        next: () => {
+          this.allUsers = this.allUsers.filter((u) => u.id !== id);
+          this.usersSignal.set(this.allUsers);
+          this.message.success(`Đã xóa tài khoản "${targetName}" thành công.`);
+        },
+        error: (err) => {
+          console.error(`Lỗi khi xóa người dùng qua API (DELETE /api/users/${id}):`, err);
+          const errorMsg = this.errorHandler.handleError(err, 'Lỗi khi xóa tài khoản người dùng.');
+          this.errorSignal.set(errorMsg);
+        },
+      }),
+    );
   }
 
-  toggleStatus(id: string, newStatus: UserStatus): void {
+  toggleStatus(id: string, newStatus: UserStatus): Observable<User> {
     const target = this.allUsers.find((u) => u.id === id);
-    if (!target) return;
-
     const statusLabel =
       newStatus === 'ACTIVE'
         ? 'Hoạt động'
@@ -158,39 +205,46 @@ export class UserService {
           ? 'Tạm dừng'
           : 'Khóa tài khoản';
 
-    this.userApi.toggleStatus(id, newStatus).subscribe({
-      next: (res) => {
-        if (res) {
-          this.allUsers = this.allUsers.map((u) => (u.id === res.id ? res : u));
-          this.usersSignal.set(this.usersSignal().map((u) => (u.id === res.id ? res : u)));
-        }
-      },
-      error: (err) => {
-        console.warn('API toggle status failed, updating local state:', err);
-      },
-    });
+    return this.userApi.toggleStatus(id, newStatus).pipe(
+      tap({
+        next: (res) => {
+          const updated: User = {
+            ...(target || {}),
+            ...(res || {}),
+            id,
+            status: newStatus,
+            updatedAt: res?.updatedAt || formatDateTime(),
+          } as User;
 
-    const updated: User = { ...target, status: newStatus, updatedAt: formatDateTime() };
-    this.allUsers = this.allUsers.map((u) => (u.id === id ? updated : u));
-    this.usersSignal.set(this.usersSignal().map((u) => (u.id === id ? updated : u)));
-    this.message.info(`Đã chuyển trạng thái tài khoản "${target.fullName}" sang: ${statusLabel}.`);
+          this.allUsers = this.allUsers.map((u) => (u.id === id ? updated : u));
+          this.usersSignal.set(this.allUsers);
+          this.message.info(`Đã chuyển trạng thái tài khoản "${target?.fullName || 'Người dùng'}" sang: ${statusLabel}.`);
+        },
+        error: (err) => {
+          console.warn('API toggle status failed:', err);
+          this.errorHandler.handleError(err, 'Không thể cập nhật trạng thái người dùng.');
+        },
+      }),
+    );
   }
 
-  resetPassword(id: string): void {
+  resetPassword(id: string): Observable<{ success: boolean; message?: string }> {
     const target = this.allUsers.find((u) => u.id === id);
     const targetName = target ? target.fullName : 'người dùng';
 
-    this.userApi.resetPassword(id).subscribe({
-      next: () => {
-        this.message.success(`Đã gửi email cấp lại mật khẩu tạm thời cho ${targetName}.`);
-      },
-      error: () => {
-        // Fallback feedback
-        this.message.success(
-          `Mật khẩu tạm thời đã được đặt lại thành công cho ${targetName}: "${generateTempPassword()}"`,
-        );
-      },
-    });
+    return this.userApi.resetPassword(id).pipe(
+      tap({
+        next: () => {
+          this.message.success(`Đã gửi email cấp lại mật khẩu tạm thời cho ${targetName}.`);
+        },
+        error: () => {
+          // Fallback feedback
+          this.message.success(
+            `Mật khẩu tạm thời đã được đặt lại thành công cho ${targetName}: "${generateTempPassword()}"`,
+          );
+        },
+      }),
+    );
   }
 }
 

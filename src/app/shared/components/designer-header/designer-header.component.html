@@ -10,6 +10,7 @@
         [ngModel]="title()"
         (ngModelChange)="title.set($event)"
         [placeholder]="effectivePlaceholder()"
+        [readonly]="readOnly()"
       />
       <div class="meta-row">
         <span class="status-badge" [class.modified]="isModified()">
@@ -24,12 +25,43 @@
 
   <!-- Actions Bar -->
   <div class="toolbar-actions">
+    <!-- Mode Switcher (Sơ đồ / Mã XML) -->
+    @if (showModeSwitch()) {
+      <div class="header-mode-switch">
+        <button
+          type="button"
+          class="mode-btn"
+          [class.active]="activeMode() === 'design'"
+          (click)="setMode('design')"
+          title="Chế độ sơ đồ trực quan (Canvas & thuộc tính)"
+        >
+          <span nz-icon nzType="deployment-unit" nzTheme="outline"></span>
+          <span class="btn-text">Sơ đồ</span>
+        </button>
+
+        <button
+          type="button"
+          class="mode-btn"
+          [class.active]="activeMode() === 'xml'"
+          (click)="setMode('xml')"
+          title="Chế độ dán và chỉnh sửa mã nguồn BPMN 2.0 XML"
+        >
+          <span nz-icon nzType="code" nzTheme="outline"></span>
+          <span class="btn-text">Mã XML</span>
+        </button>
+      </div>
+
+      <div class="divider"></div>
+    }
+
     <!-- Save & Close Primary Actions -->
     <div class="btn-group">
-      <button class="btn btn-save" (click)="save.emit()" [title]="effectiveSaveLabel()">
-        <span nz-icon nzType="save" nzTheme="outline"></span>
-        {{ effectiveSaveLabel() }}
-      </button>
+      @if (!readOnly()) {
+        <button class="btn btn-save" (click)="save.emit()" [title]="effectiveSaveLabel()">
+          <span nz-icon nzType="save" nzTheme="outline"></span>
+          {{ effectiveSaveLabel() }}
+        </button>
+      }
 
       <button class="btn btn-close" (click)="closed.emit()" [title]="closeTitle()">
         <span nz-icon nzType="close" nzTheme="outline"></span>
@@ -61,6 +93,12 @@
             <span nz-icon nzType="upload" nzTheme="outline" class="dropdown-menu-icon"></span>
             <span>Nhập file</span>
           </li>
+          @if (showModeSwitch()) {
+            <li nz-menu-item (click)="pasteXml.emit()" title="Dán mã BPMN XML từ Clipboard">
+              <span nz-icon nzType="snippets" nzTheme="outline" class="dropdown-menu-icon"></span>
+              <span>Dán XML từ Clipboard</span>
+            </li>
+          }
           <li nz-menu-divider></li>
           <li nz-menu-item (click)="exportXml.emit()" title="Tải xuống XML">
             <span nz-icon nzType="download" nzTheme="outline" class="dropdown-menu-icon"></span>

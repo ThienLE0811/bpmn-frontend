@@ -9,8 +9,9 @@ import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzResizableModule, NzResizeEvent } from 'ng-zorro-antd/resizable';
 import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
+import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { DmnDecisionService } from '@core/services';
-import { DmnDecision, DmnDecisionStatus } from '@core/models';
+import { DmnDecision } from '@core/models';
 import { DmnDesignerComponent } from '@shared/components/dmn-designer/dmn-designer.component';
 
 @Component({
@@ -27,6 +28,7 @@ import { DmnDesignerComponent } from '@shared/components/dmn-designer/dmn-design
     NzSelectModule,
     NzResizableModule,
     NzModalModule,
+    NzSpinModule,
     DmnDesignerComponent,
   ],
   templateUrl: './dmn-list.component.html',
@@ -43,8 +45,10 @@ export class DmnListComponent implements OnInit {
   }
 
   protected isModalOpen = signal<boolean>(false);
+  protected modalMode = signal<'view' | 'edit' | 'create'>('edit');
+  protected isDetailLoading = signal<boolean>(false);
+  protected isSubmitting = signal<boolean>(false);
   protected isStatsOpen = signal<boolean>(false);
-  protected isAdvancedFilterOpen = signal<boolean>(false);
   protected selectedDecision = signal<DmnDecision | null>(null);
   protected pageSize = signal<number>(10);
   protected designerWidth = signal<number | null>(null);
@@ -59,7 +63,13 @@ export class DmnListComponent implements OnInit {
     status: string;
   } | null = null;
 
+  toggleStats(): void {
+    this.isStatsOpen.update((v) => !v);
+  }
+
   // Filter State for Server-side API query
+  protected isAdvancedFilterOpen = signal<boolean>(false);
+
   protected readonly filterModel = signal({
     decisionKey: '',
     name: '',
@@ -85,10 +95,6 @@ export class DmnListComponent implements OnInit {
 
   protected readonly isFiltered = computed(() => this.activeFilterCount() > 0);
 
-  toggleStats(): void {
-    this.isStatsOpen.update((v) => !v);
-  }
-
   toggleAdvancedFilter(): void {
     this.isAdvancedFilterOpen.update((v) => !v);
   }
@@ -107,7 +113,7 @@ export class DmnListComponent implements OnInit {
   protected readonly decisionForm = form(this.decisionFormModel, (schema) => {
     required(schema.decisionKey, { message: 'Mã bảng quyết định không được để trống' });
     required(schema.name, { message: 'Tên bảng quyết định không được để trống' });
-    required(schema.version, { message: 'Phiên bản không được để trống' });
+    required(schema.category, { message: 'Danh mục không được để trống' });
   });
 
   protected decisions = this.dmnService.decisions;
@@ -173,6 +179,12 @@ export class DmnListComponent implements OnInit {
   protected sortName = (a: DmnDecision, b: DmnDecision): number =>
     (a.name || '').localeCompare(b.name || '');
 
+  protected sortCategory = (a: DmnDecision, b: DmnDecision): number =>
+    (a.category || '').localeCompare(b.category || '');
+
+  protected sortHitPolicy = (a: DmnDecision, b: DmnDecision): number =>
+    (a.hitPolicy || '').localeCompare(b.hitPolicy || '');
+
   protected sortVersion = (a: DmnDecision, b: DmnDecision): number =>
     (a.version || 0) - (b.version || 0);
 
@@ -192,6 +204,7 @@ export class DmnListComponent implements OnInit {
   }
 
   openCreateModal(): void {
+    this.modalMode.set('create');
     const nextKey = 'DMN-DEC-' + (this.decisions().length + 1).toString().padStart(2, '0');
     const initial = {
       decisionKey: nextKey,
@@ -205,23 +218,70 @@ export class DmnListComponent implements OnInit {
     this.selectedDecision.set(null);
     this.decisionFormModel.set({ ...initial });
     this.initialFormModel = { ...initial };
+    this.isDetailLoading.set(false);
     this.isModalOpen.set(true);
   }
 
-  openEditModal(decision: DmnDecision): void {
+  openDetailModal(decision: DmnDecision, event?: Event): void {
+    event?.stopPropagation();
+    this.loadAndOpenModal(decision.id, 'view', decision);
+  }
+
+  openEditModal(decision: DmnDecision, event?: Event): void {
+    event?.stopPropagation();
+    this.loadAndOpenModal(decision.id, 'edit', decision);
+  }
+
+  switchToEditMode(): void {
+    this.modalMode.set('edit');
+  }
+
+  private loadAndOpenModal(id: string, mode: 'view' | 'edit', fallbackDecision?: DmnDecision): void {
+    this.modalMode.set(mode);
+    this.isModalOpen.set(true);
+    this.isDetailLoading.set(true);
+
+    if (fallbackDecision) {
+      this.selectedDecision.set(fallbackDecision);
+      this.populateFormModel(fallbackDecision);
+    }
+
+    // Gọi API chi tiết /api/dmn-decisions/{id}
+    this.dmnService.getDecisionById(id).subscribe({
+      next: (detail) => {
+        const fullData = detail || fallbackDecision;
+        if (fullData) {
+          this.selectedDecision.set(fullData);
+          this.populateFormModel(fullData);
+        }
+        this.isDetailLoading.set(false);
+      },
+      error: (err) => {
+        console.warn(
+          `Không thể tải chi tiết bảng quyết định (${id}) từ API /api/dmn-decisions/${id}, sử dụng dữ liệu tạm thời:`,
+          err,
+        );
+        if (fallbackDecision) {
+          this.selectedDecision.set(fallbackDecision);
+          this.populateFormModel(fallbackDecision);
+        }
+        this.isDetailLoading.set(false);
+      },
+    });
+  }
+
+  private populateFormModel(decision: DmnDecision): void {
     const initial = {
-      decisionKey: decision.decisionKey,
-      name: decision.name,
+      decisionKey: decision.decisionKey || '',
+      name: decision.name || '',
       description: decision.description || '',
       hitPolicy: decision.hitPolicy || 'FIRST',
       category: decision.category || 'GENERAL',
       version: typeof decision.version === 'number' ? decision.version : 1,
-      status: decision.status,
+      status: decision.status || 'DRAFT',
     };
-    this.selectedDecision.set(decision);
     this.decisionFormModel.set({ ...initial });
     this.initialFormModel = { ...initial };
-    this.isModalOpen.set(true);
   }
 
   protected hasUnsavedChanges(): boolean {
@@ -248,7 +308,8 @@ export class DmnListComponent implements OnInit {
     if (this.hasUnsavedChanges()) {
       this.modal.confirm({
         nzTitle: 'Xác nhận đóng',
-        nzContent: 'Bảng quyết định đã có thay đổi chưa được lưu. Bạn có chắc chắn muốn đóng và hủy bỏ các thay đổi này không?',
+        nzContent:
+          'Bảng quyết định đã có thay đổi chưa được lưu. Bạn có chắc chắn muốn đóng và hủy bỏ các thay đổi này không?',
         nzOkText: 'Đóng không lưu',
         nzOkDanger: true,
         nzCancelText: 'Tiếp tục chỉnh sửa',
@@ -267,30 +328,88 @@ export class DmnListComponent implements OnInit {
     this.isModalOpen.set(false);
     this.selectedDecision.set(null);
     this.initialFormModel = null;
+    this.isDetailLoading.set(false);
+    this.isSubmitting.set(false);
+  }
+
+  submitFromSidebar(): void {
+    if (this.designerComponent) {
+      this.designerComponent.onSave();
+    }
   }
 
   onSaveFromModal(event: { name: string; xml: string }): void {
     submit(this.decisionForm, async () => {
       const current = this.selectedDecision();
       const formVal = this.decisionFormModel();
-      this.dmnService.saveDecision({
-        id: current?.id,
-        decisionKey: formVal.decisionKey,
-        name: formVal.name.trim() || event.name,
-        description: formVal.description,
-        hitPolicy: formVal.hitPolicy,
-        category: formVal.category,
-        version: Number(formVal.version) || 1,
-        status: formVal.status,
-        dmnXml: event.xml,
-      });
 
-      this.forceCloseModal();
+      if (this.modalMode() === 'create' || !current?.id) {
+        // Gọi API tạo mới: POST /api/dmn-decisions
+        this.isSubmitting.set(true);
+        this.dmnService
+          .createDecision({
+            decisionKey: formVal.decisionKey,
+            name: formVal.name.trim() || event.name,
+            description: formVal.description,
+            hitPolicy: formVal.hitPolicy,
+            category: formVal.category,
+            dmnXml: event.xml,
+            createdBy: 'Admin',
+          })
+          .subscribe({
+            next: () => {
+              this.isSubmitting.set(false);
+              this.forceCloseModal();
+            },
+            error: () => {
+              this.isSubmitting.set(false);
+            },
+          });
+      } else {
+        // Cập nhật bảng quyết định hiện tại: PUT /api/dmn-decisions/:id
+        this.isSubmitting.set(true);
+        this.dmnService
+          .updateDecision(current.id, {
+            name: formVal.name.trim() || event.name,
+            description: formVal.description,
+            hitPolicy: formVal.hitPolicy,
+            category: formVal.category,
+            status: formVal.status,
+            dmnXml: event.xml,
+            updatedBy: 'Admin',
+          })
+          .subscribe({
+            next: () => {
+              this.isSubmitting.set(false);
+              this.forceCloseModal();
+            },
+            error: () => {
+              this.isSubmitting.set(false);
+            },
+          });
+      }
     });
   }
 
   deleteDecision(decision: DmnDecision, event?: Event): void {
     event?.stopPropagation();
-    this.dmnService.deleteDecision(decision.id);
+    // Gọi API xóa: DELETE /api/dmn-decisions/:id
+    this.dmnService.deleteDecision(decision.id).subscribe();
+  }
+
+  deleteFromModal(): void {
+    const current = this.selectedDecision();
+    if (!current?.id) return;
+    this.isSubmitting.set(true);
+    // Gọi API xóa: DELETE /api/dmn-decisions/:id
+    this.dmnService.deleteDecision(current.id).subscribe({
+      next: () => {
+        this.isSubmitting.set(false);
+        this.forceCloseModal();
+      },
+      error: () => {
+        this.isSubmitting.set(false);
+      },
+    });
   }
 }

@@ -353,6 +353,8 @@
     [nzContent]="modalContentTemplate"
     [nzFooter]="modalFooterTemplate"
     (nzOnCancel)="closeModal()"
+    [nzMaskClosable]="!isSubmitting()"
+    [nzClosable]="!isSubmitting()"
     [nzWidth]="560"
     [nzCentered]="true"
   >
@@ -374,7 +376,7 @@
                 type="text"
                 nz-input
                 placeholder="vd: thienlv"
-                [readOnly]="!!selectedUser()"
+                [readOnly]="!!selectedUser() || isSubmitting()"
                 [formField]="userForm.username"
               />
             </nz-input-wrapper>
@@ -395,6 +397,7 @@
                 type="text"
                 nz-input
                 placeholder="vd: Le Van Thien"
+                [readOnly]="isSubmitting()"
                 [formField]="userForm.fullName"
               />
             </nz-input-wrapper>
@@ -416,6 +419,7 @@
               type="email"
               nz-input
               placeholder="vd: thienlv@paraline.io"
+              [readOnly]="isSubmitting()"
               [formField]="userForm.email"
             />
           </nz-input-wrapper>
@@ -431,7 +435,7 @@
         <div class="form-row two-cols">
           <div class="form-group">
             <label class="form-label required">Vai trò hệ thống</label>
-            <nz-select [formField]="userForm.role" class="form-select">
+            <nz-select [formField]="userForm.role" class="form-select" [nzDisabled]="isSubmitting()">
               <nz-option nzValue="ADMIN" nzLabel="Quản trị viên (ADMIN)"></nz-option>
               <nz-option nzValue="DEVELOPER" nzLabel="Lập trình viên (DEVELOPER)"></nz-option>
               <nz-option nzValue="MANAGER" nzLabel="Quản lý (MANAGER)"></nz-option>
@@ -442,7 +446,7 @@
 
           <div class="form-group">
             <label class="form-label required">Trạng thái tài khoản</label>
-            <nz-select [formField]="userForm.status" class="form-select">
+            <nz-select [formField]="userForm.status" class="form-select" [nzDisabled]="isSubmitting()">
               <nz-option nzValue="ACTIVE" nzLabel="Đang hoạt động (ACTIVE)"></nz-option>
               <nz-option nzValue="INACTIVE" nzLabel="Tạm dừng (INACTIVE)"></nz-option>
               <nz-option nzValue="LOCKED" nzLabel="Đã khóa (LOCKED)"></nz-option>
@@ -454,10 +458,15 @@
 
     <ng-template #modalFooterTemplate>
       <div class="modal-footer-custom">
-        <button class="btn btn-outline" (click)="closeModal()">Hủy bỏ</button>
-        <button class="btn btn-primary" (click)="saveUser()">
-          <span nz-icon nzType="save" nzTheme="outline"></span>
-          <span>{{ selectedUser() ? 'Lưu thay đổi' : 'Tạo người dùng' }}</span>
+        <button class="btn btn-outline" (click)="closeModal()" [disabled]="isSubmitting()">Hủy bỏ</button>
+        <button class="btn btn-primary" (click)="saveUser()" [disabled]="isSubmitting()">
+          @if (isSubmitting()) {
+            <span nz-icon nzType="loading" nzTheme="outline"></span>
+            <span>Đang xử lý...</span>
+          } @else {
+            <span nz-icon nzType="save" nzTheme="outline"></span>
+            <span>{{ selectedUser() ? 'Lưu thay đổi' : 'Tạo người dùng' }}</span>
+          }
         </button>
       </div>
     </ng-template>
@@ -566,6 +575,20 @@
             <button class="btn btn-secondary full-width" (click)="resetPassword(user)">
               <span nz-icon nzType="key"></span>
               <span>Đặt lại mật khẩu</span>
+            </button>
+
+            <button
+              class="btn btn-danger-outline full-width"
+              nz-popconfirm
+              nzPopconfirmTitle="Bạn có chắc chắn muốn xóa tài khoản này không?"
+              nzOkText="Xóa tài khoản"
+              nzOkDanger
+              nzCancelText="Hủy"
+              nzPopconfirmPlacement="top"
+              (nzOnConfirm)="deleteUser(user)"
+            >
+              <span nz-icon nzType="delete"></span>
+              <span>Xóa tài khoản</span>
             </button>
           </div>
         </div>

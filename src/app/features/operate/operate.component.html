@@ -1,0 +1,472 @@
+<div class="operate-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-info">
+      <div class="title-row">
+        <span nz-icon nzType="fund-projection-screen" nzTheme="outline" class="title-icon"></span>
+        <h1 class="page-title">Camunda Operate - Giám sát Quy trình</h1>
+      </div>
+      <p class="page-desc">
+        Theo dõi trạng thái thực thi quy trình theo thời gian thực, trực quan hóa vị trí token và xử lý sự cố runtime.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        nz-button
+        nzType="default"
+        [nzLoading]="operateService.isLoading()"
+        (click)="refresh()"
+        class="action-btn"
+      >
+        <span nz-icon nzType="sync" [nzSpin]="operateService.isLoading()"></span>
+        <span>Làm mới</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Metric Overview Cards -->
+  @if (operateService.metrics(); as m) {
+    <div class="metrics-grid">
+      <!-- Total -->
+      <div
+        class="metric-card"
+        [class.active-filter]="operateService.filterState() === 'ALL'"
+        (click)="onFilterStateChange('ALL')"
+      >
+        <div class="metric-icon total-icon">
+          <span nz-icon nzType="appstore" nzTheme="outline"></span>
+        </div>
+        <div class="metric-body">
+          <span class="metric-label">Tổng số phiên</span>
+          <span class="metric-value">{{ m.totalInstances }}</span>
+        </div>
+      </div>
+
+      <!-- Active -->
+      <div
+        class="metric-card active-card"
+        [class.active-filter]="operateService.filterState() === 'ACTIVE'"
+        (click)="onFilterStateChange('ACTIVE')"
+      >
+        <div class="metric-icon active-icon">
+          <span nz-icon nzType="play-circle" nzTheme="outline"></span>
+        </div>
+        <div class="metric-body">
+          <span class="metric-label">Đang thực thi</span>
+          <span class="metric-value text-active">{{ m.activeInstances }}</span>
+        </div>
+      </div>
+
+      <!-- Incident -->
+      <div
+        class="metric-card incident-card"
+        [class.active-filter]="operateService.filterState() === 'INCIDENT'"
+        (click)="onFilterStateChange('INCIDENT')"
+      >
+        <div class="metric-icon incident-icon">
+          <span nz-icon nzType="bug" nzTheme="outline"></span>
+        </div>
+        <div class="metric-body">
+          <span class="metric-label">Sự cố (Incidents)</span>
+          <span class="metric-value text-incident">{{ m.incidentInstances }}</span>
+        </div>
+        @if (m.incidentInstances > 0) {
+          <span class="pulse-dot"></span>
+        }
+      </div>
+
+      <!-- Completed -->
+      <div
+        class="metric-card completed-card"
+        [class.active-filter]="operateService.filterState() === 'COMPLETED'"
+        (click)="onFilterStateChange('COMPLETED')"
+      >
+        <div class="metric-icon completed-icon">
+          <span nz-icon nzType="check-circle" nzTheme="outline"></span>
+        </div>
+        <div class="metric-body">
+          <span class="metric-label">Đã hoàn thành</span>
+          <span class="metric-value text-completed">{{ m.completedInstances }}</span>
+        </div>
+      </div>
+
+      <!-- Canceled -->
+      <div
+        class="metric-card canceled-card"
+        [class.active-filter]="operateService.filterState() === 'CANCELED'"
+        (click)="onFilterStateChange('CANCELED')"
+      >
+        <div class="metric-icon canceled-icon">
+          <span nz-icon nzType="stop" nzTheme="outline"></span>
+        </div>
+        <div class="metric-body">
+          <span class="metric-label">Đã hủy</span>
+          <span class="metric-value text-canceled">{{ m.canceledInstances }}</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Filter & Search Toolbar -->
+  <div class="filter-toolbar">
+    <div class="filter-left">
+      <nz-input-wrapper [nzAllowClear]="true" class="search-input">
+        <span nzInputPrefix>
+          <span nz-icon nzType="search" nzTheme="outline"></span>
+        </span>
+        <input
+          type="text"
+          nz-input
+          placeholder="Tìm theo Mã phiên (ID), Tên quy trình..."
+          [ngModel]="searchInput()"
+          (ngModelChange)="onSearchChange($event)"
+        />
+      </nz-input-wrapper>
+
+      <nz-select
+        class="status-select"
+        [ngModel]="operateService.filterState()"
+        (ngModelChange)="onFilterStateChange($event)"
+      >
+        <nz-option nzValue="ALL" nzLabel="Tất cả trạng thái"></nz-option>
+        <nz-option nzValue="ACTIVE" nzLabel="Đang thực thi (Active)"></nz-option>
+        <nz-option nzValue="INCIDENT" nzLabel="Có sự cố (Incident)"></nz-option>
+        <nz-option nzValue="COMPLETED" nzLabel="Đã hoàn thành (Completed)"></nz-option>
+        <nz-option nzValue="CANCELED" nzLabel="Đã hủy (Canceled)"></nz-option>
+      </nz-select>
+    </div>
+
+    <div class="filter-right">
+      <span class="total-badge">
+        Hiển thị <strong>{{ operateService.instances().length }}</strong> phiên
+      </span>
+    </div>
+  </div>
+
+  <!-- Instances Data Table -->
+  <div class="table-container">
+    <nz-table
+      #instancesTable
+      [nzData]="operateService.instances()"
+      [nzLoading]="operateService.isLoading()"
+      [nzPageSize]="pageSize()"
+      (nzPageSizeChange)="pageSize.set($event)"
+      [nzPageIndex]="pageIndex()"
+      (nzPageIndexChange)="pageIndex.set($event)"
+      [nzShowSizeChanger]="true"
+      [nzPageSizeOptions]="[5, 10, 20, 50]"
+      [nzShowTotal]="totalTemplate"
+      [nzBordered]="false"
+      nzSize="middle"
+      class="custom-operate-table"
+    >
+      <thead>
+        <tr>
+          <th nzWidth="160px">Mã phiên (ID)</th>
+          <th>Quy trình (Definition)</th>
+          <th nzWidth="95px" nzAlign="center">Phiên bản</th>
+          <th nzWidth="175px" nzAlign="center">Trạng thái</th>
+          <th nzWidth="175px" nzAlign="center">Bắt đầu</th>
+          <th nzWidth="175px" nzAlign="center">Kết thúc</th>
+          <th nzWidth="110px">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of instancesTable.data; track item.id) {
+          <tr class="table-row-hover">
+            <td>
+              <a class="instance-link" (click)="openDetail(item)">
+                <span nz-icon nzType="branches" nzTheme="outline"></span>
+                <span>{{ item.id }}</span>
+              </a>
+            </td>
+            <td>
+              <div class="process-def-name">{{ item.processDefinitionName }}</div>
+              <div class="process-def-key">{{ item.processDefinitionKey }}</div>
+            </td>
+            <td nzAlign="center">
+              <span class="version-tag">v{{ item.processVersion }}</span>
+            </td>
+            <td nzAlign="center">
+              <div class="status-cell">
+                <nz-tag [nzColor]="getStateTagColor(item.state)" class="status-tag">
+                  {{ getStateLabel(item.state) }}
+                </nz-tag>
+                @if (item.incidentCount > 0) {
+                  <nz-badge
+                    [nzCount]="item.incidentCount"
+                    [nzStyle]="{ backgroundColor: '#ff4d4f' }"
+                    nzTitle="Số sự cố cần xử lý"
+                    class="incident-pill"
+                  ></nz-badge>
+                }
+              </div>
+            </td>
+            <td nzAlign="center">
+              <span class="date-cell">{{ formatTime(item.startDate) }}</span>
+            </td>
+            <td nzAlign="center">
+              <span class="date-cell" [class.empty-text]="!item.endDate">
+                {{ item.endDate ? formatTime(item.endDate) : '- -' }}
+              </span>
+            </td>
+            <td>
+              <div class="action-cell">
+                <button
+                  nz-button
+                  nzType="primary"
+                  nzGhost
+                  nzSize="small"
+                  class="action-icon-btn"
+                  (click)="openDetail(item)"
+                  nzTooltipTitle="Xem chi tiết & Sơ đồ Token"
+                  nz-tooltip
+                >
+                  <span nz-icon nzType="eye" nzTheme="outline"></span>
+                </button>
+
+                @if (item.state === 'ACTIVE' || item.state === 'INCIDENT') {
+                  <button
+                    nz-button
+                    nzType="default"
+                    nzDanger
+                    nzSize="small"
+                    class="action-icon-btn"
+                    nz-popconfirm
+                    nzPopconfirmTitle="Bạn có chắc chắn muốn hủy phiên thực thi này không?"
+                    nzOkText="Hủy phiên"
+                    nzCancelText="Đóng"
+                    (nzOnConfirm)="cancelInstance(item)"
+                    nzTooltipTitle="Hủy phiên quy trình"
+                    nz-tooltip
+                  >
+                    <span nz-icon nzType="stop" nzTheme="outline"></span>
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </nz-table>
+
+    <ng-template #totalTemplate let-total>
+      <span class="total-text">Tổng số: <strong>{{ total }}</strong> phiên thực thi</span>
+    </ng-template>
+  </div>
+
+  <!-- Detail Drawer (Process Instance Inspector) -->
+  <nz-drawer
+    [nzVisible]="isDetailOpen()"
+    [nzWidth]="'80%'"
+    [nzTitle]="drawerTitle"
+    [nzExtra]="drawerExtra"
+    (nzOnClose)="closeDetail()"
+    [nzBodyStyle]="{ padding: '0px' }"
+  >
+    <ng-template #drawerTitle>
+      @if (operateService.selectedInstance(); as inst) {
+        <div class="drawer-header-title">
+          <span nz-icon nzType="branches" nzTheme="outline" class="icon"></span>
+          <span class="title-text">Chi tiết phiên: {{ inst.id }}</span>
+          <nz-tag [nzColor]="getStateTagColor(inst.state)">{{ getStateLabel(inst.state) }}</nz-tag>
+          <span class="sub-text">{{ inst.processDefinitionName }} (v{{ inst.processVersion }})</span>
+        </div>
+      }
+    </ng-template>
+
+    <ng-template #drawerExtra>
+      @if (operateService.selectedInstance(); as inst) {
+        @if (inst.state === 'ACTIVE' || inst.state === 'INCIDENT') {
+          <button
+            nz-button
+            nzDanger
+            nzSize="small"
+            nz-popconfirm
+            nzPopconfirmTitle="Hủy bỏ phiên thực thi quy trình này?"
+            (nzOnConfirm)="cancelInstance(inst)"
+          >
+            <span nz-icon nzType="stop"></span> Hủy phiên
+          </button>
+        }
+      }
+    </ng-template>
+
+    <ng-container *nzDrawerContent>
+      @if (operateService.selectedInstance(); as inst) {
+        <div class="drawer-body-container">
+          <!-- Overview stats inside drawer -->
+          <div class="drawer-summary-bar">
+            <div class="summary-item">
+              <span class="label">Mã quy trình:</span>
+              <span class="value">{{ inst.processDefinitionKey }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Thời điểm bắt đầu:</span>
+              <span class="value">{{ formatTime(inst.startDate) }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Thời điểm kết thúc:</span>
+              <span class="value">{{ formatTime(inst.endDate) }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Node đang dừng:</span>
+              <span class="value active-highlight">{{ inst.activeActivities.length || '0' }} node</span>
+            </div>
+          </div>
+
+          <!-- Tabs for Detail View -->
+          <nz-tabs nzType="card" class="drawer-tabs">
+            <!-- Tab 1: BPMN Token Diagram -->
+            <nz-tab nzTitle="Lược đồ & Vị trí Token">
+              <div class="tab-content diagram-tab">
+                <app-operate-viewer
+                  [xml]="inst.bpmnXml || null"
+                  [activeActivities]="inst.activeActivities"
+                  [incidentActivities]="inst.incidentActivities"
+                  [completedActivities]="inst.completedActivities"
+                ></app-operate-viewer>
+              </div>
+            </nz-tab>
+
+            <!-- Tab 2: Incidents -->
+            <nz-tab [nzTitle]="incidentTabTitle">
+              <ng-template #incidentTabTitle>
+                <span>Sự cố (Incidents)</span>
+                @if (operateService.incidents().length > 0) {
+                  <nz-badge
+                    [nzCount]="operateService.incidents().length"
+                    [nzStyle]="{ backgroundColor: '#ff4d4f', marginLeft: '6px' }"
+                  ></nz-badge>
+                }
+              </ng-template>
+
+              <div class="tab-content incidents-tab">
+                @if (operateService.incidents().length === 0) {
+                  <nz-empty
+                    nzNotFoundImage="simple"
+                    nzNotFoundContent="Không có sự cố runtime nào trong phiên này."
+                  ></nz-empty>
+                } @else {
+                  <div class="incidents-list">
+                    @for (inc of operateService.incidents(); track inc.id) {
+                      <div class="incident-card-item">
+                        <div class="inc-header">
+                          <div class="inc-title">
+                            <span nz-icon nzType="exclamation-circle" nzTheme="fill" class="error-icon"></span>
+                            <span class="activity-name">Bước lỗi: {{ inc.activityName }}</span>
+                            <nz-tag nzColor="red">{{ inc.errorType }}</nz-tag>
+                          </div>
+                          <button
+                            nz-button
+                            nzType="primary"
+                            nzDanger
+                            nzSize="small"
+                            [nzLoading]="operateService.isActionLoading()"
+                            (click)="retryIncident(inc, inst.id)"
+                          >
+                            <span nz-icon nzType="sync"></span> Thử lại (Retry Task)
+                          </button>
+                        </div>
+                        <div class="inc-message">
+                          <strong>Chi tiết thông báo:</strong> {{ inc.errorMessage }}
+                        </div>
+                        <div class="inc-time">
+                          <span nz-icon nzType="clock-circle"></span>
+                          Thời điểm phát sinh: {{ formatTime(inc.creationTime) }} (Mã sự cố: {{ inc.id }})
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </nz-tab>
+
+            <!-- Tab 3: Process Variables -->
+            <nz-tab nzTitle="Biến quy trình (Variables)">
+              <div class="tab-content variables-tab">
+                @if (operateService.variables().length === 0) {
+                  <nz-empty nzNotFoundImage="simple" nzNotFoundContent="Chưa có dữ liệu biến quy trình."></nz-empty>
+                } @else {
+                  <nz-table
+                    #varsTable
+                    [nzData]="operateService.variables()"
+                    [nzShowPagination]="false"
+                    nzSize="small"
+                    class="variables-table"
+                  >
+                    <thead>
+                      <tr>
+                        <th nzWidth="220px">Tên biến (Key)</th>
+                        <th nzWidth="120px">Kiểu dữ liệu</th>
+                        <th>Giá trị hiện thời (Value)</th>
+                        <th nzWidth="180px">Cập nhật lúc</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (v of varsTable.data; track v.name) {
+                        <tr>
+                          <td>
+                            <code class="var-name">{{ v.name }}</code>
+                          </td>
+                          <td>
+                            <nz-tag nzColor="blue">{{ v.type }}</nz-tag>
+                          </td>
+                          <td>
+                            <code class="var-val">{{ v.value | json }}</code>
+                          </td>
+                          <td>{{ formatTime(v.lastUpdated) }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </nz-table>
+                }
+              </div>
+            </nz-tab>
+
+            <!-- Tab 4: Execution Audit Trail -->
+            <nz-tab nzTitle="Nhật ký thực thi (Audit Trail)">
+              <div class="tab-content audit-tab">
+                @if (operateService.auditTrail().length === 0) {
+                  <nz-empty nzNotFoundImage="simple" nzNotFoundContent="Chưa có nhật ký các bước."></nz-empty>
+                } @else {
+                  <nz-timeline class="audit-timeline">
+                    @for (act of operateService.auditTrail(); track act.id) {
+                      <nz-timeline-item
+                        [nzColor]="act.state === 'COMPLETED' ? 'green' : act.state === 'FAILED' ? 'red' : 'blue'"
+                      >
+                        <div class="timeline-entry">
+                          <div class="act-header">
+                            <span class="act-name">{{ act.activityName }}</span>
+                            <nz-tag nzColor="default">{{ act.activityType }}</nz-tag>
+                            @if (act.state === 'COMPLETED') {
+                              <nz-tag nzColor="success">Hoàn thành</nz-tag>
+                            } @else if (act.state === 'FAILED') {
+                              <nz-tag nzColor="error">Gặp sự cố</nz-tag>
+                            } @else {
+                              <nz-tag nzColor="processing">Đang chạy</nz-tag>
+                            }
+                          </div>
+                          <div class="act-time-row">
+                            <span>Bắt đầu: {{ formatTime(act.startTime) }}</span>
+                            @if (act.endTime) {
+                              <span> • Kết thúc: {{ formatTime(act.endTime) }}</span>
+                            }
+                            @if (act.duration) {
+                              <span class="duration"> • Thời lượng: {{ act.duration }}</span>
+                            }
+                          </div>
+                        </div>
+                      </nz-timeline-item>
+                    }
+                  </nz-timeline>
+                }
+              </div>
+            </nz-tab>
+          </nz-tabs>
+        </div>
+      }
+    </ng-container>
+  </nz-drawer>
+</div>

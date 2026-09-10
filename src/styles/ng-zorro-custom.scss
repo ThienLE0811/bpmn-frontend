@@ -1,3 +1,5 @@
+@use './colors' as *;
+
 /* ==========================================================================
    NG-ZORRO CUSTOM OVERRIDES & ENHANCEMENTS
    Centralized styling for NG-ZORRO components (Modals, Messages, Pagination, etc.)
@@ -16,19 +18,19 @@
   }
 
   .ant-modal-header {
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid $color-border-subtle;
     padding: 16px 24px;
 
     .ant-modal-title {
       font-weight: 600;
-      color: #0f172a;
+      color: $color-text-title;
       font-size: 15px;
     }
   }
 
   .ant-modal-body {
     padding: 4px;
-    color: #334155;
+    color: $color-text-body;
     font-size: 14px;
     line-height: 1.6;
   }
@@ -40,8 +42,8 @@
     justify-content: flex-end;
     gap: 8px;
     padding: 14px 24px;
-    border-top: 1px solid #f1f5f9;
-    background-color: #fafafa;
+    border-top: 1px solid $color-border-subtle;
+    background-color: $color-bg-alt;
     margin-top: 0;
 
     .ant-btn {
@@ -54,7 +56,7 @@
       border-radius: 8px !important;
       font-size: 13.5px;
       font-weight: 500;
-      border: 1px solid #cbd5e1 !important;
+      border: 1px solid $color-border-medium !important;
       box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       cursor: pointer;
@@ -62,37 +64,37 @@
       /* Default / Cancel Button */
       &.ant-btn-default,
       &:not(.ant-btn-primary):not(.ant-btn-dangerous):not(.ant-btn-danger) {
-        background-color: #ffffff !important;
-        border-color: #cbd5e1 !important;
-        color: #334155 !important;
+        background-color: $color-white !important;
+        border-color: $color-border-medium !important;
+        color: $color-text-body !important;
 
         &:hover {
-          background-color: #f8fafc !important;
-          border-color: #94a3b8 !important;
-          color: #0f172a !important;
+          background-color: $color-bg-page !important;
+          border-color: $color-border-strong !important;
+          color: $color-text-title !important;
         }
 
         &:active {
-          background-color: #f1f5f9 !important;
+          background-color: $color-bg-hover !important;
         }
       }
 
       /* Primary Button */
       &.ant-btn-primary:not(.ant-btn-dangerous):not(.ant-btn-danger) {
-        background: #2563eb !important;
-        border-color: #2563eb !important;
-        color: #ffffff !important;
+        background: $color-primary !important;
+        border-color: $color-primary !important;
+        color: $color-white !important;
 
         &:hover {
-          background: #1d4ed8 !important;
-          border-color: #1d4ed8 !important;
-          color: #ffffff !important;
-          box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+          background: $color-primary-hover !important;
+          border-color: $color-primary-hover !important;
+          color: $color-white !important;
+          box-shadow: 0 4px 10px $shadow-primary;
         }
 
         &:active {
-          background: #1e40af !important;
-          border-color: #1e40af !important;
+          background: $color-primary-active !important;
+          border-color: $color-primary-active !important;
         }
       }
 
@@ -100,20 +102,20 @@
       &.ant-btn-dangerous,
       &.ant-btn-danger,
       &.ant-btn-primary.ant-btn-dangerous {
-        background: #ef4444 !important;
-        border-color: #ef4444 !important;
-        color: #ffffff !important;
+        background: $color-danger !important;
+        border-color: $color-danger !important;
+        color: $color-white !important;
 
         &:hover {
-          background: #dc2626 !important;
-          border-color: #dc2626 !important;
-          color: #ffffff !important;
-          box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+          background: $color-danger-hover !important;
+          border-color: $color-danger-hover !important;
+          color: $color-white !important;
+          box-shadow: 0 4px 10px $shadow-danger;
         }
 
         &:active {
-          background: #b91c1c !important;
-          border-color: #b91c1c !important;
+          background: $color-danger-active !important;
+          border-color: $color-danger-active !important;
         }
       }
     }
@@ -125,13 +127,13 @@
       padding: 24px 24px 18px 24px;
 
       .ant-modal-confirm-title {
-        color: #0f172a;
+        color: $color-text-title;
         font-weight: 600;
         font-size: 16px;
       }
 
       .ant-modal-confirm-content {
-        color: #475569;
+        color: $color-text-secondary;
         font-size: 14px;
         line-height: 1.5;
         margin-top: 8px;
@@ -157,9 +159,9 @@
 
     .ant-message-notice-content {
       padding: 11px 20px;
-      background: #ffffff;
+      background: $color-white;
       border-radius: 12px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid $color-border-default;
       box-shadow:
         0 10px 25px -4px rgba(15, 23, 42, 0.12),
         0 4px 10px -2px rgba(15, 23, 42, 0.04);
@@ -177,7 +179,7 @@
       sans-serif;
     font-size: 14.5px;
     font-weight: 500;
-    color: #1e293b;
+    color: $color-text-main;
     line-height: 1.5;
     letter-spacing: -0.01em;
     display: inline-flex;
@@ -197,23 +199,23 @@
 
   /* Specific message types icon colors */
   .ant-message-success .anticon {
-    color: #10b981;
+    color: $color-success;
   }
 
   .ant-message-error .anticon {
-    color: #ef4444;
+    color: $color-danger;
   }
 
   .ant-message-warning .anticon {
-    color: #f59e0b;
+    color: $color-warning;
   }
 
   .ant-message-info .anticon {
-    color: #3b82f6;
+    color: $color-info;
   }
 
   .ant-message-loading .anticon {
-    color: #6366f1;
+    color: $color-primary;
   }
 }
 
@@ -254,7 +256,7 @@
   .ant-pagination-total-text {
     font-size: 13.5px;
     font-weight: 500;
-    color: #64748b;
+    color: $color-text-muted;
     margin-right: auto;
     height: 34px;
     line-height: 34px;
@@ -269,11 +271,11 @@
     line-height: 32px;
     margin: 0;
     border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    background-color: #ffffff;
+    border: 1px solid $color-border-default;
+    background-color: $color-white;
     font-size: 13.5px;
     font-weight: 500;
-    color: #475569;
+    color: $color-text-secondary;
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     display: inline-flex;
@@ -281,7 +283,7 @@
     justify-content: center;
 
     a {
-      color: #475569;
+      color: $color-text-secondary;
       font-weight: 500;
       padding: 0 4px;
       line-height: 1;
@@ -289,37 +291,37 @@
     }
 
     &:hover {
-      border-color: #cbd5e1;
-      background-color: #f8fafc;
+      border-color: $color-border-medium;
+      background-color: $color-bg-page;
       transform: translateY(-1px);
 
       a {
-        color: #0f172a;
+        color: $color-text-title;
       }
     }
 
     &:active {
       transform: translateY(0);
-      background-color: #f1f5f9;
+      background-color: $color-bg-hover;
     }
 
     /* Active Page Item */
     &.ant-pagination-item-active {
-      background: #2563eb !important;
-      border-color: #2563eb !important;
-      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+      background: $color-primary !important;
+      border-color: $color-primary !important;
+      box-shadow: 0 2px 6px $shadow-primary;
 
       a {
-        color: #ffffff !important;
+        color: $color-white !important;
         font-weight: 600;
       }
 
       &:hover {
-        background: #1d4ed8 !important;
-        border-color: #1d4ed8 !important;
+        background: $color-primary-hover !important;
+        border-color: $color-primary-hover !important;
 
         a {
-          color: #ffffff !important;
+          color: $color-white !important;
         }
       }
     }
@@ -341,45 +343,45 @@
       min-width: 34px;
       height: 34px;
       border-radius: 8px;
-      border: 1px solid #e2e8f0;
-      background-color: #ffffff;
-      color: #475569;
+      border: 1px solid $color-border-default;
+      background-color: $color-white;
+      color: $color-text-secondary;
       box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 
       .anticon {
         font-size: 12px;
-        color: #64748b;
+        color: $color-text-muted;
         transition: color 0.15s ease;
       }
     }
 
     &:hover:not(.ant-pagination-disabled) .ant-pagination-item-link {
-      border-color: #cbd5e1;
-      background-color: #f8fafc;
-      color: #0f172a;
+      border-color: $color-border-medium;
+      background-color: $color-bg-page;
+      color: $color-text-title;
       transform: translateY(-1px);
 
       .anticon {
-        color: #0f172a;
+        color: $color-text-title;
       }
     }
 
     &:active:not(.ant-pagination-disabled) .ant-pagination-item-link {
       transform: translateY(0);
-      background-color: #f1f5f9;
+      background-color: $color-bg-hover;
     }
 
     &.ant-pagination-disabled .ant-pagination-item-link {
-      border-color: #f1f5f9;
-      background-color: #f8fafc;
-      color: #cbd5e1;
+      border-color: $color-border-subtle;
+      background-color: $color-bg-page;
+      color: $color-border-medium;
       cursor: not-allowed;
       opacity: 0.6;
       box-shadow: none;
 
       .anticon {
-        color: #cbd5e1;
+        color: $color-border-medium;
       }
     }
   }
@@ -394,14 +396,14 @@
 
     .ant-pagination-item-container {
       .ant-pagination-item-ellipsis {
-        color: #94a3b8;
+        color: $color-text-placeholder;
         font-weight: 700;
         letter-spacing: 2px;
         line-height: 32px;
       }
 
       .ant-pagination-item-link-icon {
-        color: #2563eb;
+        color: $color-primary;
         font-size: 12px;
       }
     }
@@ -418,35 +420,35 @@
         height: 34px !important;
         padding: 0 10px !important;
         border-radius: 8px !important;
-        border: 1px solid #e2e8f0 !important;
-        background-color: #ffffff !important;
+        border: 1px solid $color-border-default !important;
+        background-color: $color-white !important;
         display: flex !important;
         align-items: center !important;
         font-size: 13px !important;
         font-weight: 500 !important;
-        color: #334155 !important;
+        color: $color-text-body !important;
         box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
         transition: all 0.2s ease;
 
         .ant-select-selection-item {
           line-height: 32px !important;
-          color: #334155;
+          color: $color-text-body;
         }
       }
 
       &:hover .ant-select-selector {
-        border-color: #cbd5e1 !important;
-        background-color: #f8fafc !important;
+        border-color: $color-border-medium !important;
+        background-color: $color-bg-page !important;
       }
 
       &.ant-select-focused .ant-select-selector,
       &.ant-select-open .ant-select-selector {
-        border-color: #2563eb !important;
+        border-color: $color-primary !important;
         box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
       }
 
       .ant-select-arrow {
-        color: #64748b;
+        color: $color-text-muted;
         font-size: 11px;
         right: 8px;
       }
@@ -457,7 +459,7 @@
       height: 34px;
       line-height: 34px;
       font-size: 13px;
-      color: #64748b;
+      color: $color-text-muted;
       font-weight: 500;
       margin-left: 8px;
 
@@ -466,20 +468,20 @@
         margin: 0 6px;
         padding: 4px 10px;
         border-radius: 8px;
-        border: 1px solid #e2e8f0;
-        background: #ffffff;
+        border: 1px solid $color-border-default;
+        background: $color-white;
         font-size: 13px;
         font-weight: 500;
-        color: #1e293b;
+        color: $color-text-main;
         box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
         transition: all 0.2s ease;
 
         &:hover {
-          border-color: #cbd5e1;
+          border-color: $color-border-medium;
         }
 
         &:focus {
-          border-color: #2563eb;
+          border-color: $color-primary;
           box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
           outline: none;
         }

@@ -44,6 +44,9 @@ export class MainLayoutComponent {
     if (url.includes('/users')) {
       return 'BPMN & DMN Platform / Quản lý Người dùng';
     }
+    if (url.includes('/operate')) {
+      return 'BPMN & DMN Platform / Camunda Operate - Giám sát Quy trình';
+    }
     return 'BPMN & DMN Platform / Quản lý Quy trình BPMN';
   });
 

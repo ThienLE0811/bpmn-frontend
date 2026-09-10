@@ -6,6 +6,8 @@
     [code]="decisionData?.decisionKey"
     [isModified]="isModified()"
     [currentZoom]="currentZoom()"
+    [readOnly]="readOnly"
+    [saveLabel]="saveLabel"
     (save)="onSave()"
     (closed)="onClose()"
     (fileSelected)="onFileSelected($event)"

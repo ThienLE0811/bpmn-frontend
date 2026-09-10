@@ -57,6 +57,7 @@ export class UsersListComponent implements OnInit {
   protected selectedUser = signal<User | null>(null);
   protected detailUser = signal<User | null>(null);
   protected pageSize = signal<number>(10);
+  protected isSubmitting = signal<boolean>(false);
 
   private initialFormModel: {
     username: string;
@@ -189,6 +190,17 @@ export class UsersListComponent implements OnInit {
   openDetailDrawer(user: User): void {
     this.detailUser.set(user);
     this.isDetailDrawerOpen.set(true);
+
+    this.userService.getUserById(user.id).subscribe({
+      next: (freshUser) => {
+        if (freshUser && this.detailUser()?.id === user.id) {
+          this.detailUser.set(freshUser);
+        }
+      },
+      error: () => {
+        // Fallback silently to table row data
+      },
+    });
   }
 
   closeDetailDrawer(): void {
@@ -230,44 +242,88 @@ export class UsersListComponent implements OnInit {
     this.isModalOpen.set(false);
     this.selectedUser.set(null);
     this.initialFormModel = null;
+    this.isSubmitting.set(false);
   }
 
   saveUser(): void {
     submit(this.userForm, async () => {
       const current = this.selectedUser();
       const formVal = this.userFormModel();
-      this.userService.saveUser({
-        id: current?.id,
-        username: formVal.username,
-        fullName: formVal.fullName,
-        email: formVal.email,
-        role: formVal.role,
-        status: formVal.status,
-      });
+      this.isSubmitting.set(true);
 
-      this.forceCloseModal();
+      if (!current?.id) {
+        // Gọi API tạo mới: POST /api/users
+        this.userService
+          .createUser({
+            username: formVal.username,
+            fullName: formVal.fullName,
+            email: formVal.email,
+            role: formVal.role,
+            status: formVal.status,
+          })
+          .subscribe({
+            next: () => {
+              this.isSubmitting.set(false);
+              this.forceCloseModal();
+            },
+            error: () => {
+              this.isSubmitting.set(false);
+            },
+          });
+      } else {
+        // Gọi API cập nhật: PUT /api/users/{id}
+        this.userService
+          .updateUser(current.id, {
+            username: formVal.username,
+            fullName: formVal.fullName,
+            email: formVal.email,
+            role: formVal.role,
+            status: formVal.status,
+          })
+          .subscribe({
+            next: (savedUser) => {
+              this.isSubmitting.set(false);
+              if (this.detailUser()?.id === current.id) {
+                this.detailUser.set(savedUser);
+              }
+              this.forceCloseModal();
+            },
+            error: () => {
+              this.isSubmitting.set(false);
+            },
+          });
+      }
     });
   }
 
   deleteUser(user: User, event?: Event): void {
     event?.stopPropagation();
-    this.userService.deleteUser(user.id);
-    if (this.detailUser()?.id === user.id) {
-      this.closeDetailDrawer();
-    }
+    // Gọi API xóa: DELETE /api/users/{id}
+    this.userService.deleteUser(user.id).subscribe({
+      next: () => {
+        if (this.detailUser()?.id === user.id) {
+          this.closeDetailDrawer();
+        }
+      },
+    });
   }
 
   toggleStatus(user: User, status: UserStatus, event?: Event): void {
     event?.stopPropagation();
-    this.userService.toggleStatus(user.id, status);
-    if (this.detailUser()?.id === user.id) {
-      this.detailUser.update((u) => (u ? { ...u, status } : null));
-    }
+    this.userService.toggleStatus(user.id, status).subscribe({
+      next: (updatedUser) => {
+        if (this.detailUser()?.id === user.id) {
+          this.detailUser.update((u) =>
+            u ? { ...u, status, updatedAt: updatedUser.updatedAt } : null,
+          );
+        }
+      },
+    });
   }
 
   resetPassword(user: User, event?: Event): void {
     event?.stopPropagation();
-    this.userService.resetPassword(user.id);
+    this.userService.resetPassword(user.id).subscribe();
   }
 
   // Helpers for UI tags, avatar and initials (delegated to @shared/utils)

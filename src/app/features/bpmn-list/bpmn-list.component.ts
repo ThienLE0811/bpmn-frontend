@@ -9,6 +9,7 @@ import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzResizableModule, NzResizeEvent } from 'ng-zorro-antd/resizable';
 import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
+import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { BpmnProcessService } from '@core/services';
 import { BpmnProcess, BpmnProcessStatus } from '@core/models';
 import { BpmnDesignerComponent } from '@shared/components/bpmn-designer/bpmn-designer.component';
@@ -27,6 +28,7 @@ import { BpmnDesignerComponent } from '@shared/components/bpmn-designer/bpmn-des
     NzSelectModule,
     NzResizableModule,
     NzModalModule,
+    NzSpinModule,
     BpmnDesignerComponent,
   ],
   templateUrl: './bpmn-list.component.html',
@@ -43,6 +45,9 @@ export class BpmnListComponent implements OnInit {
   }
 
   protected isModalOpen = signal<boolean>(false);
+  protected modalMode = signal<'view' | 'edit' | 'create'>('edit');
+  protected initialDesignerMode = signal<'design' | 'xml'>('design');
+  protected isDetailLoading = signal<boolean>(false);
   protected isStatsOpen = signal<boolean>(false);
   protected selectedProcess = signal<BpmnProcess | null>(null);
   protected pageSize = signal<number>(10);
@@ -182,11 +187,13 @@ export class BpmnListComponent implements OnInit {
     });
   }
 
-  openCreateModal(): void {
+  openCreateModal(mode: 'design' | 'xml' = 'design'): void {
+    this.initialDesignerMode.set(mode);
+    this.modalMode.set('create');
     const nextKey = 'BPMN-PROC-' + (this.processes().length + 1).toString().padStart(2, '0');
     const initial = {
       processKey: nextKey,
-      name: 'Quy trình mới',
+      name: mode === 'xml' ? 'Quy trình tạo từ XML' : 'Quy trình mới',
       description: '',
       category: 'GENERAL',
       version: 1,
@@ -195,22 +202,71 @@ export class BpmnListComponent implements OnInit {
     this.selectedProcess.set(null);
     this.processFormModel.set({ ...initial });
     this.initialFormModel = { ...initial };
+    this.isDetailLoading.set(false);
     this.isModalOpen.set(true);
   }
 
-  openEditModal(process: BpmnProcess): void {
+  openDetailModal(process: BpmnProcess, event?: Event): void {
+    event?.stopPropagation();
+    this.initialDesignerMode.set('design');
+    this.loadAndOpenModal(process.id, 'view', process);
+  }
+
+  openEditModal(process: BpmnProcess, event?: Event): void {
+    event?.stopPropagation();
+    this.initialDesignerMode.set('design');
+    this.loadAndOpenModal(process.id, 'edit', process);
+  }
+
+  switchToEditMode(): void {
+    this.modalMode.set('edit');
+  }
+
+  private loadAndOpenModal(id: string, mode: 'view' | 'edit', fallbackProcess?: BpmnProcess): void {
+    this.modalMode.set(mode);
+    this.isModalOpen.set(true);
+    this.isDetailLoading.set(true);
+
+    if (fallbackProcess) {
+      this.selectedProcess.set(fallbackProcess);
+      this.populateFormModel(fallbackProcess);
+    }
+
+    // Gọi API chi tiết /api/bpmn-processes/{id}
+    this.bpmnService.getProcessById(id).subscribe({
+      next: (detail) => {
+        const fullData = detail || fallbackProcess;
+        if (fullData) {
+          this.selectedProcess.set(fullData);
+          this.populateFormModel(fullData);
+        }
+        this.isDetailLoading.set(false);
+      },
+      error: (err) => {
+        console.warn(
+          `Không thể tải chi tiết quy trình (${id}) từ API /api/bpmn-processes/${id}, sử dụng dữ liệu tạm thời:`,
+          err,
+        );
+        if (fallbackProcess) {
+          this.selectedProcess.set(fallbackProcess);
+          this.populateFormModel(fallbackProcess);
+        }
+        this.isDetailLoading.set(false);
+      },
+    });
+  }
+
+  private populateFormModel(process: BpmnProcess): void {
     const initial = {
-      processKey: process.processKey,
-      name: process.name,
+      processKey: process.processKey || '',
+      name: process.name || '',
       description: process.description || '',
       category: process.category || 'GENERAL',
       version: process.version || 1,
       status: process.status || 'DRAFT',
     };
-    this.selectedProcess.set(process);
     this.processFormModel.set({ ...initial });
     this.initialFormModel = { ...initial };
-    this.isModalOpen.set(true);
   }
 
   protected hasUnsavedChanges(): boolean {
@@ -252,33 +308,92 @@ export class BpmnListComponent implements OnInit {
     }
   }
 
+  protected isSubmitting = signal<boolean>(false);
+
   protected forceCloseModal(): void {
     this.isModalOpen.set(false);
     this.selectedProcess.set(null);
     this.initialFormModel = null;
+    this.isDetailLoading.set(false);
+    this.isSubmitting.set(false);
+  }
+
+  submitFromSidebar(): void {
+    if (this.designerComponent) {
+      this.designerComponent.onSave();
+    }
   }
 
   onSaveFromModal(event: { name: string; xml: string }): void {
     submit(this.processForm, async () => {
       const current = this.selectedProcess();
       const formVal = this.processFormModel();
-      this.bpmnService.saveProcess({
-        id: current?.id,
-        processKey: formVal.processKey,
-        name: formVal.name.trim() || event.name,
-        description: formVal.description,
-        category: formVal.category,
-        version: Number(formVal.version) || 1,
-        status: formVal.status,
-        bpmnXml: event.xml,
-      });
 
-      this.forceCloseModal();
+      if (this.modalMode() === 'create' || !current?.id) {
+        // Gọi API tạo mới: POST /api/bpmn-processes
+        this.isSubmitting.set(true);
+        this.bpmnService
+          .createProcess({
+            processKey: formVal.processKey,
+            name: formVal.name.trim() || event.name,
+            description: formVal.description,
+            category: formVal.category,
+            bpmnXml: event.xml,
+            createdBy: 'Admin',
+          })
+          .subscribe({
+            next: () => {
+              this.isSubmitting.set(false);
+              this.forceCloseModal();
+            },
+            error: () => {
+              this.isSubmitting.set(false);
+            },
+          });
+      } else {
+        // Cập nhật quy trình hiện tại: PUT /api/bpmn-processes/:id
+        this.isSubmitting.set(true);
+        this.bpmnService
+          .updateProcess(current.id, {
+            name: formVal.name.trim() || event.name,
+            description: formVal.description,
+            category: formVal.category,
+            status: formVal.status,
+            bpmnXml: event.xml,
+            updatedBy: 'Admin',
+          })
+          .subscribe({
+            next: () => {
+              this.isSubmitting.set(false);
+              this.forceCloseModal();
+            },
+            error: () => {
+              this.isSubmitting.set(false);
+            },
+          });
+      }
     });
   }
 
   deleteProcess(process: BpmnProcess, event?: Event): void {
     event?.stopPropagation();
-    this.bpmnService.deleteProcess(process.id);
+    // Gọi API xóa: DELETE /api/bpmn-processes/:id
+    this.bpmnService.deleteProcess(process.id).subscribe();
+  }
+
+  deleteFromModal(): void {
+    const current = this.selectedProcess();
+    if (!current?.id) return;
+    this.isSubmitting.set(true);
+    // Gọi API xóa: DELETE /api/bpmn-processes/:id
+    this.bpmnService.deleteProcess(current.id).subscribe({
+      next: () => {
+        this.isSubmitting.set(false);
+        this.forceCloseModal();
+      },
+      error: () => {
+        this.isSubmitting.set(false);
+      },
+    });
   }
 }

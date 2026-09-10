@@ -38,10 +38,16 @@ import {
   TagOutline,
   ClockCircleOutline,
   CodeOutline,
-  FileDoneOutline,
   ExclamationCircleOutline,
   QuestionCircleOutline,
   WarningOutline,
+  SyncOutline,
+  PlayCircleOutline,
+  StopOutline,
+  FundProjectionScreenOutline,
+  BugOutline,
+  HistoryOutline,
+  EyeOutline,
 } from '@ant-design/icons-angular/icons';
 
 import { routes } from './app.routes';
@@ -80,10 +86,16 @@ const icons = [
   TagOutline,
   ClockCircleOutline,
   CodeOutline,
-  FileDoneOutline,
   ExclamationCircleOutline,
   QuestionCircleOutline,
   WarningOutline,
+  SyncOutline,
+  PlayCircleOutline,
+  StopOutline,
+  FundProjectionScreenOutline,
+  BugOutline,
+  HistoryOutline,
+  EyeOutline,
 ];
 
 export const appConfig: ApplicationConfig = {

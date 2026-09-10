@@ -1,3 +1,5 @@
+@use './styles/colors' as *;
+
 /* Global styles for BPMN & DMN Frontend */
 @import 'bpmn-js/dist/assets/diagram-js.css';
 @import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
@@ -18,12 +20,53 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
+/* Global CSS Custom Properties (Theme Colors) */
+:root {
+  --color-primary: #{$color-primary};
+  --color-primary-hover: #{$color-primary-hover};
+  --color-primary-active: #{$color-primary-active};
+  --color-primary-bg: #{$color-primary-bg};
+  --color-primary-border: #{$color-primary-border};
+
+  --color-danger: #{$color-danger};
+  --color-danger-hover: #{$color-danger-hover};
+  --color-danger-active: #{$color-danger-active};
+  --color-danger-bg: #{$color-danger-bg};
+  --color-danger-border: #{$color-danger-border};
+
+  --color-success: #{$color-success};
+  --color-success-hover: #{$color-success-hover};
+  --color-success-active: #{$color-success-active};
+  --color-success-bg: #{$color-success-bg};
+
+  --color-warning: #{$color-warning};
+  --color-warning-hover: #{$color-warning-hover};
+
+  --color-info: #{$color-info};
+  --color-info-hover: #{$color-info-hover};
+
+  --color-text-title: #{$color-text-title};
+  --color-text-main: #{$color-text-main};
+  --color-text-body: #{$color-text-body};
+  --color-text-secondary: #{$color-text-secondary};
+  --color-text-muted: #{$color-text-muted};
+
+  --color-border-subtle: #{$color-border-subtle};
+  --color-border-default: #{$color-border-default};
+  --color-border-medium: #{$color-border-medium};
+
+  --color-bg-page: #{$color-bg-page};
+  --color-bg-card: #{$color-bg-card};
+  --color-bg-alt: #{$color-bg-alt};
+  --color-bg-hover: #{$color-bg-hover};
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: $color-border-medium transparent;
 }
 
 /* Custom Webkit Scrollbars */
@@ -37,11 +80,11 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
+  background-color: $color-border-medium;
   border-radius: 6px;
 
   &:hover {
-    background-color: #94a3b8;
+    background-color: $color-border-strong;
   }
 }
 
@@ -60,8 +103,8 @@ html {
     Ubuntu,
     Cantarell,
     sans-serif;
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: $color-bg-page;
+  color: $color-text-title;
   overflow-x: hidden;
   overflow-y: auto;
 }

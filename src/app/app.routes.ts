@@ -46,6 +46,13 @@ export const routes: Routes = [
             (m) => m.UsersListComponent,
           ),
       },
+      {
+        path: 'operate',
+        loadComponent: () =>
+          import('./features/operate/operate.component').then(
+            (m) => m.OperateComponent,
+          ),
+      },
     ],
   },
 ];

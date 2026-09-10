@@ -1,0 +1,38 @@
+<div class="operate-viewer-wrapper">
+  <!-- Controls bar -->
+  <div class="viewer-toolbar">
+    <div class="legend-items">
+      <span class="legend-item legend-active">
+        <span class="indicator"></span> Đang chạy (Active)
+      </span>
+      <span class="legend-item legend-incident">
+        <span class="indicator"></span> Sự cố (Incident)
+      </span>
+      <span class="legend-item legend-completed">
+        <span class="indicator"></span> Hoàn tất (Completed)
+      </span>
+    </div>
+
+    <div class="zoom-controls">
+      <button nz-button nzType="text" nzSize="small" (click)="zoomIn()" nzTooltipTitle="Phóng to" nz-tooltip>
+        <span nz-icon nzType="zoom-in" nzTheme="outline"></span>
+      </button>
+      <button nz-button nzType="text" nzSize="small" (click)="zoomOut()" nzTooltipTitle="Thu nhỏ" nz-tooltip>
+        <span nz-icon nzType="zoom-out" nzTheme="outline"></span>
+      </button>
+      <button nz-button nzType="text" nzSize="small" (click)="fitViewport()" nzTooltipTitle="Vừa khung nhìn" nz-tooltip>
+        <span nz-icon nzType="deployment-unit" nzTheme="outline"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Diagram Canvas -->
+  <div class="diagram-canvas" #canvas></div>
+
+  @if (hasError()) {
+    <div class="viewer-error">
+      <span nz-icon nzType="warning" nzTheme="outline"></span>
+      <span>Không thể hiển thị sơ đồ BPMN cho phiên này.</span>
+    </div>
+  }
+</div>

@@ -1069,6 +1069,18 @@
     }
   }
 
+  &.btn-danger-outline {
+    background: #ffffff;
+    color: #dc2626;
+    border-color: #fca5a5;
+
+    &:hover {
+      background: #fef2f2;
+      color: #b91c1c;
+      border-color: #f87171;
+    }
+  }
+
   &.full-width {
     width: 100%;
   }
