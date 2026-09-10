@@ -9,7 +9,26 @@ import { ApiResponse } from '@core/models';
 })
 export class ApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = environment.apiUrl;
+
+  private get baseUrl(): string {
+    if (typeof window !== 'undefined' && window.location) {
+      const hostname = window.location.hostname;
+      const isLocal =
+        hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname === '0.0.0.0' ||
+        hostname.endsWith('.local') ||
+        /^192\.168\.\d+\.\d+$/.test(hostname) ||
+        /^10\.\d+\.\d+\.\d+$/.test(hostname) ||
+        /^172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+$/.test(hostname);
+
+      if (isLocal) {
+        return 'http://localhost:8080/api/';
+      }
+      return 'https://bpmn-backend-vh8l.onrender.com/api/';
+    }
+    return environment.apiUrl || 'http://localhost:8080/api/';
+  }
 
   private buildUrl(endpoint: string): string {
     const base = this.baseUrl.replace(/\/+$/, '');
