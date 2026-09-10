@@ -14,6 +14,12 @@ import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { UserService } from '@core/services';
 import { User, UserRole, UserStatus } from '@core/models';
+import {
+  getAvatarColor,
+  getUserInitials,
+  getUserRoleMeta,
+  getUserStatusMeta,
+} from '@shared/utils';
 
 @Component({
   selector: 'app-users-list',
@@ -48,7 +54,6 @@ export class UsersListComponent implements OnInit {
   protected isModalOpen = signal<boolean>(false);
   protected isDetailDrawerOpen = signal<boolean>(false);
   protected isStatsOpen = signal<boolean>(true);
-  protected isAdvancedFilterOpen = signal<boolean>(false);
   protected selectedUser = signal<User | null>(null);
   protected detailUser = signal<User | null>(null);
   protected pageSize = signal<number>(10);
@@ -57,11 +62,8 @@ export class UsersListComponent implements OnInit {
     username: string;
     fullName: string;
     email: string;
-    phone: string;
     role: UserRole;
-    department: string;
     status: UserStatus;
-    notes: string;
   } | null = null;
 
   // Filter signal model
@@ -69,8 +71,6 @@ export class UsersListComponent implements OnInit {
     search: '',
     role: 'ALL',
     status: 'ALL',
-    department: 'ALL',
-    phone: '',
   });
 
   protected readonly activeFilterCount = computed(() => {
@@ -79,34 +79,18 @@ export class UsersListComponent implements OnInit {
     if (m.search.trim()) count++;
     if (m.role !== 'ALL') count++;
     if (m.status !== 'ALL') count++;
-    if (m.department !== 'ALL') count++;
-    if (m.phone.trim()) count++;
     return count;
   });
 
   protected readonly isFiltered = computed(() => this.activeFilterCount() > 0);
-
-  // Departments list for dropdown filter & selection
-  protected readonly departments = [
-    'Ban Công nghệ Thông tin',
-    'Khối Quản trị Vận hành',
-    'Trung tâm Phát triển Giải pháp',
-    'Phòng Kiểm soát Tuân thủ & Rủi ro',
-    'Ban Tài chính Kế toán',
-    'Khối Kinh doanh & Marketing',
-    'Đối tác Tư vấn Độc lập',
-  ];
 
   // User form signal
   protected readonly userFormModel = signal({
     username: '',
     fullName: '',
     email: '',
-    phone: '',
-    role: 'DESIGNER' as UserRole,
-    department: 'Ban Công nghệ Thông tin',
+    role: 'DEVELOPER' as UserRole,
     status: 'ACTIVE' as UserStatus,
-    notes: '',
   });
 
   protected readonly userForm = form(this.userFormModel, (schema) => {
@@ -114,7 +98,6 @@ export class UsersListComponent implements OnInit {
     required(schema.fullName, { message: 'Họ và tên không được để trống' });
     required(schema.email, { message: 'Email không được để trống' });
     required(schema.role, { message: 'Vui lòng chọn vai trò người dùng' });
-    required(schema.department, { message: 'Vui lòng chọn phòng ban' });
   });
 
   protected users = this.userService.users;
@@ -127,14 +110,10 @@ export class UsersListComponent implements OnInit {
     () => this.users().filter((u) => u.status === 'INACTIVE' || u.status === 'LOCKED').length,
   );
   protected adminCount = computed(() => this.users().filter((u) => u.role === 'ADMIN').length);
-  protected designerCount = computed(() => this.users().filter((u) => u.role === 'DESIGNER').length);
+  protected developerCount = computed(() => this.users().filter((u) => u.role === 'DEVELOPER').length);
 
   toggleStats(): void {
     this.isStatsOpen.update((v) => !v);
-  }
-
-  toggleAdvancedFilter(): void {
-    this.isAdvancedFilterOpen.update((v) => !v);
   }
 
   search(): void {
@@ -143,7 +122,6 @@ export class UsersListComponent implements OnInit {
       search: m.search,
       role: m.role,
       status: m.status,
-      department: m.department,
     });
   }
 
@@ -152,8 +130,6 @@ export class UsersListComponent implements OnInit {
       search: '',
       role: 'ALL',
       status: 'ALL',
-      department: 'ALL',
-      phone: '',
     });
     this.search();
   }
@@ -168,11 +144,6 @@ export class UsersListComponent implements OnInit {
     this.search();
   }
 
-  onDepartmentFilterChange(department: string): void {
-    this.filterModel.update((m) => ({ ...m, department }));
-    this.search();
-  }
-
   loadUsers(): void {
     this.search();
   }
@@ -182,20 +153,17 @@ export class UsersListComponent implements OnInit {
   protected sortUsername = (a: User, b: User): number => (a.username || '').localeCompare(b.username || '');
   protected sortEmail = (a: User, b: User): number => (a.email || '').localeCompare(b.email || '');
   protected sortRole = (a: User, b: User): number => (a.role || '').localeCompare(b.role || '');
-  protected sortDepartment = (a: User, b: User): number => (a.department || '').localeCompare(b.department || '');
   protected sortStatus = (a: User, b: User): number => (a.status || '').localeCompare(b.status || '');
-  protected sortLastLogin = (a: User, b: User): number => (a.lastLogin || '').localeCompare(b.lastLogin || '');
+  protected sortCreatedAt = (a: User, b: User): number => (a.createdAt || '').localeCompare(b.createdAt || '');
+  protected sortUpdatedAt = (a: User, b: User): number => (a.updatedAt || '').localeCompare(b.updatedAt || '');
 
   openCreateModal(): void {
     const initial = {
       username: '',
       fullName: '',
       email: '',
-      phone: '',
-      role: 'DESIGNER' as UserRole,
-      department: 'Trung tâm Phát triển Giải pháp',
+      role: 'DEVELOPER' as UserRole,
       status: 'ACTIVE' as UserStatus,
-      notes: '',
     };
     this.selectedUser.set(null);
     this.userFormModel.set({ ...initial });
@@ -209,11 +177,8 @@ export class UsersListComponent implements OnInit {
       username: user.username,
       fullName: user.fullName,
       email: user.email,
-      phone: user.phone || '',
       role: user.role,
-      department: user.department,
       status: user.status,
-      notes: user.notes || '',
     };
     this.selectedUser.set(user);
     this.userFormModel.set({ ...initial });
@@ -238,11 +203,8 @@ export class UsersListComponent implements OnInit {
       cur.username !== this.initialFormModel.username ||
       cur.fullName !== this.initialFormModel.fullName ||
       cur.email !== this.initialFormModel.email ||
-      cur.phone !== this.initialFormModel.phone ||
       cur.role !== this.initialFormModel.role ||
-      cur.department !== this.initialFormModel.department ||
-      cur.status !== this.initialFormModel.status ||
-      cur.notes !== this.initialFormModel.notes
+      cur.status !== this.initialFormModel.status
     );
   }
 
@@ -279,11 +241,8 @@ export class UsersListComponent implements OnInit {
         username: formVal.username,
         fullName: formVal.fullName,
         email: formVal.email,
-        phone: formVal.phone,
         role: formVal.role,
-        department: formVal.department,
         status: formVal.status,
-        notes: formVal.notes,
       });
 
       this.forceCloseModal();
@@ -311,48 +270,9 @@ export class UsersListComponent implements OnInit {
     this.userService.resetPassword(user.id);
   }
 
-  // Helpers for UI tags and colors
-  getRoleBadgeInfo(role: UserRole): { label: string; class: string; icon: string } {
-    switch (role) {
-      case 'ADMIN':
-        return { label: 'Quản trị viên', class: 'role-badge admin', icon: 'safety' };
-      case 'MANAGER':
-        return { label: 'Quản lý', class: 'role-badge manager', icon: 'crown' };
-      case 'DESIGNER':
-        return { label: 'Thiết kế quy trình', class: 'role-badge designer', icon: 'appstore-add' };
-      case 'VIEWER':
-      default:
-        return { label: 'Người xem', class: 'role-badge viewer', icon: 'eye' };
-    }
-  }
-
-  getStatusBadgeInfo(status: UserStatus): { label: string; class: string } {
-    switch (status) {
-      case 'ACTIVE':
-        return { label: 'Hoạt động', class: 'status-tag active' };
-      case 'INACTIVE':
-        return { label: 'Tạm dừng', class: 'status-tag inactive' };
-      case 'LOCKED':
-        return { label: 'Đã khóa', class: 'status-tag locked' };
-      default:
-        return { label: 'Không xác định', class: 'status-tag' };
-    }
-  }
-
-  getAvatarColor(name: string): string {
-    const colors = [
-      'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-      'linear-gradient(135deg, #10b981 0%, #047857 100%)',
-      'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
-      'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)',
-      'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
-      'linear-gradient(135deg, #06b6d4 0%, #0e7490 100%)',
-    ];
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const index = Math.abs(hash) % colors.length;
-    return colors[index];
-  }
+  // Helpers for UI tags, avatar and initials (delegated to @shared/utils)
+  protected readonly getRoleBadgeInfo = getUserRoleMeta;
+  protected readonly getStatusBadgeInfo = getUserStatusMeta;
+  protected readonly getAvatarColor = getAvatarColor;
+  protected readonly getUserInitials = getUserInitials;
 }

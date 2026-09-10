@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { BpmnProcess } from '@core/models/bpmn-process.model';
 import { ApiErrorHandlerService } from '@shared/services';
+import { formatIsoDateTime } from '@shared/utils';
 import { BpmnApiService, BpmnQueryParams } from '../api/bpmn-api.service';
 
 @Injectable({
@@ -58,7 +59,7 @@ export class BpmnProcessService {
     },
   ): BpmnProcess {
     const list = this.processesSignal();
-    const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    const nowStr = formatIsoDateTime();
 
     const xmlContent =
       processData.bpmnXml !== undefined

@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { DmnDecision } from '@core/models/dmn-decision.model';
 import { ApiErrorHandlerService } from '@shared/services';
+import { formatIsoDateTime } from '@shared/utils';
 import { DmnApiService, DmnQueryParams } from '../api/dmn-api.service';
 
 @Injectable({
@@ -54,7 +55,7 @@ export class DmnDecisionService {
     decisionData: Partial<DmnDecision> & { name: string; dmnXml?: string; xml?: string },
   ): DmnDecision {
     const list = this.decisionsSignal();
-    const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    const nowStr = formatIsoDateTime();
     const xmlContent =
       decisionData.dmnXml !== undefined
         ? decisionData.dmnXml

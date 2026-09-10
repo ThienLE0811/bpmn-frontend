@@ -29,9 +29,6 @@ export class UserApiService {
       if (params['role'] && params['role'] !== 'ALL') {
         cleanParams['role'] = String(params['role']).trim();
       }
-      if (params['department'] && params['department'] !== 'ALL') {
-        cleanParams['department'] = String(params['department']).trim();
-      }
       if (params['status'] && params['status'] !== 'ALL') {
         cleanParams['status'] = String(params['status']).trim();
       }
