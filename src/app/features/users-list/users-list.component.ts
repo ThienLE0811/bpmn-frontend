@@ -20,6 +20,7 @@ import {
   getUserRoleMeta,
   getUserStatusMeta,
 } from '@shared/utils';
+import { TableAutoHeightDirective } from '@shared/directives';
 
 @Component({
   selector: 'app-users-list',
@@ -38,6 +39,7 @@ import {
     NzDropdownModule,
     NzTooltipModule,
     NzDrawerModule,
+    TableAutoHeightDirective,
   ],
   templateUrl: './users-list.component.html',
   styleUrl: './users-list.component.scss',
@@ -53,7 +55,7 @@ export class UsersListComponent implements OnInit {
   // UI state signals
   protected isModalOpen = signal<boolean>(false);
   protected isDetailDrawerOpen = signal<boolean>(false);
-  protected isStatsOpen = signal<boolean>(true);
+  protected isStatsOpen = signal<boolean>(false);
   protected selectedUser = signal<User | null>(null);
   protected detailUser = signal<User | null>(null);
   protected pageSize = signal<number>(10);

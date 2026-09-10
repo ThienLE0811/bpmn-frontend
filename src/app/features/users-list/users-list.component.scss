@@ -5,7 +5,7 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
 }
 
 /* Page Title Bar */
@@ -126,7 +126,7 @@
   .content-container {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
   }
 }
 
@@ -134,13 +134,13 @@
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
+  gap: 12px;
   animation: fadeIn 0.3s ease-in-out;
 
   .stat-card {
     background: #ffffff;
     border-radius: 14px;
-    padding: 18px 20px;
+    padding: 12px 18px;
     display: flex;
     align-items: center;
     gap: 16px;
@@ -222,7 +222,7 @@
 
 /* Toolbar */
 .table-toolbar {
-  padding: 16px 20px;
+  padding: 12px 16px;
   border-bottom: 1px solid #f1f5f9;
   display: flex;
   align-items: center;
@@ -502,11 +502,34 @@
 
 /* Table Custom Styling */
 .table-wrapper {
-  padding: 0 8px 12px 8px;
+  padding: 0 8px 8px 8px;
 
   .custom-users-table {
     ::ng-deep .ant-table {
       background: transparent;
+
+      .ant-table-content {
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+
+        &::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+
+        &::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 4px;
+
+          &:hover {
+            background: #94a3b8;
+          }
+        }
+      }
 
       .ant-table-thead > tr > th {
         background: #f8fafc;
@@ -515,6 +538,10 @@
         font-size: 13px;
         border-bottom: 1px solid #e2e8f0;
         padding: 14px 16px;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        box-shadow: 0 1px 0 #e2e8f0;
       }
 
       .ant-table-tbody > tr {
@@ -532,6 +559,15 @@
           color: #1e293b;
         }
       }
+    }
+
+    ::ng-deep .ant-pagination {
+      padding: 12px 16px;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
     }
   }
 }

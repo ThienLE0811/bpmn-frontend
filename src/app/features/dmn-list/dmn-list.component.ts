@@ -13,6 +13,7 @@ import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { DmnDecisionService } from '@core/services';
 import { DmnDecision } from '@core/models';
 import { DmnDesignerComponent } from '@shared/components/dmn-designer/dmn-designer.component';
+import { TableAutoHeightDirective } from '@shared/directives';
 
 @Component({
   selector: 'app-dmn-list',
@@ -30,6 +31,7 @@ import { DmnDesignerComponent } from '@shared/components/dmn-designer/dmn-design
     NzModalModule,
     NzSpinModule,
     DmnDesignerComponent,
+    TableAutoHeightDirective,
   ],
   templateUrl: './dmn-list.component.html',
   styleUrl: './dmn-list.component.scss',

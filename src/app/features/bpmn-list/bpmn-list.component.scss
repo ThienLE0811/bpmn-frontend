@@ -732,6 +732,29 @@
         font-size: 13.5px;
       }
 
+      .ant-table-content {
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+
+        &::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+
+        &::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 4px;
+
+          &:hover {
+            background: #94a3b8;
+          }
+        }
+      }
+
       .ant-table-thead > tr > th {
         background: #f8fafc;
         color: #475569;
@@ -741,6 +764,10 @@
         letter-spacing: 0.5px;
         padding: 14px 20px;
         border-bottom: 1px solid #e2e8f0;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        box-shadow: 0 1px 0 #e2e8f0;
 
         &.ant-table-column-has-sorters:hover {
           background: #f1f5f9;

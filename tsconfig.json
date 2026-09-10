@@ -15,6 +15,7 @@
     "module": "preserve",
     "paths": {
       "@shared/*": ["./src/app/shared/*"],
+      "@shared/directives": ["./src/app/shared/directives/index.ts"],
       "@shared/components": ["./src/app/shared/components/index.ts"],
       "@shared/constants": ["./src/app/shared/constants/index.ts"],
       "@shared/utils": ["./src/app/shared/utils/index.ts"],

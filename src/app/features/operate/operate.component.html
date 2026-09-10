@@ -13,6 +13,16 @@
 
     <div class="header-actions">
       <button
+        class="btn-outline-stats"
+        [class.active]="isStatsOpen()"
+        (click)="toggleStats()"
+        title="Xem thống kê tổng quan"
+      >
+        <span nz-icon [nzType]="isStatsOpen() ? 'eye-invisible' : 'dashboard'" nzTheme="outline"></span>
+        <span>{{ isStatsOpen() ? 'Ẩn thống kê' : 'Xem thống kê' }}</span>
+      </button>
+
+      <button
         nz-button
         nzType="default"
         [nzLoading]="operateService.isLoading()"
@@ -25,8 +35,8 @@
     </div>
   </div>
 
-  <!-- Metric Overview Cards -->
-  @if (operateService.metrics(); as m) {
+  <!-- Metric Overview Cards (Collapsible) -->
+  @if (isStatsOpen() && operateService.metrics(); as m) {
     <div class="metrics-grid">
       <!-- Total -->
       <div
@@ -108,152 +118,156 @@
     </div>
   }
 
-  <!-- Filter & Search Toolbar -->
-  <div class="filter-toolbar">
-    <div class="filter-left">
-      <nz-input-wrapper [nzAllowClear]="true" class="search-input">
-        <span nzInputPrefix>
-          <span nz-icon nzType="search" nzTheme="outline"></span>
+  <!-- Unified Table Card (Toolbar + Data Table) -->
+  <div class="table-card">
+    <!-- Filter & Search Toolbar -->
+    <div class="table-toolbar">
+      <div class="toolbar-left">
+        <nz-input-wrapper [nzAllowClear]="true" class="search-input">
+          <span nzInputPrefix>
+            <span nz-icon nzType="search" nzTheme="outline"></span>
+          </span>
+          <input
+            type="text"
+            nz-input
+            placeholder="Tìm theo Mã phiên (ID), Tên quy trình..."
+            [ngModel]="searchInput()"
+            (ngModelChange)="onSearchChange($event)"
+          />
+        </nz-input-wrapper>
+
+        <nz-select
+          class="status-select"
+          [ngModel]="operateService.filterState()"
+          (ngModelChange)="onFilterStateChange($event)"
+        >
+          <nz-option nzValue="ALL" nzLabel="Tất cả trạng thái"></nz-option>
+          <nz-option nzValue="ACTIVE" nzLabel="Đang thực thi (Active)"></nz-option>
+          <nz-option nzValue="INCIDENT" nzLabel="Có sự cố (Incident)"></nz-option>
+          <nz-option nzValue="COMPLETED" nzLabel="Đã hoàn thành (Completed)"></nz-option>
+          <nz-option nzValue="CANCELED" nzLabel="Đã hủy (Canceled)"></nz-option>
+        </nz-select>
+      </div>
+
+      <div class="toolbar-right">
+        <span class="total-badge">
+          Hiển thị <strong>{{ operateService.instances().length }}</strong> phiên
         </span>
-        <input
-          type="text"
-          nz-input
-          placeholder="Tìm theo Mã phiên (ID), Tên quy trình..."
-          [ngModel]="searchInput()"
-          (ngModelChange)="onSearchChange($event)"
-        />
-      </nz-input-wrapper>
+      </div>
+    </div>
 
-      <nz-select
-        class="status-select"
-        [ngModel]="operateService.filterState()"
-        (ngModelChange)="onFilterStateChange($event)"
+    <!-- Instances Data Table -->
+    <div class="table-wrapper">
+      <nz-table
+        #instancesTable
+        appTableAutoHeight
+        [nzData]="operateService.instances()"
+        [nzLoading]="operateService.isLoading()"
+        [nzPageSize]="pageSize()"
+        (nzPageSizeChange)="pageSize.set($event)"
+        [nzPageIndex]="pageIndex()"
+        (nzPageIndexChange)="pageIndex.set($event)"
+        [nzShowSizeChanger]="true"
+        [nzPageSizeOptions]="[5, 10, 20, 50]"
+        [nzShowTotal]="totalTemplate"
+        [nzBordered]="false"
+        nzSize="middle"
+        class="custom-operate-table"
       >
-        <nz-option nzValue="ALL" nzLabel="Tất cả trạng thái"></nz-option>
-        <nz-option nzValue="ACTIVE" nzLabel="Đang thực thi (Active)"></nz-option>
-        <nz-option nzValue="INCIDENT" nzLabel="Có sự cố (Incident)"></nz-option>
-        <nz-option nzValue="COMPLETED" nzLabel="Đã hoàn thành (Completed)"></nz-option>
-        <nz-option nzValue="CANCELED" nzLabel="Đã hủy (Canceled)"></nz-option>
-      </nz-select>
-    </div>
-
-    <div class="filter-right">
-      <span class="total-badge">
-        Hiển thị <strong>{{ operateService.instances().length }}</strong> phiên
-      </span>
-    </div>
-  </div>
-
-  <!-- Instances Data Table -->
-  <div class="table-container">
-    <nz-table
-      #instancesTable
-      [nzData]="operateService.instances()"
-      [nzLoading]="operateService.isLoading()"
-      [nzPageSize]="pageSize()"
-      (nzPageSizeChange)="pageSize.set($event)"
-      [nzPageIndex]="pageIndex()"
-      (nzPageIndexChange)="pageIndex.set($event)"
-      [nzShowSizeChanger]="true"
-      [nzPageSizeOptions]="[5, 10, 20, 50]"
-      [nzShowTotal]="totalTemplate"
-      [nzBordered]="false"
-      nzSize="middle"
-      class="custom-operate-table"
-    >
-      <thead>
-        <tr>
-          <th nzWidth="160px">Mã phiên (ID)</th>
-          <th>Quy trình (Definition)</th>
-          <th nzWidth="95px" nzAlign="center">Phiên bản</th>
-          <th nzWidth="175px" nzAlign="center">Trạng thái</th>
-          <th nzWidth="175px" nzAlign="center">Bắt đầu</th>
-          <th nzWidth="175px" nzAlign="center">Kết thúc</th>
-          <th nzWidth="110px">Thao tác</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (item of instancesTable.data; track item.id) {
-          <tr class="table-row-hover">
-            <td>
-              <a class="instance-link" (click)="openDetail(item)">
-                <span nz-icon nzType="branches" nzTheme="outline"></span>
-                <span>{{ item.id }}</span>
-              </a>
-            </td>
-            <td>
-              <div class="process-def-name">{{ item.processDefinitionName }}</div>
-              <div class="process-def-key">{{ item.processDefinitionKey }}</div>
-            </td>
-            <td nzAlign="center">
-              <span class="version-tag">v{{ item.processVersion }}</span>
-            </td>
-            <td nzAlign="center">
-              <div class="status-cell">
-                <nz-tag [nzColor]="getStateTagColor(item.state)" class="status-tag">
-                  {{ getStateLabel(item.state) }}
-                </nz-tag>
-                @if (item.incidentCount > 0) {
-                  <nz-badge
-                    [nzCount]="item.incidentCount"
-                    [nzStyle]="{ backgroundColor: '#ff4d4f' }"
-                    nzTitle="Số sự cố cần xử lý"
-                    class="incident-pill"
-                  ></nz-badge>
-                }
-              </div>
-            </td>
-            <td nzAlign="center">
-              <span class="date-cell">{{ formatTime(item.startDate) }}</span>
-            </td>
-            <td nzAlign="center">
-              <span class="date-cell" [class.empty-text]="!item.endDate">
-                {{ item.endDate ? formatTime(item.endDate) : '- -' }}
-              </span>
-            </td>
-            <td>
-              <div class="action-cell">
-                <button
-                  nz-button
-                  nzType="primary"
-                  nzGhost
-                  nzSize="small"
-                  class="action-icon-btn"
-                  (click)="openDetail(item)"
-                  nzTooltipTitle="Xem chi tiết & Sơ đồ Token"
-                  nz-tooltip
-                >
-                  <span nz-icon nzType="eye" nzTheme="outline"></span>
-                </button>
-
-                @if (item.state === 'ACTIVE' || item.state === 'INCIDENT') {
+        <thead>
+          <tr>
+            <th nzWidth="160px">Mã phiên (ID)</th>
+            <th>Quy trình (Definition)</th>
+            <th nzWidth="95px" nzAlign="center">Phiên bản</th>
+            <th nzWidth="175px" nzAlign="center">Trạng thái</th>
+            <th nzWidth="175px" nzAlign="center">Bắt đầu</th>
+            <th nzWidth="175px" nzAlign="center">Kết thúc</th>
+            <th nzWidth="110px">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of instancesTable.data; track item.id) {
+            <tr class="table-row-hover">
+              <td>
+                <a class="instance-link" (click)="openDetail(item)">
+                  <span nz-icon nzType="branches" nzTheme="outline"></span>
+                  <span>{{ item.id }}</span>
+                </a>
+              </td>
+              <td>
+                <div class="process-def-name">{{ item.processDefinitionName }}</div>
+                <div class="process-def-key">{{ item.processDefinitionKey }}</div>
+              </td>
+              <td nzAlign="center">
+                <span class="version-tag">v{{ item.processVersion }}</span>
+              </td>
+              <td nzAlign="center">
+                <div class="status-cell">
+                  <nz-tag [nzColor]="getStateTagColor(item.state)" class="status-tag">
+                    {{ getStateLabel(item.state) }}
+                  </nz-tag>
+                  @if (item.incidentCount > 0) {
+                    <nz-badge
+                      [nzCount]="item.incidentCount"
+                      [nzStyle]="{ backgroundColor: '#ff4d4f' }"
+                      nzTitle="Số sự cố cần xử lý"
+                      class="incident-pill"
+                    ></nz-badge>
+                  }
+                </div>
+              </td>
+              <td nzAlign="center">
+                <span class="date-cell">{{ formatTime(item.startDate) }}</span>
+              </td>
+              <td nzAlign="center">
+                <span class="date-cell" [class.empty-text]="!item.endDate">
+                  {{ item.endDate ? formatTime(item.endDate) : '- -' }}
+                </span>
+              </td>
+              <td>
+                <div class="action-cell">
                   <button
                     nz-button
-                    nzType="default"
-                    nzDanger
+                    nzType="primary"
+                    nzGhost
                     nzSize="small"
                     class="action-icon-btn"
-                    nz-popconfirm
-                    nzPopconfirmTitle="Bạn có chắc chắn muốn hủy phiên thực thi này không?"
-                    nzOkText="Hủy phiên"
-                    nzCancelText="Đóng"
-                    (nzOnConfirm)="cancelInstance(item)"
-                    nzTooltipTitle="Hủy phiên quy trình"
+                    (click)="openDetail(item)"
+                    nzTooltipTitle="Xem chi tiết & Sơ đồ Token"
                     nz-tooltip
                   >
-                    <span nz-icon nzType="stop" nzTheme="outline"></span>
+                    <span nz-icon nzType="eye" nzTheme="outline"></span>
                   </button>
-                }
-              </div>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </nz-table>
 
-    <ng-template #totalTemplate let-total>
-      <span class="total-text">Tổng số: <strong>{{ total }}</strong> phiên thực thi</span>
-    </ng-template>
+                  @if (item.state === 'ACTIVE' || item.state === 'INCIDENT') {
+                    <button
+                      nz-button
+                      nzType="default"
+                      nzDanger
+                      nzSize="small"
+                      class="action-icon-btn"
+                      nz-popconfirm
+                      nzPopconfirmTitle="Bạn có chắc chắn muốn hủy phiên thực thi này không?"
+                      nzOkText="Hủy phiên"
+                      nzCancelText="Đóng"
+                      (nzOnConfirm)="cancelInstance(item)"
+                      nzTooltipTitle="Hủy phiên quy trình"
+                      nz-tooltip
+                    >
+                      <span nz-icon nzType="stop" nzTheme="outline"></span>
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </nz-table>
+
+      <ng-template #totalTemplate let-total>
+        <span class="total-text">Tổng số: <strong>{{ total }}</strong> phiên thực thi</span>
+      </ng-template>
+    </div>
   </div>
 
   <!-- Detail Drawer (Process Instance Inspector) -->

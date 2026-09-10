@@ -13,6 +13,7 @@ import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { BpmnProcessService } from '@core/services';
 import { BpmnProcess, BpmnProcessStatus } from '@core/models';
 import { BpmnDesignerComponent } from '@shared/components/bpmn-designer/bpmn-designer.component';
+import { TableAutoHeightDirective } from '@shared/directives';
 
 @Component({
   selector: 'app-bpmn-list',
@@ -30,6 +31,7 @@ import { BpmnDesignerComponent } from '@shared/components/bpmn-designer/bpmn-des
     NzModalModule,
     NzSpinModule,
     BpmnDesignerComponent,
+    TableAutoHeightDirective,
   ],
   templateUrl: './bpmn-list.component.html',
   styleUrl: './bpmn-list.component.scss',

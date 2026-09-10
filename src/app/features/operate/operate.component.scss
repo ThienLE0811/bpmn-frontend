@@ -1,26 +1,33 @@
 .operate-page {
   padding: 24px;
+  max-width: 100%;
+  margin: 0 auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  background-color: #f5f7fa;
-  min-height: calc(100vh - 64px);
+  gap: 8px;
+  box-sizing: border-box;
 
   /* Page Header */
   .page-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    padding-bottom: 4px;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
 
     .header-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
       .title-row {
         display: flex;
         align-items: center;
         gap: 12px;
 
         .title-icon {
-          font-size: 26px;
+          font-size: 24px;
           color: #1677ff;
           background: #e6f4ff;
           padding: 8px;
@@ -29,30 +36,63 @@
 
         .page-title {
           font-size: 22px;
-          font-weight: 700;
-          color: #1f2937;
+          font-weight: 800;
+          color: #0f172a;
           margin: 0;
-          letter-spacing: -0.3px;
+          letter-spacing: -0.4px;
         }
       }
 
       .page-desc {
         color: #64748b;
         font-size: 13.5px;
-        margin: 6px 0 0 46px;
+        margin: 0;
       }
     }
 
     .header-actions {
       display: flex;
-      gap: 10px;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+
+      .btn-outline-stats {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 16px;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        color: #475569;
+        font-size: 13.5px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: #f8fafc;
+          border-color: #cbd5e1;
+          color: #0f172a;
+          transform: translateY(-1px);
+        }
+
+        &.active {
+          background: #eff6ff;
+          border-color: #2563eb;
+          color: #2563eb;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+        }
+      }
 
       .action-btn {
         display: inline-flex;
         align-items: center;
         gap: 6px;
         font-weight: 500;
-        border-radius: 6px;
+        border-radius: 8px;
+        height: 38px;
       }
     }
   }
@@ -61,16 +101,18 @@
   .metrics-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
+    gap: 12px;
+    margin: 4px 0 8px 0;
+    animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 
     .metric-card {
       background: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 12px;
-      padding: 16px 20px;
+      padding: 12px 16px;
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
       cursor: pointer;
       position: relative;
       transition: all 0.25s ease;
@@ -89,13 +131,14 @@
       }
 
       .metric-icon {
-        width: 46px;
-        height: 46px;
+        width: 42px;
+        height: 42px;
         border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 22px;
+        font-size: 20px;
+        flex-shrink: 0;
 
         &.total-icon {
           background: #f1f5f9;
@@ -128,13 +171,13 @@
         flex-direction: column;
 
         .metric-label {
-          font-size: 13px;
+          font-size: 12.5px;
           color: #64748b;
           font-weight: 500;
         }
 
         .metric-value {
-          font-size: 24px;
+          font-size: 22px;
           font-weight: 700;
           color: #1e293b;
           line-height: 1.2;
@@ -157,8 +200,8 @@
 
       .pulse-dot {
         position: absolute;
-        top: 14px;
-        right: 14px;
+        top: 12px;
+        right: 12px;
         width: 8px;
         height: 8px;
         border-radius: 50%;
@@ -169,262 +212,296 @@
     }
   }
 
-  /* Filter Toolbar */
-  .filter-toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  /* Table Card */
+  .table-card {
     background: #ffffff;
-    padding: 14px 18px;
-    border-radius: 10px;
+    border-radius: 16px;
     border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
 
-    .filter-left {
+    /* Toolbar */
+    .table-toolbar {
+      padding: 12px 16px;
+      border-bottom: 1px solid #f1f5f9;
       display: flex;
       align-items: center;
-      gap: 14px;
+      justify-content: space-between;
+      gap: 16px;
       flex-wrap: wrap;
 
-      .search-input {
-        width: 320px;
-        border-radius: 6px;
+      .toolbar-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        flex: 1;
+
+        .search-input {
+          width: 320px;
+          border-radius: 8px;
+        }
+
+        .status-select {
+          width: 220px;
+        }
       }
 
-      .status-select {
-        width: 220px;
+      .toolbar-right {
+        .total-badge {
+          font-size: 13px;
+          color: #64748b;
+
+          strong {
+            color: #1e293b;
+          }
+        }
       }
     }
 
-    .filter-right {
-      .total-badge {
-        font-size: 13px;
-        color: #64748b;
+    /* Table Custom Styling */
+    .table-wrapper {
+      padding: 0 8px 8px 8px;
 
-        strong {
-          color: #1e293b;
+      .custom-operate-table {
+        ::ng-deep {
+          .ant-table {
+            background: transparent !important;
+            font-size: 13.5px !important;
+            color: #1e293b !important;
+          }
+
+          .ant-table-content {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+
+            &::-webkit-scrollbar {
+              width: 6px;
+              height: 6px;
+            }
+
+            &::-webkit-scrollbar-track {
+              background: transparent;
+            }
+
+            &::-webkit-scrollbar-thumb {
+              background: #cbd5e1;
+              border-radius: 4px;
+
+              &:hover {
+                background: #94a3b8;
+              }
+            }
+          }
+
+          /* Thead headers: only horizontal border, sticky */
+          .ant-table-thead > tr > th {
+            background: #f8fafc !important;
+            color: #475569 !important;
+            font-size: 12.5px !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+            padding: 12px 16px !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            border-right: none !important;
+            border-left: none !important;
+            white-space: nowrap !important;
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 2 !important;
+            box-shadow: 0 1px 0 #e2e8f0 !important;
+
+            &::before {
+              display: none !important;
+            }
+          }
+
+          /* Tbody data cells */
+          .ant-table-tbody > tr > td {
+            padding: 12px 16px !important;
+            font-size: 13.5px !important;
+            color: #1e293b !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            border-right: none !important;
+            border-left: none !important;
+            vertical-align: middle !important;
+          }
+
+          .ant-table-tbody > tr:last-child > td {
+            border-bottom: none !important;
+          }
+
+          .ant-table-tbody > tr {
+            transition: background-color 0.15s ease;
+
+            &:hover > td {
+              background-color: #f8fafc !important;
+            }
+          }
+
+          /* Direct table fallback */
+          table {
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+            width: 100% !important;
+
+            th,
+            td {
+              border-right: none !important;
+              border-left: none !important;
+            }
+
+            th {
+              border-bottom: 1px solid #e2e8f0 !important;
+            }
+
+            td {
+              border-bottom: 1px solid #f1f5f9 !important;
+            }
+
+            tbody > tr:last-child > td {
+              border-bottom: none !important;
+            }
+          }
+
+          .ant-pagination {
+            padding: 12px 16px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+          }
+        }
+
+        /* Elements with Border Radius */
+        .instance-link {
+          font-weight: 600;
+          color: #2563eb;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-family: 'JetBrains Mono', 'Fira Code', monospace;
+          font-size: 12.5px;
+          padding: 4px 8px;
+          background: #eff6ff;
+          border: 1px solid #bfdbfe;
+          border-radius: 6px;
+          transition: all 0.2s ease;
+
+          &:hover {
+            background: #dbeafe;
+            border-color: #93c5fd;
+            color: #1d4ed8;
+          }
+        }
+
+        .process-def-name {
+          font-weight: 600;
+          color: #0f172a;
+          font-size: 14px;
+          line-height: 1.35;
+        }
+
+        .process-def-key {
+          font-size: 12px;
+          color: #94a3b8;
+          font-family: 'JetBrains Mono', monospace;
+          margin-top: 2px;
+        }
+
+        .version-tag {
+          display: inline-block;
+          font-weight: 600;
+          border-radius: 6px;
+          padding: 3px 10px;
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          color: #475569;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 12px;
+        }
+
+        .status-cell {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          white-space: nowrap;
+
+          .status-tag {
+            font-weight: 600;
+            border-radius: 6px !important;
+            padding: 3px 10px !important;
+            margin: 0;
+            font-size: 12px;
+          }
+
+          .incident-pill {
+            display: inline-flex;
+            align-items: center;
+            margin: 0;
+
+            ::ng-deep .ant-badge-count {
+              border-radius: 10px !important;
+            }
+          }
+        }
+
+        .date-cell {
+          font-family: 'JetBrains Mono', 'Fira Code', monospace;
+          font-size: 12.5px;
+          color: #334155;
+          white-space: nowrap;
+
+          &.empty-text {
+            color: #94a3b8;
+            font-weight: 600;
+          }
+        }
+
+        .action-cell {
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          gap: 8px;
+
+          .action-icon-btn,
+          button,
+          ::ng-deep .ant-btn {
+            border-radius: 6px !important;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+          }
+        }
+
+        .total-text {
+          font-size: 13px;
+          color: #64748b;
+
+          strong {
+            color: #0f172a;
+          }
         }
       }
     }
   }
+}
 
-  /* Table Container */
-  .table-container {
-    background: #ffffff;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-    padding: 16px;
-
-    .custom-operate-table {
-      ::ng-deep {
-        .ant-table {
-          background: transparent !important;
-          font-size: 13.5px !important;
-          color: #1e293b !important;
-        }
-
-        /* Outer Table Border with Rounded Corners */
-        .ant-table-container {
-          border: 1px solid #e2e8f0 !important;
-          border-radius: 8px !important;
-          overflow: hidden !important;
-        }
-
-        /* Thead headers: only horizontal border, NO vertical borders between columns */
-        .ant-table-thead > tr > th {
-          background: #f8fafc !important;
-          color: #475569 !important;
-          font-size: 12px !important;
-          font-weight: 700 !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.5px !important;
-          padding: 14px 18px !important;
-          border-bottom: 1px solid #e2e8f0 !important;
-          border-right: none !important;
-          border-left: none !important;
-          white-space: nowrap !important;
-
-          /* Remove Ant Design's column separator line */
-          &::before {
-            display: none !important;
-          }
-        }
-
-        /* Tbody data cells: only horizontal row borders, NO vertical borders between columns */
-        .ant-table-tbody > tr > td {
-          padding: 14px 18px !important;
-          font-size: 13.5px !important;
-          color: #1e293b !important;
-          border-bottom: 1px solid #f1f5f9 !important;
-          border-right: none !important;
-          border-left: none !important;
-          vertical-align: middle !important;
-        }
-
-        .ant-table-tbody > tr:last-child > td {
-          border-bottom: none !important;
-        }
-
-        .ant-table-tbody > tr {
-          transition: background-color 0.15s ease;
-
-          &:hover > td {
-            background-color: #f8fafc !important;
-          }
-        }
-
-        /* Direct table fallback */
-        table {
-          border-collapse: separate !important;
-          border-spacing: 0 !important;
-          width: 100% !important;
-
-          th,
-          td {
-            border-right: none !important;
-            border-left: none !important;
-          }
-
-          th {
-            border-bottom: 1px solid #e2e8f0 !important;
-          }
-
-          td {
-            border-bottom: 1px solid #f1f5f9 !important;
-          }
-
-          tbody > tr:last-child > td {
-            border-bottom: none !important;
-          }
-        }
-
-        .ant-pagination {
-          padding: 14px 4px 6px 4px;
-          margin: 0;
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          gap: 8px;
-        }
-      }
-
-      /* Elements with Border Radius */
-      .instance-link {
-        font-weight: 600;
-        color: #2563eb;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-family: 'JetBrains Mono', 'Fira Code', monospace;
-        font-size: 12.5px;
-        padding: 4px 8px;
-        background: #eff6ff;
-        border: 1px solid #bfdbfe;
-        border-radius: 6px;
-        transition: all 0.2s ease;
-
-        &:hover {
-          background: #dbeafe;
-          border-color: #93c5fd;
-          color: #1d4ed8;
-        }
-      }
-
-      .process-def-name {
-        font-weight: 600;
-        color: #0f172a;
-        font-size: 14px;
-        line-height: 1.35;
-      }
-
-      .process-def-key {
-        font-size: 12px;
-        color: #94a3b8;
-        font-family: 'JetBrains Mono', monospace;
-        margin-top: 2px;
-      }
-
-      .version-tag {
-        display: inline-block;
-        font-weight: 600;
-        border-radius: 6px;
-        padding: 3px 10px;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        color: #475569;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 12px;
-      }
-
-      .status-cell {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        white-space: nowrap;
-
-        .status-tag {
-          font-weight: 600;
-          border-radius: 6px !important;
-          padding: 3px 10px !important;
-          margin: 0;
-          font-size: 12px;
-        }
-
-        .incident-pill {
-          display: inline-flex;
-          align-items: center;
-          margin: 0;
-
-          ::ng-deep .ant-badge-count {
-            border-radius: 10px !important;
-          }
-        }
-      }
-
-      .date-cell {
-        font-family: 'JetBrains Mono', 'Fira Code', monospace;
-        font-size: 12.5px;
-        color: #334155;
-        white-space: nowrap;
-
-        &.empty-text {
-          color: #94a3b8;
-          font-weight: 600;
-        }
-      }
-
-      .action-cell {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 8px;
-
-        .action-icon-btn,
-        button,
-        ::ng-deep .ant-btn {
-          border-radius: 6px !important;
-          width: 32px;
-          height: 32px;
-          padding: 0;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-      }
-
-      .total-text {
-        font-size: 13px;
-        color: #64748b;
-
-        strong {
-          color: #0f172a;
-        }
-      }
-    }
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

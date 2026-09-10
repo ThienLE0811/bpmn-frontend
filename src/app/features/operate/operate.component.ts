@@ -26,6 +26,7 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 import { OperateService } from '@core/services';
 import { ProcessInstance, ProcessIncident, ProcessInstanceState } from '@core/models';
 import { formatDateTime } from '@shared/utils';
+import { TableAutoHeightDirective } from '@shared/directives';
 import { OperateViewerComponent } from './operate-viewer/operate-viewer.component';
 
 @Component({
@@ -54,6 +55,7 @@ import { OperateViewerComponent } from './operate-viewer/operate-viewer.componen
     NzSpinModule,
     NzDividerModule,
     OperateViewerComponent,
+    TableAutoHeightDirective,
   ],
   templateUrl: './operate.component.html',
   styleUrl: './operate.component.scss',
@@ -62,6 +64,7 @@ export class OperateComponent implements OnInit {
   protected readonly operateService = inject(OperateService);
   private readonly message = inject(NzMessageService);
 
+  protected isStatsOpen = signal<boolean>(false);
   protected isDetailOpen = signal<boolean>(false);
   protected pageSize = signal<number>(10);
   protected pageIndex = signal<number>(1);
@@ -69,6 +72,10 @@ export class OperateComponent implements OnInit {
 
   ngOnInit(): void {
     this.refresh();
+  }
+
+  toggleStats(): void {
+    this.isStatsOpen.update((v) => !v);
   }
 
   refresh(): void {
