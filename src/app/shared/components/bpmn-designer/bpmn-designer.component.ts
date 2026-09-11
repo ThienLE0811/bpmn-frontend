@@ -16,6 +16,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import BpmnModeler from 'bpmn-js/lib/Modeler';
+import TokenSimulationModule from 'bpmn-js-token-simulation';
 import { BpmnProcess } from '@core/models/bpmn-process.model';
 import { DEFAULT_BPMN_XML } from '@shared/constants';
 import {
@@ -83,6 +84,10 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
   protected activeSidebarTab = signal<'general' | 'execution' | 'advanced'>('general');
   protected copiedId = signal<boolean>(false);
   private initialProcessName = '';
+
+  // Token Simulation State
+  readonly isSimulationActive = signal<boolean>(false);
+  readonly isSimulationPaused = signal<boolean>(true);
 
   // XML Mode State
   protected xmlContent = signal<string>('');
@@ -154,6 +159,33 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
       keyboard: {
         bindTo: window,
       },
+      additionalModules: [
+        TokenSimulationModule,
+      ],
+    });
+
+    const eventBus = this.bpmnModeler.get('eventBus');
+
+    // Sync simulation mode with toolbar
+    eventBus.on('tokenSimulation.toggleMode', (event: any) => {
+      const active = !!event?.active;
+      this.isSimulationActive.set(active);
+      if (!active) {
+        this.isSimulationPaused.set(true);
+      }
+    });
+
+    // Sync play/pause/reset simulation states
+    eventBus.on('tokenSimulation.playSimulation', () => {
+      this.isSimulationPaused.set(false);
+    });
+
+    eventBus.on('tokenSimulation.pauseSimulation', () => {
+      this.isSimulationPaused.set(true);
+    });
+
+    eventBus.on('tokenSimulation.resetSimulation', () => {
+      this.isSimulationPaused.set(true);
     });
 
     this.bpmnModeler.on('commandStack.changed', () => {
@@ -232,6 +264,11 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
   ngOnDestroy(): void {
     clearTimeout(this.modelerToXmlTimer);
     clearTimeout(this.xmlToModelerTimer);
+    if (this.isSimulationActive()) {
+      try {
+        this.bpmnModeler?.get('toggleMode')?.toggleMode(false);
+      } catch (_) {}
+    }
     if (this.bpmnModeler) {
       this.bpmnModeler.destroy();
     }
@@ -261,6 +298,10 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
   // --- Two-way Sync & Mode Management ---
 
   setMode(mode: DesignerMode): void {
+    if (mode === 'xml' && this.isSimulationActive()) {
+      this.toggleSimulation();
+    }
+
     this.viewMode.set(mode);
 
     if (mode === 'xml') {
@@ -625,6 +666,51 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
     const commandStack = this.bpmnModeler.get('commandStack');
     if (commandStack.canRedo()) {
       commandStack.redo();
+    }
+  }
+
+  toggleSimulation(): void {
+    if (!this.bpmnModeler) return;
+    try {
+      const toggleMode = this.bpmnModeler.get('toggleMode');
+      if (toggleMode) {
+        const willBeActive = !this.isSimulationActive();
+        toggleMode.toggleMode();
+        if (willBeActive) {
+          this.message.info(
+            'Đã bật mô phỏng trực quan. Nhấp vào nút Play trên sự kiện Bắt đầu để quan sát token di chuyển qua các cổng!',
+          );
+        } else {
+          this.message.info('Đã thoát chế độ mô phỏng.');
+        }
+      }
+    } catch (err) {
+      console.warn('Không thể bật/tắt token simulation:', err);
+    }
+  }
+
+  onSimulationPlayPause(): void {
+    if (!this.bpmnModeler) return;
+    try {
+      const pauseSimulation = this.bpmnModeler.get('pauseSimulation');
+      if (pauseSimulation) {
+        pauseSimulation.toggle();
+      }
+    } catch (err) {
+      console.warn('Lỗi khi thay đổi play/pause mô phỏng:', err);
+    }
+  }
+
+  onSimulationReset(): void {
+    if (!this.bpmnModeler) return;
+    try {
+      const resetSimulation = this.bpmnModeler.get('resetSimulation');
+      if (resetSimulation) {
+        resetSimulation.resetSimulation();
+        this.message.info('Đã đặt lại phiên mô phỏng.');
+      }
+    } catch (err) {
+      console.warn('Lỗi khi đặt lại mô phỏng:', err);
     }
   }
 

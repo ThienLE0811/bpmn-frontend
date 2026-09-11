@@ -1,5 +1,11 @@
 @use '../../../styles/colors' as *;
 
+// Chuyển màu chủ đạo DMN sang màu xanh dương đồng bộ với BPMN
+$dmn: $primary;
+$dmn-hover: $primary-hover;
+$dmn-light: $primary-light;
+$shadow-dmn: $shadow-primary;
+
 .dmn-list-layout {
   padding: 24px;
   max-width: 100%;
@@ -108,7 +114,7 @@
 
       &:hover {
         transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
       }
 
       &:active {
@@ -254,7 +260,7 @@
           &:focus,
           &.ant-input-affix-wrapper-focused {
             border-color: $dmn;
-            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
           }
         }
 
@@ -282,7 +288,7 @@
 
           &.ant-select-focused ::ng-deep .ant-select-selector {
             border-color: $dmn !important;
-            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12) !important;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
           }
         }
       }
@@ -368,7 +374,7 @@
 
         &:hover:not(:disabled) {
           transform: translateY(-1px);
-          box-shadow: 0 4px 10px rgba(124, 58, 237, 0.35);
+          box-shadow: 0 4px 10px rgba(37, 99, 235, 0.35);
         }
 
         &:active:not(:disabled) {
@@ -550,7 +556,7 @@
           &:focus,
           &.ant-input-affix-wrapper-focused {
             border-color: $dmn;
-            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
           }
         }
 
@@ -579,7 +585,7 @@
 
           &.ant-select-focused ::ng-deep .ant-select-selector {
             border-color: $dmn !important;
-            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12) !important;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
           }
         }
       }
@@ -611,7 +617,7 @@
 
         &:hover:not(:disabled) {
           transform: translateY(-1px);
-          box-shadow: 0 4px 10px rgba(124, 58, 237, 0.35);
+          box-shadow: 0 4px 10px rgba(37, 99, 235, 0.35);
         }
 
         &:disabled {
@@ -1384,7 +1390,7 @@
         &:focus {
           background: $white;
           border-color: $dmn;
-          box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
         }
 
         &.readonly-input,
@@ -1628,8 +1634,8 @@
           box-shadow: 0 2px 8px $shadow-dmn;
 
           &:hover:not(:disabled) {
-            background: linear-gradient(135deg, $dmn-hover 0%, #5b21b6 100%);
-            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+            background: linear-gradient(135deg, $dmn-hover 0%, #1e40af 100%);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
             transform: translateY(-1px);
           }
         }
@@ -1776,8 +1782,8 @@ button.btn-footer-submit,
     box-shadow: 0 2px 8px $shadow-dmn;
 
     &:hover:not(:disabled) {
-      background: linear-gradient(135deg, $dmn-hover 0%, #5b21b6 100%);
-      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+      background: linear-gradient(135deg, $dmn-hover 0%, #1e40af 100%);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
       transform: translateY(-1px);
     }
   }

@@ -56,6 +56,15 @@ export class DesignerHeaderComponent {
   /** Whether designer is in read-only mode */
   readOnly = input<boolean>(false);
 
+  /** Whether to show token simulation controls (BPMN only) */
+  showSimulation = input<boolean>(false);
+
+  /** Whether token simulation is currently active */
+  isSimulationActive = input<boolean>(false);
+
+  /** Whether token simulation is paused */
+  isSimulationPaused = input<boolean>(true);
+
   // Computed properties
   effectivePlaceholder = computed(() => {
     if (this.placeholder()) return this.placeholder()!;
@@ -89,6 +98,9 @@ export class DesignerHeaderComponent {
   zoomIn = output<void>();
   zoomOut = output<void>();
   zoomReset = output<void>();
+  toggleSimulation = output<void>();
+  simulationPlayPause = output<void>();
+  simulationReset = output<void>();
 
   setMode(mode: DesignerMode): void {
     this.activeMode.set(mode);

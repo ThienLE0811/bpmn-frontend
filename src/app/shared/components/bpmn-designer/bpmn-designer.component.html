@@ -10,6 +10,12 @@
     [saveLabel]="saveLabel"
     [showModeSwitch]="true"
     [activeMode]="viewMode()"
+    [showSimulation]="viewMode() === 'design' && !readOnly"
+    [isSimulationActive]="isSimulationActive()"
+    [isSimulationPaused]="isSimulationPaused()"
+    (toggleSimulation)="toggleSimulation()"
+    (simulationPlayPause)="onSimulationPlayPause()"
+    (simulationReset)="onSimulationReset()"
     (activeModeChange)="setMode($event)"
     (pasteXml)="pasteFromClipboard()"
     (save)="onSave()"
@@ -32,7 +38,7 @@
   >
     <!-- Canvas Area (kept in DOM across all modes to preserve bpmn-js instance) -->
     <div
-      class="canvas-container"
+      class="canvas-container bjs-container"
       [class.readonly]="readOnly"
       [class.hidden-canvas]="viewMode() === 'xml'"
       #canvas
@@ -41,6 +47,20 @@
     <!-- Properties Panel Sidebar (shown in Visual Design mode) -->
     @if (viewMode() === 'design') {
       <aside class="properties-sidebar">
+      @if (isSimulationActive()) {
+        <div class="simulation-banner">
+          <div class="sim-banner-icon">
+            <span nz-icon nzType="thunderbolt" nzTheme="outline"></span>
+          </div>
+          <div class="sim-banner-content">
+            <div class="sim-banner-title">Chế độ mô phỏng đang bật</div>
+            <div class="sim-banner-text">
+              Nhấp vào nút <strong class="highlight-action">Play</strong> trên sự kiện Bắt đầu hoặc cổng rẽ nhánh để quan sát token di chuyển qua quy trình.
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- Sidebar Header -->
       <div class="sidebar-header">
         <div class="header-left">

@@ -38,11 +38,11 @@ $shadow-primary: rgba(37, 99, 235, 0.25);
 $shadow-danger:  rgba(239, 68, 68, 0.25);
 $shadow-card:    rgba(15, 23, 42, 0.08);
 
-// 9. MÀU DMN (DECISION / TÍM ĐẶC TRƯNG)
-$dmn:            #7c3aed; // Tím DMN chủ đạo
-$dmn-hover:      #6d28d9; // Tím đậm khi hover
-$dmn-light:      #f5f3ff; // Nền tím nhạt (badge, highlight DMN)
-$shadow-dmn:     rgba(124, 58, 237, 0.25);
+// 9. MÀU DMN (DECISION / ĐỒNG BỘ MÀU XANH THEO BPMN)
+$dmn:            $primary; // Xanh DMN chủ đạo (đồng bộ BPMN)
+$dmn-hover:      $primary-hover; // Xanh đậm hơn khi hover
+$dmn-light:      $primary-light; // Nền xanh nhạt
+$shadow-dmn:     $shadow-primary;
 
 // -----------------------------------------------------------------------------
 // TƯƠNG THÍCH NGƯỢC (Aliases tương thích với các tệp dùng tiền tố $color-...)

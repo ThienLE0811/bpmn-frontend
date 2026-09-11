@@ -362,7 +362,6 @@ export class BpmnListComponent implements OnInit {
             description: formVal.description,
             category: formVal.category,
             bpmnXml: event.xml,
-            createdBy: 'Admin',
           })
           .subscribe({
             next: () => {
@@ -383,7 +382,6 @@ export class BpmnListComponent implements OnInit {
             category: formVal.category,
             status: formVal.status,
             bpmnXml: event.xml,
-            updatedBy: 'Admin',
           })
           .subscribe({
             next: () => {

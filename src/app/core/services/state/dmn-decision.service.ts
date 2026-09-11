@@ -73,7 +73,6 @@ export class DmnDecisionService {
     hitPolicy?: string;
     category?: string;
     dmnXml?: string | null;
-    createdBy?: string;
   }): Observable<DmnDecision> {
     const cleanPayload: Partial<DmnDecision> = {
       decisionKey: payload.decisionKey.trim(),
@@ -82,7 +81,6 @@ export class DmnDecisionService {
       hitPolicy: payload.hitPolicy || 'FIRST',
       category: payload.category || 'GENERAL',
       dmnXml: payload.dmnXml || '',
-      createdBy: payload.createdBy || 'Admin',
     };
 
     return this.dmnApi.create(cleanPayload).pipe(
@@ -117,7 +115,6 @@ export class DmnDecisionService {
       category?: string;
       status?: string;
       dmnXml?: string | null;
-      updatedBy?: string;
     },
   ): Observable<DmnDecision> {
     // Partial merge: Chỉ gửi các trường được truyền để backend giữ nguyên các trường khác
@@ -128,7 +125,6 @@ export class DmnDecisionService {
     if (payload.category !== undefined) cleanPayload.category = payload.category;
     if (payload.status !== undefined) cleanPayload.status = payload.status;
     if (payload.dmnXml !== undefined && payload.dmnXml !== null) cleanPayload.dmnXml = payload.dmnXml;
-    cleanPayload.updatedBy = payload.updatedBy || 'Admin';
 
     return this.dmnApi.update(id, cleanPayload).pipe(
       tap({
@@ -221,7 +217,6 @@ export class DmnDecisionService {
         category: updatedItem.category,
         status: updatedItem.status,
         dmnXml: updatedItem.dmnXml,
-        updatedBy: 'Admin',
       };
 
       this.dmnApi.update(decisionData.id, cleanPayload).subscribe({
@@ -268,7 +263,6 @@ export class DmnDecisionService {
         hitPolicy: decisionData.hitPolicy || 'FIRST',
         category: decisionData.category || 'GENERAL',
         dmnXml: xmlContent,
-        createdBy: decisionData.createdBy || 'Admin',
       };
 
       const newDmn: DmnDecision = {
@@ -281,7 +275,7 @@ export class DmnDecisionService {
         version: 1,
         status: 'DRAFT',
         dmnXml: xmlContent,
-        createdBy: cleanPayload.createdBy || 'Admin',
+        createdBy: 'Admin',
         updatedBy: null as any,
         createdAt: nowStr,
         updatedAt: nowStr,

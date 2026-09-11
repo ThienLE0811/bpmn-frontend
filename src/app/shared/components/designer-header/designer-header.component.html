@@ -54,6 +54,49 @@
       <div class="divider"></div>
     }
 
+    <!-- Token Simulation Controls (BPMN visual mode) -->
+    @if (showSimulation()) {
+      <div class="simulation-controls">
+        <button
+          type="button"
+          class="btn btn-simulation"
+          [class.active]="isSimulationActive()"
+          (click)="toggleSimulation.emit()"
+          [title]="isSimulationActive() ? 'Đang bật mô phỏng: Nhấp để tắt chế độ mô phỏng' : 'Bật chế độ mô phỏng luồng (Token Simulation)'"
+        >
+          <span nz-icon [nzType]="isSimulationActive() ? 'thunderbolt' : 'play-circle'" nzTheme="outline" class="sim-icon"></span>
+          <span class="btn-text">{{ isSimulationActive() ? 'Đang mô phỏng' : 'Mô phỏng' }}</span>
+          @if (isSimulationActive()) {
+            <span class="pulse-indicator"></span>
+          }
+        </button>
+
+        @if (isSimulationActive()) {
+          <div class="sim-quick-actions">
+            <button
+              type="button"
+              class="btn-icon sim-action-btn"
+              (click)="simulationPlayPause.emit()"
+              [title]="isSimulationPaused() ? 'Tiếp tục chạy mô phỏng (Play)' : 'Tạm dừng mô phỏng (Pause)'"
+            >
+              <span nz-icon [nzType]="isSimulationPaused() ? 'caret-right' : 'pause'" nzTheme="outline"></span>
+            </button>
+
+            <button
+              type="button"
+              class="btn-icon sim-action-btn"
+              (click)="simulationReset.emit()"
+              title="Đặt lại phiên mô phỏng (Reset Simulation)"
+            >
+              <span nz-icon nzType="reload" nzTheme="outline"></span>
+            </button>
+          </div>
+        }
+      </div>
+
+      <div class="divider"></div>
+    }
+
     <!-- Save & Close Primary Actions -->
     <div class="btn-group">
       @if (!readOnly()) {

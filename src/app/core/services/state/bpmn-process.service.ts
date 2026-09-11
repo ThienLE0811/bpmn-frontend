@@ -112,7 +112,6 @@ export class BpmnProcessService {
         category: updatedItem.category,
         status: updatedItem.status,
         bpmnXml: updatedItem.bpmnXml,
-        updatedBy: 'Admin',
       };
 
       // Gọi API cập nhật: PUT /api/bpmn-processes/:id
@@ -159,7 +158,6 @@ export class BpmnProcessService {
         description: processData.description || '',
         category: processData.category || 'GENERAL',
         bpmnXml: xmlContent,
-        createdBy: 'Admin',
       };
 
       const newProc: BpmnProcess = {
@@ -209,7 +207,6 @@ export class BpmnProcessService {
     description?: string;
     category: string;
     bpmnXml?: string | null;
-    createdBy?: string;
   }): Observable<BpmnProcess> {
     const cleanPayload: Partial<BpmnProcess> = {
       processKey: payload.processKey.trim(),
@@ -217,7 +214,6 @@ export class BpmnProcessService {
       description: payload.description || '',
       category: payload.category || 'GENERAL',
       bpmnXml: payload.bpmnXml || null,
-      createdBy: payload.createdBy || 'Admin',
     };
 
     return this.bpmnApi.create(cleanPayload).pipe(
@@ -251,7 +247,6 @@ export class BpmnProcessService {
       category?: string;
       status?: string;
       bpmnXml?: string | null;
-      updatedBy?: string;
     },
   ): Observable<BpmnProcess> {
     const cleanPayload: Partial<BpmnProcess> = {
@@ -260,7 +255,6 @@ export class BpmnProcessService {
       category: payload.category || 'GENERAL',
       status: payload.status || 'DRAFT',
       bpmnXml: payload.bpmnXml !== undefined ? payload.bpmnXml : null,
-      updatedBy: payload.updatedBy || 'Admin',
     };
 
     return this.bpmnApi.update(id, cleanPayload).pipe(

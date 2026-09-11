@@ -356,7 +356,6 @@ export class DmnListComponent implements OnInit {
             hitPolicy: formVal.hitPolicy,
             category: formVal.category,
             dmnXml: event.xml,
-            createdBy: 'Admin',
           })
           .subscribe({
             next: () => {
@@ -378,7 +377,6 @@ export class DmnListComponent implements OnInit {
             category: formVal.category,
             status: formVal.status,
             dmnXml: event.xml,
-            updatedBy: 'Admin',
           })
           .subscribe({
             next: () => {
