@@ -13,11 +13,19 @@
         (click)="toggleStats()"
         title="Xem thống kê tổng quan"
       >
-        <span nz-icon [nzType]="isStatsOpen() ? 'eye-invisible' : 'dashboard'" nzTheme="outline"></span>
+        <span
+          nz-icon
+          [nzType]="isStatsOpen() ? 'eye-invisible' : 'dashboard'"
+          nzTheme="outline"
+        ></span>
         <span>{{ isStatsOpen() ? 'Ẩn thống kê' : 'Xem thống kê' }}</span>
       </button>
 
-      <button class="btn btn-user-glow" (click)="openCreateModal()">
+      <button
+        class="btn btn-user-glow"
+        [disabled]="!isAdmin()"
+        (click)="openCreateModal()"
+      >
         <span nz-icon nzType="user-add" nzTheme="outline"></span>
         <span>Thêm người dùng</span>
       </button>
@@ -200,7 +208,9 @@
                         {{ getUserInitials(user.fullName) }}
                       </div>
                       <div class="user-meta">
-                        <span class="user-fullname" [title]="user.fullName">{{ user.fullName }}</span>
+                        <span class="user-fullname" [title]="user.fullName">{{
+                          user.fullName
+                        }}</span>
                         <span class="user-username">@{{ user.username }}</span>
                       </div>
                     </div>
@@ -253,16 +263,6 @@
                   <!-- Actions Cell -->
                   <td nzAlign="center" (click)="$event.stopPropagation()">
                     <div class="actions-group">
-                      <!-- Edit button -->
-                      <button
-                        class="action-btn edit-btn"
-                        nz-tooltip
-                        nzTooltipTitle="Chỉnh sửa tài khoản"
-                        (click)="openEditModal(user, $event)"
-                      >
-                        <span nz-icon nzType="edit" nzTheme="outline"></span>
-                      </button>
-
                       <!-- Action Dropdown for Status, Reset PW, Delete -->
                       <button
                         class="action-btn more-btn"
@@ -277,59 +277,78 @@
                       <nz-dropdown-menu #actionMenu="nzDropdownMenu">
                         <ul nz-menu class="custom-dropdown-menu">
                           <li nz-menu-item (click)="openDetailDrawer(user)">
-                            <span nz-icon nzType="eye" nzTheme="outline" class="menu-action-icon"></span>
+                            <span
+                              nz-icon
+                              nzType="eye"
+                              nzTheme="outline"
+                              class="menu-action-icon"
+                            ></span>
                             <span>Xem thông tin chi tiết</span>
                           </li>
 
-                          <li nz-menu-item (click)="openEditModal(user, $event)">
-                            <span nz-icon nzType="form" nzTheme="outline" class="menu-action-icon"></span>
+                          <li
+                            nz-menu-item
+                            [nzDisabled]="!canEditUser(user)"
+                            (click)="canEditUser(user) && openEditModal(user, $event)"
+                          >
+                            <span
+                              nz-icon
+                              nzType="form"
+                              nzTheme="outline"
+                              class="menu-action-icon"
+                            ></span>
                             <span>Cập nhật thông tin</span>
                           </li>
 
-                          <li nz-menu-divider></li>
-
                           @if (user.status !== 'ACTIVE') {
-                            <li nz-menu-item (click)="toggleStatus(user, 'ACTIVE', $event)">
-                              <span nz-icon nzType="check-circle" nzTheme="outline" class="menu-action-icon success"></span>
+                            <li
+                              nz-menu-item
+                              [nzDisabled]="!isAdmin()"
+                              (click)="isAdmin() && toggleStatus(user, 'ACTIVE', $event)"
+                            >
+                              <span
+                                nz-icon
+                                nzType="check-circle"
+                                nzTheme="outline"
+                                class="menu-action-icon success"
+                              ></span>
                               <span>Kích hoạt tài khoản</span>
                             </li>
                           }
 
-                          @if (user.status !== 'INACTIVE') {
-                            <li nz-menu-item (click)="toggleStatus(user, 'INACTIVE', $event)">
-                              <span nz-icon nzType="pause-circle" nzTheme="outline" class="menu-action-icon warning"></span>
-                              <span>Tạm dừng tài khoản</span>
-                            </li>
-                          }
-
-                          @if (user.status !== 'LOCKED') {
-                            <li nz-menu-item (click)="toggleStatus(user, 'LOCKED', $event)">
-                              <span nz-icon nzType="lock" nzTheme="outline" class="menu-action-icon danger"></span>
-                              <span>Khóa quyền truy cập</span>
-                            </li>
-                          }
-
-                          <li nz-menu-item (click)="resetPassword(user, $event)">
-                            <span nz-icon nzType="key" nzTheme="outline" class="menu-action-icon"></span>
-                            <span>Đặt lại mật khẩu</span>
-                          </li>
-
                           <li nz-menu-divider></li>
 
-                          <li
-                            nz-menu-item
-                            nzDanger
-                            nz-popconfirm
-                            nzPopconfirmTitle="Bạn có chắc chắn muốn xóa tài khoản này không?"
-                            nzOkText="Xóa tài khoản"
-                            nzOkDanger
-                            nzCancelText="Hủy"
-                            nzPopconfirmPlacement="left"
-                            (nzOnConfirm)="deleteUser(user)"
-                          >
-                            <span nz-icon nzType="delete" nzTheme="outline" class="menu-action-icon danger"></span>
-                            <span>Xóa tài khoản</span>
-                          </li>
+                          @if (canDeleteUser(user)) {
+                            <li
+                              nz-menu-item
+                              nzDanger
+                              nz-popconfirm
+                              nzPopconfirmTitle="Bạn có chắc chắn muốn xóa tài khoản này không?"
+                              nzOkText="Xóa tài khoản"
+                              nzOkDanger
+                              nzCancelText="Hủy"
+                              nzPopconfirmPlacement="left"
+                              (nzOnConfirm)="deleteUser(user)"
+                            >
+                              <span
+                                nz-icon
+                                nzType="delete"
+                                nzTheme="outline"
+                                class="menu-action-icon danger"
+                              ></span>
+                              <span>Xóa tài khoản</span>
+                            </li>
+                          } @else {
+                            <li nz-menu-item nzDisabled>
+                              <span
+                                nz-icon
+                                nzType="delete"
+                                nzTheme="outline"
+                                class="menu-action-icon danger"
+                              ></span>
+                              <span>Xóa tài khoản</span>
+                            </li>
+                          }
                         </ul>
                       </nz-dropdown-menu>
                     </div>
@@ -340,7 +359,9 @@
           </nz-table>
 
           <ng-template #totalTemplate let-total>
-            <span class="table-total-count">Tổng cộng <strong>{{ total }}</strong> người dùng</span>
+            <span class="table-total-count"
+              >Tổng cộng <strong>{{ total }}</strong> người dùng</span
+            >
           </ng-template>
         </div>
       </section>
@@ -433,10 +454,54 @@
           }
         </div>
 
+        <div class="form-group">
+          <label class="form-label" [class.required]="!selectedUser()">
+            {{ selectedUser() ? 'Mật khẩu mới (Để trống nếu không đổi)' : 'Mật khẩu' }}
+          </label>
+          <nz-input-wrapper>
+            <span nzInputPrefix><span nz-icon nzType="lock"></span></span>
+            <input
+              [type]="passwordVisible() ? 'text' : 'password'"
+              nz-input
+              [placeholder]="
+                selectedUser()
+                  ? 'Nhập mật khẩu mới nếu muốn đổi'
+                  : 'Nhập mật khẩu (tối thiểu 3 ký tự)'
+              "
+              [readOnly]="isSubmitting()"
+              [formField]="userForm.password"
+            />
+            <span nzInputSuffix>
+              <button
+                type="button"
+                class="password-toggle-btn"
+                (click)="togglePasswordVisibility()"
+                tabindex="-1"
+                [title]="passwordVisible() ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'"
+              >
+                <span
+                  nz-icon
+                  [nzType]="passwordVisible() ? 'eye-invisible' : 'eye'"
+                  nzTheme="outline"
+                ></span>
+              </button>
+            </span>
+          </nz-input-wrapper>
+          @if (passwordError()) {
+            <div class="form-error-msg">
+              <span>{{ passwordError() }}</span>
+            </div>
+          }
+        </div>
+
         <div class="form-row two-cols">
           <div class="form-group">
             <label class="form-label required">Vai trò hệ thống</label>
-            <nz-select [formField]="userForm.role" class="form-select" [nzDisabled]="isSubmitting()">
+            <nz-select
+              [formField]="userForm.role"
+              class="form-select"
+              [nzDisabled]="isSubmitting() || (!isAdmin() && !!selectedUser())"
+            >
               <nz-option nzValue="ADMIN" nzLabel="Quản trị viên (ADMIN)"></nz-option>
               <nz-option nzValue="DEVELOPER" nzLabel="Lập trình viên (DEVELOPER)"></nz-option>
               <nz-option nzValue="MANAGER" nzLabel="Quản lý (MANAGER)"></nz-option>
@@ -447,7 +512,11 @@
 
           <div class="form-group">
             <label class="form-label required">Trạng thái tài khoản</label>
-            <nz-select [formField]="userForm.status" class="form-select" [nzDisabled]="isSubmitting()">
+            <nz-select
+              [formField]="userForm.status"
+              class="form-select"
+              [nzDisabled]="isSubmitting() || (!isAdmin() && !!selectedUser())"
+            >
               <nz-option nzValue="ACTIVE" nzLabel="Đang hoạt động (ACTIVE)"></nz-option>
               <nz-option nzValue="INACTIVE" nzLabel="Tạm dừng (INACTIVE)"></nz-option>
               <nz-option nzValue="LOCKED" nzLabel="Đã khóa (LOCKED)"></nz-option>
@@ -459,7 +528,9 @@
 
     <ng-template #modalFooterTemplate>
       <div class="modal-footer-custom">
-        <button class="btn btn-outline" (click)="closeModal()" [disabled]="isSubmitting()">Hủy bỏ</button>
+        <button class="btn btn-outline" (click)="closeModal()" [disabled]="isSubmitting()">
+          Hủy bỏ
+        </button>
         <button class="btn btn-primary" (click)="saveUser()" [disabled]="isSubmitting()">
           @if (isSubmitting()) {
             <span nz-icon nzType="loading" nzTheme="outline"></span>
@@ -512,30 +583,22 @@
             <h4 class="section-title">Thông tin tài khoản</h4>
 
             <div class="info-item">
-              <span class="info-label">
-                <span nz-icon nzType="idcard"></span> Mã người dùng:
-              </span>
+              <span class="info-label"> <span nz-icon nzType="idcard"></span> Mã người dùng: </span>
               <span class="info-value font-mono">{{ user.id }}</span>
             </div>
 
             <div class="info-item">
-              <span class="info-label">
-                <span nz-icon nzType="user"></span> Tên đăng nhập:
-              </span>
+              <span class="info-label"> <span nz-icon nzType="user"></span> Tên đăng nhập: </span>
               <span class="info-value font-mono">&#64;{{ user.username }}</span>
             </div>
 
             <div class="info-item">
-              <span class="info-label">
-                <span nz-icon nzType="mail"></span> Email:
-              </span>
+              <span class="info-label"> <span nz-icon nzType="mail"></span> Email: </span>
               <span class="info-value">{{ user.email }}</span>
             </div>
 
             <div class="info-item">
-              <span class="info-label">
-                <span nz-icon nzType="safety"></span> Vai trò:
-              </span>
+              <span class="info-label"> <span nz-icon nzType="safety"></span> Vai trò: </span>
               <span class="info-value">{{ roleInfo.label }}</span>
             </div>
 
@@ -568,29 +631,35 @@
 
           <!-- Drawer Actions -->
           <div class="drawer-footer-actions">
-            <button class="btn btn-outline full-width" (click)="openEditModal(user)">
+            <button
+              class="btn btn-outline full-width"
+              [disabled]="!canEditUser(user)"
+              (click)="openEditModal(user)"
+            >
               <span nz-icon nzType="edit"></span>
               <span>Chỉnh sửa thông tin</span>
             </button>
 
-            <button class="btn btn-secondary full-width" (click)="resetPassword(user)">
-              <span nz-icon nzType="key"></span>
-              <span>Đặt lại mật khẩu</span>
-            </button>
-
-            <button
-              class="btn btn-danger-outline full-width"
-              nz-popconfirm
-              nzPopconfirmTitle="Bạn có chắc chắn muốn xóa tài khoản này không?"
-              nzOkText="Xóa tài khoản"
-              nzOkDanger
-              nzCancelText="Hủy"
-              nzPopconfirmPlacement="top"
-              (nzOnConfirm)="deleteUser(user)"
-            >
-              <span nz-icon nzType="delete"></span>
-              <span>Xóa tài khoản</span>
-            </button>
+            @if (canDeleteUser(user)) {
+              <button
+                class="btn btn-danger-outline full-width"
+                nz-popconfirm
+                nzPopconfirmTitle="Bạn có chắc chắn muốn xóa tài khoản này không?"
+                nzOkText="Xóa tài khoản"
+                nzOkDanger
+                nzCancelText="Hủy"
+                nzPopconfirmPlacement="top"
+                (nzOnConfirm)="deleteUser(user)"
+              >
+                <span nz-icon nzType="delete"></span>
+                <span>Xóa tài khoản</span>
+              </button>
+            } @else {
+              <button class="btn btn-danger-outline full-width" disabled>
+                <span nz-icon nzType="delete"></span>
+                <span>Xóa tài khoản</span>
+              </button>
+            }
           </div>
         </div>
       }

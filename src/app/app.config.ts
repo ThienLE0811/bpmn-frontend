@@ -1,11 +1,12 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig, provideBrowserGlobalErrorListeners, importProvidersFrom } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { registerLocaleData } from '@angular/common';
 import vi from '@angular/common/locales/vi';
 import { provideNzI18n, vi_VN } from 'ng-zorro-antd/i18n';
 import { provideNzIcons } from 'ng-zorro-antd/icon';
+import { NzModalModule } from 'ng-zorro-antd/modal';
 import {
   PlusOutline,
   EditOutline,
@@ -48,9 +49,19 @@ import {
   BugOutline,
   HistoryOutline,
   EyeOutline,
+  EyeInvisibleOutline,
+  LockOutline,
+  UserOutline,
+  LogoutOutline,
+  SafetyCertificateOutline,
+  LoginOutline,
+  KeyOutline,
+  TeamOutline,
+  DownOutline,
 } from '@ant-design/icons-angular/icons';
 
 import { routes } from './app.routes';
+import { authInterceptor } from './core/interceptors';
 
 registerLocaleData(vi);
 
@@ -96,15 +107,27 @@ const icons = [
   BugOutline,
   HistoryOutline,
   EyeOutline,
+  EyeInvisibleOutline,
+  LockOutline,
+  UserOutline,
+  LogoutOutline,
+  SafetyCertificateOutline,
+  LoginOutline,
+  KeyOutline,
+  TeamOutline,
+  DownOutline,
 ];
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    provideHttpClient(withFetch()),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     provideAnimationsAsync(),
     provideNzI18n(vi_VN),
     provideNzIcons(icons),
+    importProvidersFrom(NzModalModule),
   ],
 };
+
+

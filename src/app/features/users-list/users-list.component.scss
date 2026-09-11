@@ -106,13 +106,23 @@
       box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
       transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
-      &:hover {
+      &:disabled,
+      &[disabled] {
+        cursor: not-allowed !important;
+        opacity: 0.45 !important;
+        background: #94a3b8 !important;
+        box-shadow: none !important;
+        transform: none !important;
+        pointer-events: auto !important;
+      }
+
+      &:not(:disabled):hover {
         background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
         box-shadow: 0 6px 20px rgba(2, 132, 199, 0.45);
         transform: translateY(-1px);
       }
 
-      &:active {
+      &:not(:disabled):active {
         transform: translateY(0);
       }
     }
@@ -781,14 +791,26 @@
     cursor: pointer;
     transition: all 0.2s ease;
 
-    &:hover {
+    &:disabled,
+    &[disabled] {
+      cursor: not-allowed !important;
+      opacity: 0.45;
+      background: #f1f5f9 !important;
+      border-color: #e2e8f0 !important;
+      color: #94a3b8 !important;
+      transform: none !important;
+      box-shadow: none !important;
+      pointer-events: auto !important;
+    }
+
+    &:not(:disabled):hover {
       background: #f0f9ff;
       border-color: #bae6fd;
       color: #0284c7;
       transform: translateY(-1px);
     }
 
-    &.edit-btn:hover {
+    &.edit-btn:not(:disabled):hover {
       background: #f0fdf4;
       border-color: #bbf7d0;
       color: #16a34a;
@@ -797,13 +819,36 @@
 }
 
 /* Custom Dropdown Menu */
-.custom-dropdown-menu {
+::ng-deep .custom-dropdown-menu {
   min-width: 190px;
   border-radius: 10px;
   box-shadow:
     0 10px 25px -5px rgba(0, 0, 0, 0.1),
     0 8px 10px -6px rgba(0, 0, 0, 0.1);
   padding: 6px;
+
+  .ant-dropdown-menu-item {
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
+    transition: all 0.15s ease;
+
+    &.ant-dropdown-menu-item-disabled {
+      cursor: not-allowed !important;
+      color: #94a3b8 !important;
+      background: transparent !important;
+      opacity: 0.55;
+
+      * {
+        cursor: not-allowed !important;
+      }
+
+      &:hover {
+        background: transparent !important;
+        color: #94a3b8 !important;
+      }
+    }
+  }
 
   .menu-action-icon {
     font-size: 14px;
@@ -884,7 +929,25 @@
         border-color: #0284c7 !important;
         box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
       }
+
+      .password-toggle-btn {
+        background: transparent;
+        border: none;
+        padding: 0 4px;
+        color: #64748b;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        transition: color 0.15s ease;
+
+        &:hover {
+          color: #0f172a;
+        }
+      }
     }
+
 
     .form-select {
       width: 100%;
@@ -1073,11 +1136,20 @@
   transition: all 0.2s ease;
   border: 1px solid transparent;
 
+  &:disabled,
+  &[disabled] {
+    cursor: not-allowed !important;
+    opacity: 0.45 !important;
+    transform: none !important;
+    box-shadow: none !important;
+    pointer-events: auto !important;
+  }
+
   &.btn-primary {
     background: #0284c7;
     color: #ffffff;
 
-    &:hover {
+    &:not(:disabled):hover {
       background: #0369a1;
     }
   }
@@ -1087,7 +1159,7 @@
     color: #334155;
     border-color: #e2e8f0;
 
-    &:hover {
+    &:not(:disabled):hover {
       background: #e2e8f0;
       color: #0f172a;
     }
@@ -1098,7 +1170,7 @@
     color: #475569;
     border-color: #cbd5e1;
 
-    &:hover {
+    &:not(:disabled):hover {
       background: #f8fafc;
       color: #0f172a;
       border-color: #94a3b8;
@@ -1110,7 +1182,7 @@
     color: #dc2626;
     border-color: #fca5a5;
 
-    &:hover {
+    &:not(:disabled):hover {
       background: #fef2f2;
       color: #b91c1c;
       border-color: #f87171;

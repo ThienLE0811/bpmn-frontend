@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { User, UserQueryParams, UserRole, UserStatus } from '@core/models/user.model';
 import { ApiErrorHandlerService } from '@shared/services';
-import { formatDateTime, generateTempPassword } from '@shared/utils';
+import { formatDateTime } from '@shared/utils';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { UserApiService } from '../api/user-api.service';
 
@@ -75,6 +75,7 @@ export class UserService {
     email: string;
     role: UserRole;
     status: UserStatus;
+    password?: string;
   }): Observable<User> {
     const cleanPayload: Partial<User> = {
       username: userData.username.trim(),
@@ -82,6 +83,7 @@ export class UserService {
       email: userData.email.trim(),
       role: userData.role || 'DEVELOPER',
       status: userData.status || 'ACTIVE',
+      ...(userData.password && userData.password.trim() ? { password: userData.password.trim() } : {}),
     };
 
     return this.userApi.create(cleanPayload).pipe(
@@ -120,6 +122,7 @@ export class UserService {
       email: string;
       role: UserRole;
       status: UserStatus;
+      password?: string;
     },
   ): Observable<User> {
     const cleanPayload: Partial<User> = {
@@ -128,9 +131,11 @@ export class UserService {
       email: userData.email.trim(),
       role: userData.role,
       status: userData.status,
+      ...(userData.password && userData.password.trim() ? { password: userData.password.trim() } : {}),
     };
 
     return this.userApi.update(id, cleanPayload).pipe(
+
       tap({
         next: (updated) => {
           const nowStr = formatDateTime();
@@ -227,25 +232,7 @@ export class UserService {
       }),
     );
   }
-
-  resetPassword(id: string): Observable<{ success: boolean; message?: string }> {
-    const target = this.allUsers.find((u) => u.id === id);
-    const targetName = target ? target.fullName : 'người dùng';
-
-    return this.userApi.resetPassword(id).pipe(
-      tap({
-        next: () => {
-          this.message.success(`Đã gửi email cấp lại mật khẩu tạm thời cho ${targetName}.`);
-        },
-        error: () => {
-          // Fallback feedback
-          this.message.success(
-            `Mật khẩu tạm thời đã được đặt lại thành công cho ${targetName}: "${generateTempPassword()}"`,
-          );
-        },
-      }),
-    );
-  }
 }
+
 
 

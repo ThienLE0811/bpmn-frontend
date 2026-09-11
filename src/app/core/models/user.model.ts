@@ -8,9 +8,11 @@ export interface User {
   fullName: string;
   role: UserRole;
   status: UserStatus;
+  password?: string;
   createdAt: string;
   updatedAt: string;
 }
+
 
 export interface UserQueryParams {
   search?: string;

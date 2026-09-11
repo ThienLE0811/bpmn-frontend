@@ -17,15 +17,6 @@
         <span>{{ isStatsOpen() ? 'Ẩn thống kê' : 'Xem thống kê' }}</span>
       </button>
 
-      <button
-        class="btn btn-outline-xml"
-        (click)="openCreateModal('xml')"
-        title="Tạo quy trình mới trực tiếp từ việc dán mã BPMN XML"
-      >
-        <span nz-icon nzType="snippets" nzTheme="outline"></span>
-        <span>Dán file XML</span>
-      </button>
-
       <button class="btn btn-primary-glow" (click)="openCreateModal('design')">
         <span nz-icon nzType="plus" nzTheme="outline"></span>
         <span>Tạo quy trình mới</span>

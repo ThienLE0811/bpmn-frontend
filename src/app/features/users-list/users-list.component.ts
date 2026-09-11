@@ -12,13 +12,15 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
-import { UserService } from '@core/services';
+import { UserService, AuthService } from '@core/services';
 import { User, UserRole, UserStatus } from '@core/models';
+import { NzMessageService } from 'ng-zorro-antd/message';
 import {
   getAvatarColor,
   getUserInitials,
   getUserRoleMeta,
   getUserStatusMeta,
+  checkPer,
 } from '@shared/utils';
 import { TableAutoHeightDirective } from '@shared/directives';
 
@@ -46,11 +48,57 @@ import { TableAutoHeightDirective } from '@shared/directives';
 })
 export class UsersListComponent implements OnInit {
   private userService = inject(UserService);
+  private authService = inject(AuthService);
   private modal = inject(NzModalService);
+  private message = inject(NzMessageService);
+
+  readonly loggedInUser = this.authService.currentUser;
+  readonly isAdmin = computed(() => checkPer('ADMIN', this.loggedInUser()));
+
+  // Cung cấp hàm checkPer dùng trong template và component
+  protected readonly checkPer = checkPer;
+
+  canEditUser(targetUser: User | null | undefined): boolean {
+    if (!targetUser) return false;
+    const current = this.loggedInUser();
+    if (!current) return false;
+
+    // Quản trị viên (ADMIN) có quyền sửa bất kỳ tài khoản nào
+    if (checkPer('ADMIN', current)) return true;
+
+    // Người dùng chỉ có quyền sửa chính bản thân mình
+    const isSameId = !!current.id && !!targetUser.id && current.id === targetUser.id;
+    const isSameUsername =
+      !!current.username &&
+      !!targetUser.username &&
+      current.username.trim().toLowerCase() === targetUser.username.trim().toLowerCase();
+
+    return isSameId || isSameUsername;
+  }
+
+  canDeleteUser(targetUser: User | null | undefined): boolean {
+    if (!targetUser) return false;
+    const current = this.loggedInUser();
+    if (!current) return false;
+
+    // Chỉ Quản trị viên (ADMIN) mới có quyền xóa tài khoản
+    if (!checkPer('ADMIN', current)) return false;
+
+    // Không cho phép tự xóa tài khoản của chính mình đang đăng nhập
+    const isSameId = !!current.id && !!targetUser.id && current.id === targetUser.id;
+    const isSameUsername =
+      !!current.username &&
+      !!targetUser.username &&
+      current.username.trim().toLowerCase() === targetUser.username.trim().toLowerCase();
+
+    return !isSameId && !isSameUsername;
+  }
+
 
   ngOnInit(): void {
     this.search();
   }
+
 
   // UI state signals
   protected isModalOpen = signal<boolean>(false);
@@ -67,6 +115,7 @@ export class UsersListComponent implements OnInit {
     email: string;
     role: UserRole;
     status: UserStatus;
+    password?: string;
   } | null = null;
 
   // Filter signal model
@@ -88,12 +137,20 @@ export class UsersListComponent implements OnInit {
   protected readonly isFiltered = computed(() => this.activeFilterCount() > 0);
 
   // User form signal
+  protected readonly passwordVisible = signal<boolean>(false);
+  protected readonly passwordError = signal<string | null>(null);
+
+  togglePasswordVisibility(): void {
+    this.passwordVisible.set(!this.passwordVisible());
+  }
+
   protected readonly userFormModel = signal({
     username: '',
     fullName: '',
     email: '',
     role: 'DEVELOPER' as UserRole,
     status: 'ACTIVE' as UserStatus,
+    password: '',
   });
 
   protected readonly userForm = form(this.userFormModel, (schema) => {
@@ -102,6 +159,7 @@ export class UsersListComponent implements OnInit {
     required(schema.email, { message: 'Email không được để trống' });
     required(schema.role, { message: 'Vui lòng chọn vai trò người dùng' });
   });
+
 
   protected users = this.userService.users;
   protected isLoading = this.userService.isLoading;
@@ -161,14 +219,21 @@ export class UsersListComponent implements OnInit {
   protected sortUpdatedAt = (a: User, b: User): number => (a.updatedAt || '').localeCompare(b.updatedAt || '');
 
   openCreateModal(): void {
+    if (!this.isAdmin()) {
+      this.message.warning('Chỉ Quản trị viên (ADMIN) mới có quyền thêm người dùng mới.');
+      return;
+    }
     const initial = {
       username: '',
       fullName: '',
       email: '',
       role: 'DEVELOPER' as UserRole,
       status: 'ACTIVE' as UserStatus,
+      password: '',
     };
     this.selectedUser.set(null);
+    this.passwordVisible.set(false);
+    this.passwordError.set(null);
     this.userFormModel.set({ ...initial });
     this.initialFormModel = { ...initial };
     this.isModalOpen.set(true);
@@ -176,18 +241,26 @@ export class UsersListComponent implements OnInit {
 
   openEditModal(user: User, event?: Event): void {
     event?.stopPropagation();
+    if (!this.canEditUser(user)) {
+      this.message.warning('Bạn chỉ có quyền chỉnh sửa tài khoản của chính mình hoặc tài khoản có quyền Quản trị viên (ADMIN).');
+      return;
+    }
     const initial = {
       username: user.username,
       fullName: user.fullName,
       email: user.email,
       role: user.role,
       status: user.status,
+      password: '',
     };
     this.selectedUser.set(user);
+    this.passwordVisible.set(false);
+    this.passwordError.set(null);
     this.userFormModel.set({ ...initial });
     this.initialFormModel = { ...initial };
     this.isModalOpen.set(true);
   }
+
 
   openDetailDrawer(user: User): void {
     this.detailUser.set(user);
@@ -218,7 +291,8 @@ export class UsersListComponent implements OnInit {
       cur.fullName !== this.initialFormModel.fullName ||
       cur.email !== this.initialFormModel.email ||
       cur.role !== this.initialFormModel.role ||
-      cur.status !== this.initialFormModel.status
+      cur.status !== this.initialFormModel.status ||
+      cur.password !== (this.initialFormModel.password || '')
     );
   }
 
@@ -245,13 +319,45 @@ export class UsersListComponent implements OnInit {
     this.selectedUser.set(null);
     this.initialFormModel = null;
     this.isSubmitting.set(false);
+    this.passwordVisible.set(false);
+    this.passwordError.set(null);
   }
 
   saveUser(): void {
     submit(this.userForm, async () => {
       const current = this.selectedUser();
       const formVal = this.userFormModel();
+      this.passwordError.set(null);
+
+      // Validate password
+      if (!current?.id) {
+        // Khi tạo mới: bắt buộc là ADMIN và phải nhập mật khẩu
+        if (!this.isAdmin()) {
+          this.message.error('Chỉ Quản trị viên (ADMIN) mới có quyền tạo người dùng mới.');
+          return;
+        }
+        if (!formVal.password?.trim()) {
+          this.passwordError.set('Vui lòng nhập mật khẩu khởi tạo cho người dùng mới.');
+          return;
+        }
+        if (formVal.password.trim().length < 3) {
+          this.passwordError.set('Mật khẩu phải có tối thiểu 3 ký tự.');
+          return;
+        }
+      } else {
+        if (!this.canEditUser(current)) {
+          this.message.error('Bạn không có quyền chỉnh sửa tài khoản người dùng này.');
+          return;
+        }
+        // Khi cập nhật: nếu có nhập thì phải >= 3 ký tự
+        if (formVal.password?.trim() && formVal.password.trim().length < 3) {
+          this.passwordError.set('Mật khẩu mới phải có tối thiểu 3 ký tự.');
+          return;
+        }
+      }
+
       this.isSubmitting.set(true);
+
 
       if (!current?.id) {
         // Gọi API tạo mới: POST /api/users
@@ -262,6 +368,7 @@ export class UsersListComponent implements OnInit {
             email: formVal.email,
             role: formVal.role,
             status: formVal.status,
+            password: formVal.password.trim(),
           })
           .subscribe({
             next: () => {
@@ -281,6 +388,7 @@ export class UsersListComponent implements OnInit {
             email: formVal.email,
             role: formVal.role,
             status: formVal.status,
+            ...(formVal.password?.trim() ? { password: formVal.password.trim() } : {}),
           })
           .subscribe({
             next: (savedUser) => {
@@ -298,8 +406,13 @@ export class UsersListComponent implements OnInit {
     });
   }
 
+
   deleteUser(user: User, event?: Event): void {
     event?.stopPropagation();
+    if (!this.canDeleteUser(user)) {
+      this.message.warning('Bạn không có quyền xóa tài khoản này.');
+      return;
+    }
     // Gọi API xóa: DELETE /api/users/{id}
     this.userService.deleteUser(user.id).subscribe({
       next: () => {
@@ -312,6 +425,10 @@ export class UsersListComponent implements OnInit {
 
   toggleStatus(user: User, status: UserStatus, event?: Event): void {
     event?.stopPropagation();
+    if (!this.isAdmin()) {
+      this.message.warning('Chỉ Quản trị viên (ADMIN) mới có quyền thay đổi trạng thái tài khoản.');
+      return;
+    }
     this.userService.toggleStatus(user.id, status).subscribe({
       next: (updatedUser) => {
         if (this.detailUser()?.id === user.id) {
@@ -323,12 +440,8 @@ export class UsersListComponent implements OnInit {
     });
   }
 
-  resetPassword(user: User, event?: Event): void {
-    event?.stopPropagation();
-    this.userService.resetPassword(user.id).subscribe();
-  }
-
   // Helpers for UI tags, avatar and initials (delegated to @shared/utils)
+
   protected readonly getRoleBadgeInfo = getUserRoleMeta;
   protected readonly getStatusBadgeInfo = getUserStatusMeta;
   protected readonly getAvatarColor = getAvatarColor;

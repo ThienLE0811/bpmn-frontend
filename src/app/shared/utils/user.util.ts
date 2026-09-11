@@ -1,4 +1,4 @@
-import { UserRole, UserStatus } from '@core/models';
+import { User, UserRole, UserStatus } from '@core/models';
 
 export interface UserRoleMeta {
   label: string;
@@ -87,3 +87,7 @@ export function generateTempPassword(prefix = 'BPMN'): string {
   const code = Math.floor(1000 + Math.random() * 9000);
   return `${prefix}@${code}`;
 }
+
+// Re-export checkPer từ auth.util để tương thích ngược
+export { checkPer } from './auth.util';
+

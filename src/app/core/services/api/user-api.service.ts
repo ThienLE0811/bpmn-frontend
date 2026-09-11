@@ -62,8 +62,5 @@ export class UserApiService {
   toggleStatus(id: string, status: UserStatus): Observable<User> {
     return this.api.patch<User>(`${this.endpoint}/${id}/status`, { status });
   }
-
-  resetPassword(id: string): Observable<{ success: boolean; message?: string }> {
-    return this.api.post<{ success: boolean; message?: string }>(`${this.endpoint}/${id}/reset-password`, {});
-  }
 }
+
