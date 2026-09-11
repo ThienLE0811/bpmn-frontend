@@ -153,6 +153,32 @@
           </div>
 
           <div class="toolbar-right">
+            <!-- View Mode Switcher: Table vs List -->
+            <div class="view-mode-toggle">
+              <button
+                type="button"
+                class="btn-toggle-view"
+                [class.active]="viewDisplayMode() === 'table'"
+                (click)="viewDisplayMode.set('table')"
+                title="Chế độ xem Bảng chi tiết"
+              >
+                <span nz-icon nzType="table" nzTheme="outline"></span>
+                <span>Bảng</span>
+              </button>
+              <button
+                type="button"
+                class="btn-toggle-view"
+                [class.active]="viewDisplayMode() === 'list'"
+                (click)="viewDisplayMode.set('list')"
+                title="Chế độ xem Danh sách rút gọn"
+              >
+                <span nz-icon nzType="unordered-list" nzTheme="outline"></span>
+                <span>Danh sách</span>
+              </button>
+            </div>
+
+            <div class="toolbar-divider"></div>
+
             <button
               class="btn-refresh"
               (click)="loadProcesses()"
@@ -328,122 +354,249 @@
           </div>
         }
 
-        <!-- Table View with nz-table -->
-        <div class="table-responsive">
-          <nz-table
-            #processTable
-            appTableAutoHeight
-            [nzData]="processes()"
-            [nzLoading]="isLoading()"
-            [nzFrontPagination]="true"
-            [nzPageSize]="pageSize()"
-            [nzPageSizeOptions]="[5, 10, 20, 50]"
-            [nzShowSizeChanger]="true"
-            [nzShowTotal]="totalTemplate"
-            [nzBordered]="false"
-            [nzNoResult]="emptyTemplate"
-            nzSize="middle"
-            class="custom-nz-table"
-          >
-            <thead>
-              <tr>
-                <th nzWidth="160px" [nzSortFn]="sortProcessKey">Mã Quy Trình</th>
-                <th [nzSortFn]="sortName">Tên & Mô Tả Quy Trình</th>
-                <th nzWidth="120px" [nzSortFn]="sortCategory">Danh Mục</th>
-                <th nzWidth="100px" [nzSortFn]="sortVersion">Phiên Bản</th>
-                <th nzWidth="140px" [nzSortFn]="sortStatus">Trạng Thái</th>
-                <th nzWidth="160px" [nzSortFn]="sortUpdatedAt">Lần Sửa Cuối</th>
-                <th nzWidth="140px" nzAlign="right">Thao Tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (process of processTable.data; track process.id) {
-                <tr class="table-row" (click)="openDetailModal(process)">
-                  <td>
-                    <span class="code-badge">{{ process.processKey }}</span>
-                  </td>
-                  <td>
-                    <div class="process-name-cell">
-                      <span class="name">{{ process.name }}</span>
-                      <span class="desc">{{ process.description }}</span>
+        @if (viewDisplayMode() === 'table') {
+          <div class="table-responsive">
+            <nz-table
+              #processTable
+              [nzData]="processes()"
+              [nzLoading]="isLoading()"
+              [nzFrontPagination]="true"
+              [nzPageSize]="pageSize()"
+              [nzPageSizeOptions]="[5, 10, 20, 50]"
+              [nzShowSizeChanger]="true"
+              [nzShowTotal]="totalTemplate"
+              [nzBordered]="false"
+              [nzNoResult]="emptyTemplate"
+              nzSize="middle"
+              class="custom-nz-table"
+              (nzPageSizeChange)="pageSize.set($event)"
+            >
+              <thead>
+                <tr>
+                  <th nzWidth="150px" [nzSortFn]="sortProcessKey">Mã Quy Trình</th>
+                  <th [nzSortFn]="sortName">Tên & Mô Tả Quy Trình</th>
+                  <th nzWidth="120px" [nzSortFn]="sortCategory">Danh Mục</th>
+                  <th nzWidth="90px" [nzSortFn]="sortVersion">Phiên Bản</th>
+                  <th nzWidth="130px" [nzSortFn]="sortStatus">Trạng Thái</th>
+                  <th nzWidth="150px" [nzSortFn]="sortCreatedAt">Thời Gian Tạo</th>
+                  <th nzWidth="150px" [nzSortFn]="sortUpdatedAt">Lần Sửa Cuối</th>
+                  <th nzWidth="130px" nzAlign="right">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (process of processTable.data; track process.id) {
+                  <tr class="table-row" (click)="openDetailModal(process)">
+                    <td>
+                      <span class="code-badge">{{ process.processKey }}</span>
+                    </td>
+                    <td>
+                      <div class="process-name-cell">
+                        <span class="name">{{ process.name }}</span>
+                        <span class="desc">{{ process.description }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span
+                        class="code-badge"
+                        style="background: #f1f5f9; color: #475569; border-color: #e2e8f0"
+                        >{{ process.category }}</span
+                      >
+                    </td>
+                    <td>
+                      <span class="version-tag">v{{ process.version }}</span>
+                    </td>
+                    <td>
+                      <span class="status-pill" [class]="process.status.toLowerCase()">
+                        <span class="dot"></span>
+                        @switch (process.status) {
+                          @case ('PUBLISHED') {
+                            Đã phát hành
+                          }
+                          @case ('ARCHIVED') {
+                            Lưu trữ
+                          }
+                          @default {
+                            Bản nháp
+                          }
+                        }
+                      </span>
+                    </td>
+                    <td>
+                      <span class="date-text">{{ process.createdAt }}</span>
+                    </td>
+                    <td>
+                      <span class="date-text">{{ process.updatedAt }}</span>
+                    </td>
+                    <td nzAlign="right" (click)="$event.stopPropagation()">
+                      <div class="action-btns">
+                        <button
+                          class="btn-action view"
+                          (click)="openDetailModal(process, $event)"
+                          title="Xem chi tiết quy trình"
+                        >
+                          <span nz-icon nzType="eye" nzTheme="outline"></span>
+                        </button>
+                        <button
+                          class="btn-action edit"
+                          (click)="openEditModal(process, $event)"
+                          title="Cập nhật quy trình"
+                        >
+                          <span nz-icon nzType="edit" nzTheme="outline"></span>
+                        </button>
+                        <button
+                          class="btn-action delete"
+                          nz-popconfirm
+                          nzPopconfirmTitle="Bạn có chắc chắn muốn xóa quy trình này không?"
+                          nzOkText="Xóa"
+                          nzCancelText="Hủy"
+                          nzOkDanger
+                          (nzOnConfirm)="deleteProcess(process)"
+                          (click)="$event.stopPropagation()"
+                          title="Xóa quy trình"
+                        >
+                          <span nz-icon nzType="delete" nzTheme="outline"></span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </nz-table>
+          </div>
+        } @else {
+          <!-- Chế độ xem Danh sách gọn gàng (nz-list) -->
+          <div class="list-view-container">
+            <nz-list
+              [nzLoading]="isLoading()"
+              [nzDataSource]="paginatedProcesses()"
+              [nzRenderItem]="processListItem"
+              [nzNoResult]="emptyTemplate"
+              [nzBordered]="false"
+              nzSize="small"
+              class="custom-nz-list"
+            >
+              <ng-template #processListItem let-item>
+                <nz-list-item class="bpmn-list-item-row" (click)="openDetailModal(item)">
+                  <div class="bpmn-item-card">
+                    <!-- Biểu tượng quy trình -->
+                    <div class="item-avatar">
+                      <span nz-icon nzType="branches" nzTheme="outline"></span>
                     </div>
-                  </td>
-                  <td>
-                    <span
-                      class="code-badge"
-                      style="background: #f1f5f9; color: #475569; border-color: #e2e8f0"
-                      >{{ process.category }}</span
-                    >
-                  </td>
-                  <td>
-                    <span class="version-tag">v{{ process.version }}</span>
-                  </td>
-                  <td>
-                    <span class="status-pill" [class]="process.status.toLowerCase()">
-                      <span class="dot"></span>
-                      @switch (process.status) {
-                        @case ('PUBLISHED') {
-                          Đã phát hành
+
+                    <!-- Nội dung chính: 2 dòng tinh gọn -->
+                    <div class="item-body">
+                      <!-- Dòng 1: Tiêu đề + Badges -->
+                      <div class="item-header-row">
+                        <span class="item-title">{{ item.name }}</span>
+                        <span class="code-badge">{{ item.processKey }}</span>
+                        <span class="category-badge">{{ item.category }}</span>
+                        <span class="version-tag">v{{ item.version }}</span>
+                        <span class="status-pill" [class]="item.status.toLowerCase()">
+                          <span class="dot"></span>
+                          @switch (item.status) {
+                            @case ('PUBLISHED') {
+                              Đã phát hành
+                            }
+                            @case ('ARCHIVED') {
+                              Lưu trữ
+                            }
+                            @default {
+                              Bản nháp
+                            }
+                          }
+                        </span>
+                      </div>
+
+                      <!-- Dòng 2: Mô tả & Thông tin ngày giờ, người tạo -->
+                      <div class="item-meta-row">
+                        @if (item.description) {
+                          <span class="item-desc" [title]="item.description">{{ item.description }}</span>
+                          <span class="meta-dot">·</span>
                         }
-                        @case ('ARCHIVED') {
-                          Lưu trữ
+                        @if (item.createdAt) {
+                          <span class="meta-chip">
+                            <span nz-icon nzType="calendar" nzTheme="outline"></span>
+                            <span>Tạo: {{ item.createdAt }}</span>
+                          </span>
                         }
-                        @default {
-                          Bản nháp
+                        @if (item.updatedAt) {
+                          <span class="meta-chip">
+                            <span nz-icon nzType="clock-circle" nzTheme="outline"></span>
+                            <span>Sửa: {{ item.updatedAt }}</span>
+                          </span>
                         }
-                      }
-                    </span>
-                  </td>
-                  <td>
-                    <span class="date-text">{{ process.updatedAt }}</span>
-                  </td>
-                  <td nzAlign="right" (click)="$event.stopPropagation()">
-                    <div class="action-btns">
+                        @if (item.createdBy) {
+                          <span class="meta-chip">
+                            <span nz-icon nzType="user" nzTheme="outline"></span>
+                            <span>{{ item.createdBy }}</span>
+                          </span>
+                        }
+                      </div>
+                    </div>
+
+                    <!-- Cụm nút thao tác hiện đại -->
+                    <div class="item-actions" (click)="$event.stopPropagation()">
                       <button
-                        class="btn-action view"
-                        (click)="openDetailModal(process, $event)"
+                        class="btn-item-action view"
+                        (click)="openDetailModal(item, $event)"
                         title="Xem chi tiết quy trình"
                       >
                         <span nz-icon nzType="eye" nzTheme="outline"></span>
                       </button>
                       <button
-                        class="btn-action edit"
-                        (click)="openEditModal(process, $event)"
+                        class="btn-item-action edit"
+                        (click)="openEditModal(item, $event)"
                         title="Cập nhật quy trình"
                       >
                         <span nz-icon nzType="edit" nzTheme="outline"></span>
                       </button>
                       <button
-                        class="btn-action delete"
+                        class="btn-item-action delete"
                         nz-popconfirm
                         nzPopconfirmTitle="Bạn có chắc chắn muốn xóa quy trình này không?"
                         nzOkText="Xóa"
                         nzCancelText="Hủy"
                         nzOkDanger
-                        (nzOnConfirm)="deleteProcess(process)"
+                        (nzOnConfirm)="deleteProcess(item)"
                         (click)="$event.stopPropagation()"
                         title="Xóa quy trình"
                       >
                         <span nz-icon nzType="delete" nzTheme="outline"></span>
                       </button>
                     </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </nz-table>
+                  </div>
+                </nz-list-item>
+              </ng-template>
+            </nz-list>
 
-          <ng-template #totalTemplate let-total>
-            <span class="pagination-total">Tổng số {{ total }} quy trình</span>
-          </ng-template>
+            <!-- Thanh phân trang cho chế độ danh sách -->
+            @if (processes().length > 0) {
+              <div class="list-pagination-bar">
+                <nz-pagination
+                  [nzPageIndex]="listPageIndex()"
+                  [nzPageSize]="pageSize()"
+                  [nzTotal]="processes().length"
+                  [nzPageSizeOptions]="[5, 10, 20, 50]"
+                  [nzShowSizeChanger]="true"
+                  [nzShowTotal]="totalTemplate"
+                  (nzPageIndexChange)="listPageIndex.set($event)"
+                  (nzPageSizeChange)="onListPageSizeChange($event)"
+                ></nz-pagination>
+              </div>
+            }
+          </div>
+        }
 
-          <ng-template #emptyTemplate>
-            <div class="empty-state">
-              <span nz-icon nzType="file-search" nzTheme="outline" class="empty-icon"></span>
-              <p>Không tìm thấy quy trình BPMN nào phù hợp.</p>
-            </div>
-          </ng-template>
-        </div>
+        <ng-template #totalTemplate let-total>
+          <span class="pagination-total">Tổng số {{ total }} quy trình</span>
+        </ng-template>
+
+        <ng-template #emptyTemplate>
+          <div class="empty-state">
+            <span nz-icon nzType="file-search" nzTheme="outline" class="empty-icon"></span>
+            <p>Không tìm thấy quy trình BPMN nào phù hợp.</p>
+          </div>
+        </ng-template>
       </section>
     </div>
   </main>
@@ -525,6 +678,7 @@
                           <span>Chỉnh sửa</span>
                         </span>
                       }
+                      <span class="version-pill" title="Phiên bản quy trình">v{{ selectedProcess()?.version || processFormModel().version || 1 }}</span>
                       <span class="status-badge" [class]="processForm.status().value().toLowerCase()">
                         <span class="status-dot"></span>
                         @switch (processForm.status().value()) {
@@ -576,15 +730,29 @@
                   <label class="form-label">
                     <span>Mã quy trình (Key)</span>
                     <span class="required-star">*</span>
+                    @if (modalMode() !== 'create') {
+                      <span class="auto-hint">(Cố định)</span>
+                    }
                   </label>
                   <div class="input-with-icon">
                     <span nz-icon nzType="code" nzTheme="outline" class="input-icon"></span>
-                    <input
-                      type="text"
-                      class="form-control"
-                      [formField]="processForm.processKey"
-                      placeholder="VD: BPMN-PROC-01"
-                    />
+                    @if (modalMode() === 'create') {
+                      <input
+                        type="text"
+                        class="form-control"
+                        [formField]="processForm.processKey"
+                        placeholder="VD: BPMN-PROC-01"
+                      />
+                    } @else {
+                      <input
+                        type="text"
+                        class="form-control readonly-input"
+                        [value]="processFormModel().processKey"
+                        readonly
+                        disabled
+                        title="Mã quy trình là định danh cố định, không thể thay đổi sau khi tạo"
+                      />
+                    }
                   </div>
                   @if (processForm.processKey().invalid() && processForm.processKey().touched()) {
                     @for (error of processForm.processKey().errors(); track error.kind) {
@@ -656,18 +824,21 @@
                     }
                   </div>
 
-                  <!-- Phiên bản (Version number) -->
+                  <!-- Phiên bản (Version number - Tự động quản lý bởi máy chủ) -->
                   <div class="form-group">
                     <label class="form-label">
                       <span>Phiên bản</span>
+                      <span class="auto-hint">(Hệ thống tự tăng)</span>
                     </label>
                     <div class="input-with-icon">
                       <span nz-icon nzType="tag" nzTheme="outline" class="input-icon"></span>
                       <input
-                        type="number"
-                        class="form-control"
-                        [formField]="processForm.version"
-                        placeholder="1"
+                        type="text"
+                        class="form-control readonly-input"
+                        [value]="'v' + (selectedProcess()?.version || processFormModel().version || 1)"
+                        readonly
+                        disabled
+                        title="Phiên bản được máy chủ tự động quản lý và tăng dần"
                       />
                     </div>
                   </div>
@@ -713,6 +884,13 @@
                     <div class="meta-item">
                       <span class="meta-label">Mã ID hệ thống:</span>
                       <span class="meta-value">{{ selectedProcess()?.id || 'Tạo mới' }}</span>
+                    </div>
+                    <div class="meta-item">
+                      <span class="meta-label">Phiên bản:</span>
+                      <span class="meta-value">
+                        <span class="version-tag">v{{ selectedProcess()?.version || 1 }}</span>
+                        <span class="meta-subtext">(Tự động tăng)</span>
+                      </span>
                     </div>
                     <div class="meta-item">
                       <span class="meta-label">Người tạo:</span>

@@ -241,7 +241,14 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
     try {
       await this.bpmnModeler.importXML(xml);
       const canvas = this.bpmnModeler.get('canvas');
-      canvas.zoom('fit-viewport');
+      try {
+        const container = this.canvasRef?.nativeElement;
+        if (container && container.clientWidth > 0 && container.clientHeight > 0) {
+          canvas.zoom('fit-viewport');
+        }
+      } catch (zoomErr) {
+        console.warn('Không thể tự động zoom canvas lúc khởi tạo:', zoomErr);
+      }
       this.updateZoomLevel();
       this.isModified.set(false);
       this.xmlContent.set(xml);
@@ -267,8 +274,14 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
         const canvas = this.bpmnModeler?.get('canvas');
         if (canvas) {
           canvas.resized();
+          try {
+            canvas.zoom('fit-viewport');
+          } catch (zoomErr) {
+            console.warn('Canvas zoom fit-viewport error:', zoomErr);
+          }
+          this.updateZoomLevel();
         }
-      }, 60);
+      }, 80);
     }
   }
 
@@ -335,17 +348,38 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
     this.isSyncing.set(true);
     try {
       const canvas = this.bpmnModeler?.get('canvas');
-      const savedViewbox = canvas ? canvas.viewbox() : null;
+      let savedViewbox: any = null;
+      if (canvas && this.viewMode() === 'design') {
+        try {
+          const vb = canvas.viewbox();
+          if (vb && Number.isFinite(vb.scale) && vb.width > 0 && vb.height > 0) {
+            savedViewbox = vb;
+          }
+        } catch (_) {}
+      }
 
       await this.bpmnModeler.importXML(xml);
 
-      if (canvas && savedViewbox) {
-        canvas.viewbox(savedViewbox);
-      } else if (canvas) {
-        canvas.zoom('fit-viewport');
+      if (canvas) {
+        try {
+          const container = this.canvasRef?.nativeElement;
+          const hasSize = container && container.clientWidth > 0 && container.clientHeight > 0;
+          if (hasSize) {
+            if (savedViewbox) {
+              canvas.viewbox(savedViewbox);
+            } else if (this.viewMode() === 'design') {
+              canvas.zoom('fit-viewport');
+            }
+          }
+        } catch (zoomErr) {
+          console.warn('Bỏ qua lỗi điều chỉnh zoom canvas trong chế độ XML:', zoomErr);
+        }
       }
 
-      this.updateZoomLevel();
+      try {
+        this.updateZoomLevel();
+      } catch (_) {}
+
       this.syncProcessNameFromDefinitions();
       this.xmlError.set(null);
 

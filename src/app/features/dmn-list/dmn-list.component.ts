@@ -296,12 +296,12 @@ export class DmnListComponent implements OnInit {
     if (!this.initialFormModel) return false;
     const current = this.decisionFormModel();
     return (
-      current.decisionKey !== this.initialFormModel.decisionKey ||
+      (this.modalMode() === 'create' &&
+        current.decisionKey !== this.initialFormModel.decisionKey) ||
       current.name !== this.initialFormModel.name ||
       current.description !== this.initialFormModel.description ||
       current.hitPolicy !== this.initialFormModel.hitPolicy ||
       current.category !== this.initialFormModel.category ||
-      current.version !== this.initialFormModel.version ||
       current.status !== this.initialFormModel.status
     );
   }

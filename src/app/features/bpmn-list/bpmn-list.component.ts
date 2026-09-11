@@ -10,10 +10,11 @@ import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzResizableModule, NzResizeEvent } from 'ng-zorro-antd/resizable';
 import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
+import { NzListModule } from 'ng-zorro-antd/list';
+import { NzPaginationModule } from 'ng-zorro-antd/pagination';
 import { BpmnProcessService } from '@core/services';
 import { BpmnProcess, BpmnProcessStatus } from '@core/models';
 import { BpmnDesignerComponent } from '@shared/components/bpmn-designer/bpmn-designer.component';
-import { TableAutoHeightDirective } from '@shared/directives';
 
 @Component({
   selector: 'app-bpmn-list',
@@ -23,6 +24,8 @@ import { TableAutoHeightDirective } from '@shared/directives';
     FormsModule,
     FormField,
     NzTableModule,
+    NzListModule,
+    NzPaginationModule,
     NzPopconfirmModule,
     NzIconModule,
     NzInputModule,
@@ -31,7 +34,6 @@ import { TableAutoHeightDirective } from '@shared/directives';
     NzModalModule,
     NzSpinModule,
     BpmnDesignerComponent,
-    TableAutoHeightDirective,
   ],
   templateUrl: './bpmn-list.component.html',
   styleUrl: './bpmn-list.component.scss',
@@ -52,8 +54,22 @@ export class BpmnListComponent implements OnInit {
   protected isDetailLoading = signal<boolean>(false);
   protected isStatsOpen = signal<boolean>(false);
   protected selectedProcess = signal<BpmnProcess | null>(null);
+  protected viewDisplayMode = signal<'table' | 'list'>('table');
   protected pageSize = signal<number>(10);
+  protected listPageIndex = signal<number>(1);
   protected designerWidth = signal<number | null>(null);
+
+  protected paginatedProcesses = computed(() => {
+    const list = this.processes();
+    const page = this.listPageIndex();
+    const size = this.pageSize();
+    return list.slice((page - 1) * size, page * size);
+  });
+
+  onListPageSizeChange(size: number): void {
+    this.pageSize.set(size);
+    this.listPageIndex.set(1);
+  }
   private resizeId = -1;
   private initialFormModel: {
     processKey: string;
@@ -139,10 +155,14 @@ export class BpmnListComponent implements OnInit {
   protected sortStatus = (a: BpmnProcess, b: BpmnProcess): number =>
     a.status.localeCompare(b.status);
 
+  protected sortCreatedAt = (a: BpmnProcess, b: BpmnProcess): number =>
+    (a.createdAt || '').localeCompare(b.createdAt || '');
+
   protected sortUpdatedAt = (a: BpmnProcess, b: BpmnProcess): number =>
-    a.updatedAt.localeCompare(b.updatedAt);
+    (a.updatedAt || '').localeCompare(b.updatedAt || '');
 
   search(): void {
+    this.listPageIndex.set(1);
     const m = this.filterModel();
     this.bpmnService.loadProcesses({
       processKey: m.processKey,
@@ -155,6 +175,7 @@ export class BpmnListComponent implements OnInit {
   }
 
   resetFilters(): void {
+    this.listPageIndex.set(1);
     this.filterModel.set({
       processKey: '',
       name: '',
@@ -281,11 +302,11 @@ export class BpmnListComponent implements OnInit {
     if (!this.initialFormModel) return false;
     const current = this.processFormModel();
     return (
-      current.processKey !== this.initialFormModel.processKey ||
+      (this.modalMode() === 'create' &&
+        current.processKey !== this.initialFormModel.processKey) ||
       current.name !== this.initialFormModel.name ||
       current.description !== this.initialFormModel.description ||
       current.category !== this.initialFormModel.category ||
-      current.version !== this.initialFormModel.version ||
       current.status !== this.initialFormModel.status
     );
   }

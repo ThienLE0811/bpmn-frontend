@@ -24,7 +24,15 @@
     position: relative;
 
     &.hidden-canvas {
-      display: none !important;
+      position: absolute !important;
+      top: 0;
+      left: 0;
+      width: 100% !important;
+      height: 100% !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      z-index: 0 !important;
     }
 
     &.split-canvas {
@@ -545,6 +553,7 @@
     background-color: #0b0f19;
     position: relative;
     overflow: hidden;
+    z-index: 2;
 
     &.split-xml {
       flex: 1;

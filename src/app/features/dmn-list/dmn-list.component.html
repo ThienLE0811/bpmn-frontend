@@ -544,6 +544,7 @@
                           <span>Chỉnh sửa</span>
                         </span>
                       }
+                      <span class="version-pill" title="Phiên bản bảng quyết định">v{{ selectedDecision()?.version || decisionFormModel().version || 1 }}</span>
                       <span class="status-badge" [class]="decisionForm.status().value().toLowerCase()">
                         <span class="status-dot"></span>
                         @switch (decisionForm.status().value()) {
@@ -593,15 +594,29 @@
                   <label class="form-label">
                     <span>Mã quyết định (Key)</span>
                     <span class="required-star">*</span>
+                    @if (modalMode() !== 'create') {
+                      <span class="auto-hint">(Cố định)</span>
+                    }
                   </label>
                   <div class="input-with-icon">
                     <span nz-icon nzType="code" nzTheme="outline" class="input-icon"></span>
-                    <input
-                      type="text"
-                      class="form-control"
-                      [formField]="decisionForm.decisionKey"
-                      placeholder="VD: DMN-DEC-01"
-                    />
+                    @if (modalMode() === 'create') {
+                      <input
+                        type="text"
+                        class="form-control"
+                        [formField]="decisionForm.decisionKey"
+                        placeholder="VD: DMN-DEC-01"
+                      />
+                    } @else {
+                      <input
+                        type="text"
+                        class="form-control readonly-input"
+                        [value]="decisionFormModel().decisionKey"
+                        readonly
+                        disabled
+                        title="Mã quyết định là định danh cố định, không thể thay đổi sau khi tạo"
+                      />
+                    }
                   </div>
                   @if (decisionForm.decisionKey().invalid() && decisionForm.decisionKey().touched()) {
                     @for (error of decisionForm.decisionKey().errors(); track error.kind) {
@@ -692,18 +707,21 @@
 
                 <!-- Form Row: Phiên bản & Trạng thái -->
                 <div class="form-row-2col">
-                  <!-- Phiên bản -->
+                  <!-- Phiên bản (Version number - Tự động quản lý bởi máy chủ) -->
                   <div class="form-group">
                     <label class="form-label">
                       <span>Phiên bản</span>
+                      <span class="auto-hint">(Hệ thống tự tăng)</span>
                     </label>
                     <div class="input-with-icon">
                       <span nz-icon nzType="tag" nzTheme="outline" class="input-icon"></span>
                       <input
-                        type="number"
-                        class="form-control"
-                        [formField]="decisionForm.version"
-                        placeholder="1"
+                        type="text"
+                        class="form-control readonly-input"
+                        [value]="'v' + (selectedDecision()?.version || decisionFormModel().version || 1)"
+                        readonly
+                        disabled
+                        title="Phiên bản được máy chủ tự động quản lý và tăng dần"
                       />
                     </div>
                   </div>
@@ -746,6 +764,13 @@
                     <div class="meta-item">
                       <span class="meta-label">Mã ID hệ thống:</span>
                       <span class="meta-value">{{ selectedDecision()?.id || 'Tạo mới' }}</span>
+                    </div>
+                    <div class="meta-item">
+                      <span class="meta-label">Phiên bản:</span>
+                      <span class="meta-value">
+                        <span class="version-tag">v{{ selectedDecision()?.version || 1 }}</span>
+                        <span class="meta-subtext">(Tự động tăng)</span>
+                      </span>
                     </div>
                     <div class="meta-item">
                       <span class="meta-label">Người tạo:</span>
