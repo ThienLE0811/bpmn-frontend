@@ -4,3 +4,4 @@ export * from './dmn-api.service';
 export * from './user-api.service';
 export * from './operate-api.service';
 export * from './auth-api.service';
+export * from './task-api.service';

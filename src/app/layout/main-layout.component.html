@@ -21,57 +21,69 @@
     </div>
 
     <ul nz-menu nzMode="inline" [nzInlineCollapsed]="isCollapsed()" class="sider-menu">
-      <li nz-menu-item nzMatchRouter>
-        <a routerLink="/dashboard">
-          <span class="menu-icon">
-            <span nz-icon nzType="dashboard" nzTheme="outline"></span>
-          </span>
-          <span class="menu-title">Tổng quan & Thống kê</span>
-        </a>
-      </li>
-
-      <li nz-menu-item nzMatchRouter>
-        <a routerLink="/processes">
-          <span class="menu-icon">
-            <span nz-icon nzType="branches" nzTheme="outline"></span>
-          </span>
-          <span class="menu-title">Quy trình BPMN</span>
-        </a>
-      </li>
-
-      <li nz-menu-item nzMatchRouter>
-        <a routerLink="/decisions">
-          <span class="menu-icon">
-            <span nz-icon nzType="table" nzTheme="outline"></span>
-          </span>
-          <span class="menu-title">Bảng quyết định DMN</span>
-        </a>
-      </li>
-
-      <li nz-menu-item nzMatchRouter>
-        <a routerLink="/operate">
-          <span class="menu-icon">
-            <span nz-icon nzType="fund-projection-screen" nzTheme="outline"></span>
-          </span>
-          <span class="menu-title">Camunda Operate</span>
-        </a>
-      </li>
-
-      <li nz-menu-item nzMatchRouter>
-        <a routerLink="/users">
-          <span class="menu-icon">
-            <span nz-icon nzType="team" nzTheme="outline"></span>
-          </span>
-          <span class="menu-title">Quản lý Người dùng</span>
-        </a>
-      </li>
-
-      <li nz-menu-item nzDisabled>
-        <span class="menu-icon">
-          <span nz-icon nzType="setting" nzTheme="outline"></span>
-        </span>
-        <span class="menu-title">Cấu hình hệ thống</span>
-      </li>
+      @for (item of menuItems(); track item.id) {
+        @if (item.children && item.children.length > 0) {
+          <!-- Menu nhóm có submenu đa cấp -->
+          <li
+            nz-submenu
+            [nzTitle]="item.label"
+            [nzIcon]="item.icon || ''"
+          >
+            <ul>
+              @for (child of item.children; track child.id) {
+                @if (child.disabled) {
+                  <li nz-menu-item nzDisabled class="child-menu-item">
+                    <span class="menu-icon">
+                      <span nz-icon [nzType]="child.icon || 'file'" nzTheme="outline"></span>
+                    </span>
+                    <span class="menu-title">{{ child.label }}</span>
+                    @if (child.badge) {
+                      <span class="menu-tag">{{ child.badge }}</span>
+                    }
+                  </li>
+                } @else {
+                  <li nz-menu-item nzMatchRouter class="child-menu-item">
+                    <a [routerLink]="child.route">
+                      <span class="menu-icon">
+                        <span nz-icon [nzType]="child.icon || 'file'" nzTheme="outline"></span>
+                      </span>
+                      <span class="menu-title">{{ child.label }}</span>
+                      @if (child.badge) {
+                        <span class="menu-tag">{{ child.badge }}</span>
+                      }
+                    </a>
+                  </li>
+                }
+              }
+            </ul>
+          </li>
+        } @else {
+          <!-- Menu item độc lập cấp 1 -->
+          @if (item.disabled) {
+            <li nz-menu-item nzDisabled>
+              <span class="menu-icon">
+                <span nz-icon [nzType]="item.icon || 'file'" nzTheme="outline"></span>
+              </span>
+              <span class="menu-title">{{ item.label }}</span>
+              @if (item.badge) {
+                <span class="menu-tag">{{ item.badge }}</span>
+              }
+            </li>
+          } @else {
+            <li nz-menu-item nzMatchRouter>
+              <a [routerLink]="item.route">
+                <span class="menu-icon">
+                  <span nz-icon [nzType]="item.icon || 'file'" nzTheme="outline"></span>
+                </span>
+                <span class="menu-title">{{ item.label }}</span>
+                @if (item.badge) {
+                  <span class="menu-tag">{{ item.badge }}</span>
+                }
+              </a>
+            </li>
+          }
+        }
+      }
     </ul>
   </nz-sider>
 

@@ -8,6 +8,7 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { AuthService } from '@core/services';
+import { NAV_ITEMS, NavItem, findBreadcrumbTrail } from './nav.config';
 
 @Component({
   selector: 'app-main-layout',
@@ -38,21 +39,39 @@ export class MainLayoutComponent {
     { initialValue: this.router.url },
   );
 
+  /**
+   * Danh sách menu đã được lọc theo vai trò (Role-based access control)
+   */
+  protected menuItems = computed<NavItem[]>(() => {
+    const currentUser = this.authService.currentUser();
+    const userRole = currentUser?.role;
+
+    return NAV_ITEMS.filter((item) => {
+      if (item.roles && (!userRole || !item.roles.includes(userRole))) {
+        return false;
+      }
+      return true;
+    })
+      .map((item) => {
+        if (!item.children) return item;
+        const filteredChildren = item.children.filter((child) => {
+          if (child.roles && (!userRole || !child.roles.includes(userRole))) {
+            return false;
+          }
+          return true;
+        });
+        return { ...item, children: filteredChildren };
+      })
+      .filter((item) => !item.children || item.children.length > 0 || item.route);
+  });
+
   protected breadcrumb = computed(() => {
     const url = this.currentUrl();
-    if (url.includes('/dashboard')) {
-      return 'BPMN & DMN Platform / Tổng quan & Thống kê';
+    const trail = findBreadcrumbTrail(NAV_ITEMS, url);
+    if (trail && trail.length > 0) {
+      return ['BPMN Platform', ...trail].join(' / ');
     }
-    if (url.includes('/decisions') || url.includes('/dmn')) {
-      return 'BPMN & DMN Platform / Bảng Quyết định DMN';
-    }
-    if (url.includes('/users')) {
-      return 'BPMN & DMN Platform / Quản lý Người dùng';
-    }
-    if (url.includes('/operate')) {
-      return 'BPMN & DMN Platform / Camunda Operate - Giám sát Quy trình';
-    }
-    return 'BPMN & DMN Platform / Quản lý Quy trình BPMN';
+    return 'BPMN Platform / Quản lý Quy trình BPMN';
   });
 
   protected userInitials = computed(() => {

@@ -31,6 +31,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'tasks',
+        loadComponent: () =>
+          import('./features/task-list/task-list.component').then(
+            (m) => m.TaskListComponent,
+          ),
+      },
+      {
         path: 'processes',
         loadComponent: () =>
           import('./features/bpmn-list/bpmn-list.component').then(
