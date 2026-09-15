@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { DmnDecision } from '@core/models/dmn-decision.model';
+import { extractContent, extractPageMetadata } from '@core/models';
 import { ApiErrorHandlerService } from '@shared/services';
 import { formatIsoDateTime } from '@shared/utils';
 import { DmnApiService, DmnQueryParams } from '../api/dmn-api.service';
@@ -16,11 +17,31 @@ export class DmnDecisionService {
   private decisionsSignal = signal<DmnDecision[]>([]);
   private loadingSignal = signal<boolean>(false);
   private errorSignal = signal<string | null>(null);
+  private totalElementsSignal = signal<number>(0);
+  private totalPagesSignal = signal<number>(1);
+  private currentPageSignal = signal<number>(1);
+  private pageSizeSignal = signal<number>(20);
 
   constructor() {}
 
   get decisions() {
     return this.decisionsSignal.asReadonly();
+  }
+
+  get totalElements() {
+    return this.totalElementsSignal.asReadonly();
+  }
+
+  get totalPages() {
+    return this.totalPagesSignal.asReadonly();
+  }
+
+  get currentPage() {
+    return this.currentPageSignal.asReadonly();
+  }
+
+  get pageSize() {
+    return this.pageSizeSignal.asReadonly();
   }
 
   get isLoading() {
@@ -49,9 +70,13 @@ export class DmnDecisionService {
 
     this.dmnApi.getAll(params).subscribe({
       next: (data) => {
-        if (Array.isArray(data)) {
-          this.decisionsSignal.set(data);
-        }
+        const list = extractContent(data);
+        const meta = extractPageMetadata(data, list.length);
+        this.decisionsSignal.set(list);
+        this.totalElementsSignal.set(meta.totalElements);
+        this.totalPagesSignal.set(meta.totalPages);
+        this.currentPageSignal.set(meta.page);
+        this.pageSizeSignal.set(meta.size);
         this.loadingSignal.set(false);
       },
       error: (err) => {

@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { DmnDecision } from '@core/models/dmn-decision.model';
+import { PageData } from '@core/models';
 
 export interface DmnQueryParams {
   decisionKey?: string;
@@ -23,8 +24,11 @@ export class DmnApiService {
   private readonly api = inject(ApiService);
   private readonly endpoint = '/dmn-decisions';
 
-  getAll(params?: DmnQueryParams): Observable<DmnDecision[]> {
-    const cleanParams: Record<string, string | number> = {};
+  getAll(params?: DmnQueryParams): Observable<PageData<DmnDecision>> {
+    const cleanParams: Record<string, string | number> = {
+      page: params?.page !== undefined && params?.page !== null ? params.page : 1,
+      size: params?.size !== undefined && params?.size !== null ? params.size : 20,
+    };
 
     if (params) {
       if (params['decisionKey'] && String(params['decisionKey']).trim()) {
@@ -48,15 +52,9 @@ export class DmnApiService {
       if (params['createdBy'] && String(params['createdBy']).trim()) {
         cleanParams['createdBy'] = String(params['createdBy']).trim();
       }
-      if (params['page'] !== undefined && params['page'] !== null) {
-        cleanParams['page'] = params['page'];
-      }
-      if (params['size'] !== undefined && params['size'] !== null) {
-        cleanParams['size'] = params['size'];
-      }
     }
 
-    return this.api.get<DmnDecision[]>(this.endpoint, cleanParams);
+    return this.api.get<PageData<DmnDecision>>(this.endpoint, cleanParams);
   }
 
   getById(id: string): Observable<DmnDecision> {

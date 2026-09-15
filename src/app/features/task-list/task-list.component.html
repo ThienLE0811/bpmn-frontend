@@ -175,7 +175,7 @@
             [nzData]="tasks()"
             [nzLoading]="isLoading()"
             [nzPageSize]="pageSize()"
-            (nzPageSizeChange)="pageSize.set($event)"
+            (nzPageSizeChange)="onPageSizeChange($event)"
             [nzShowSizeChanger]="true"
             [nzPageSizeOptions]="[10, 20, 50]"
             [nzBordered]="false"

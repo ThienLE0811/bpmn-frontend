@@ -1,89 +1,17 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { Observable, tap, catchError, of } from 'rxjs';
-import { TaskResponse, TaskQueryParams, CompleteTaskPayload } from '@core/models';
+import {
+  TaskResponse,
+  TaskQueryParams,
+  CompleteTaskPayload,
+  extractContent,
+  extractPageMetadata,
+} from '@core/models';
 import { TaskApiService } from '../api/task-api.service';
 import { AuthService } from './auth.service';
 import { ApiErrorHandlerService } from '@shared/services';
 import { formatDateTime } from '@shared/utils';
 import { NzMessageService } from 'ng-zorro-antd/message';
-
-const MOCK_TASKS: TaskResponse[] = [
-  {
-    id: 'task-1001',
-    processInstanceId: 'pi-loan-8812',
-    nodeId: 'Activity_VerifyApplication',
-    name: 'Kiểm tra hồ sơ vay vốn cá nhân',
-    description: 'Rà soát thông tin CCCD, sao kê ngân hàng 6 tháng và thẩm định tính hợp lệ của hồ sơ vay.',
-    status: 'CREATED',
-    assigneeId: '',
-    claimedBy: '',
-    claimedAt: '',
-    completedBy: '',
-    completedAt: '',
-    createdAt: '2026-09-14 09:30:00',
-    updatedAt: '2026-09-14 09:30:00',
-  },
-  {
-    id: 'task-1002',
-    processInstanceId: 'pi-loan-8812',
-    nodeId: 'Activity_ApproveCredit',
-    name: 'Phê duyệt hạn mức tín dụng',
-    description: 'Đánh giá điểm tín dụng CIC và phê duyệt hạn mức tối đa cho khoản vay mua nhà.',
-    status: 'CLAIMED',
-    assigneeId: 'admin',
-    claimedBy: 'admin',
-    claimedAt: '2026-09-15 08:15:00',
-    completedBy: '',
-    completedAt: '',
-    createdAt: '2026-09-14 14:00:00',
-    updatedAt: '2026-09-15 08:15:00',
-  },
-  {
-    id: 'task-1003',
-    processInstanceId: 'pi-loan-7734',
-    nodeId: 'Activity_DraftContract',
-    name: 'Soạn thảo hợp đồng tín dụng & thế chấp',
-    description: 'Tạo bản thảo hợp đồng vay và gửi thông báo tới khách hàng ký phụ lục.',
-    status: 'CREATED',
-    assigneeId: '',
-    claimedBy: '',
-    claimedAt: '',
-    completedBy: '',
-    completedAt: '',
-    createdAt: '2026-09-15 07:45:00',
-    updatedAt: '2026-09-15 07:45:00',
-  },
-  {
-    id: 'task-1004',
-    processInstanceId: 'pi-kyc-1092',
-    nodeId: 'Activity_KycCheck',
-    name: 'Xác thực sinh trắc học và KYC mở tài khoản',
-    description: 'Đối chiếu video call và hình ảnh khuôn mặt với cơ sở dữ liệu quốc gia về dân cư.',
-    status: 'CLAIMED',
-    assigneeId: 'dev_user',
-    claimedBy: 'dev_user',
-    claimedAt: '2026-09-14 16:20:00',
-    completedBy: '',
-    completedAt: '',
-    createdAt: '2026-09-14 15:10:00',
-    updatedAt: '2026-09-14 16:20:00',
-  },
-  {
-    id: 'task-1005',
-    processInstanceId: 'pi-disburse-6621',
-    nodeId: 'Activity_DisburseFunds',
-    name: 'Xác nhận giải ngân qua cổng thanh toán',
-    description: 'Thực hiện chuyển khoản giải ngân vào tài khoản thụ hưởng theo chỉ định.',
-    status: 'COMPLETED',
-    assigneeId: 'admin',
-    claimedBy: 'admin',
-    claimedAt: '2026-09-13 11:00:00',
-    completedBy: 'admin',
-    completedAt: '2026-09-13 11:30:00',
-    createdAt: '2026-09-13 10:00:00',
-    updatedAt: '2026-09-13 11:30:00',
-  },
-];
 
 @Injectable({
   providedIn: 'root',
@@ -94,14 +22,34 @@ export class TaskService {
   private readonly errorHandler = inject(ApiErrorHandlerService);
   private readonly message = inject(NzMessageService);
 
-  private allTasks: TaskResponse[] = [...MOCK_TASKS];
+  private allTasks: TaskResponse[] = [];
   private tasksSignal = signal<TaskResponse[]>([]);
   private loadingSignal = signal<boolean>(false);
   private errorSignal = signal<string | null>(null);
   private currentTaskSignal = signal<TaskResponse | null>(null);
+  private totalElementsSignal = signal<number>(0);
+  private totalPagesSignal = signal<number>(1);
+  private currentPageSignal = signal<number>(1);
+  private pageSizeSignal = signal<number>(20);
 
   get tasks() {
     return this.tasksSignal.asReadonly();
+  }
+
+  get totalElements() {
+    return this.totalElementsSignal.asReadonly();
+  }
+
+  get totalPages() {
+    return this.totalPagesSignal.asReadonly();
+  }
+
+  get currentPage() {
+    return this.currentPageSignal.asReadonly();
+  }
+
+  get pageSize() {
+    return this.pageSizeSignal.asReadonly();
   }
 
   get isLoading() {
@@ -117,18 +65,14 @@ export class TaskService {
   }
 
   // Thống kê nhanh
-  readonly totalCount = computed(() => this.allTasks.length);
+  readonly totalCount = computed(() => this.totalElementsSignal() || this.allTasks.length);
   readonly createdCount = computed(
     () =>
-      this.allTasks.filter(
-        (t) => t.status === 'CREATED' || t.status === 'PENDING' || !t.claimedBy,
-      ).length,
+      this.allTasks.filter((t) => t.status === 'CREATED' || t.status === 'PENDING' || !t.claimedBy)
+        .length,
   );
   readonly claimedCount = computed(
-    () =>
-      this.allTasks.filter(
-        (t) => t.status === 'CLAIMED' || t.status === 'ASSIGNED',
-      ).length,
+    () => this.allTasks.filter((t) => t.status === 'CLAIMED' || t.status === 'ASSIGNED').length,
   );
   readonly completedCount = computed(
     () => this.allTasks.filter((t) => t.status === 'COMPLETED').length,
@@ -140,15 +84,23 @@ export class TaskService {
 
     this.taskApi.getAll(params).subscribe({
       next: (data) => {
-        const list = Array.isArray(data) && data.length > 0 ? data : this.filterMockTasks(params);
+        const content = extractContent(data);
+        const meta = extractPageMetadata(data, content.length);
+        const list = content.length > 0 ? content : this.filterMockTasks(params);
         this.allTasks = list;
         this.tasksSignal.set(list);
+        this.totalElementsSignal.set(meta.totalElements || list.length);
+        this.totalPagesSignal.set(meta.totalPages);
+        this.currentPageSignal.set(meta.page);
+        this.pageSizeSignal.set(meta.size);
         this.loadingSignal.set(false);
       },
       error: (err) => {
         console.warn('Kết nối /api/tasks không thành công, sử dụng dữ liệu mẫu (mock):', err);
         const filtered = this.filterMockTasks(params);
+        this.allTasks = filtered;
         this.tasksSignal.set(filtered);
+        this.totalElementsSignal.set(filtered.length);
         this.loadingSignal.set(false);
       },
     });

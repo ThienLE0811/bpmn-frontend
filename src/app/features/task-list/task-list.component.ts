@@ -96,12 +96,19 @@ export class TaskListComponent implements OnInit {
     this.loadTasks();
   }
 
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
+    this.loadTasks();
+  }
+
   loadTasks(): void {
     const { status, mine, search } = this.filterModel();
     this.taskService.loadTasks({
       status: status !== 'ALL' ? status : undefined,
       mine: mine ? true : undefined,
       search: search.trim() || undefined,
+      page: 1,
+      size: this.pageSize(),
     });
   }
 

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
-import { TaskResponse, TaskQueryParams, CompleteTaskPayload } from '@core/models';
+import { TaskResponse, TaskQueryParams, CompleteTaskPayload, PageData } from '@core/models';
 
 @Injectable({
   providedIn: 'root',
@@ -10,8 +10,11 @@ export class TaskApiService {
   private readonly api = inject(ApiService);
   private readonly endpoint = '/tasks';
 
-  getAll(params?: TaskQueryParams): Observable<TaskResponse[]> {
-    const cleanParams: Record<string, string | number | boolean> = {};
+  getAll(params?: TaskQueryParams): Observable<PageData<TaskResponse>> {
+    const cleanParams: Record<string, string | number | boolean> = {
+      page: params?.page !== undefined && params?.page !== null ? params.page : 1,
+      size: params?.size !== undefined && params?.size !== null ? params.size : 20,
+    };
 
     if (params) {
       if (params.status && params.status !== 'ALL') {
@@ -23,15 +26,9 @@ export class TaskApiService {
       if (params.search && params.search.trim()) {
         cleanParams['search'] = params.search.trim();
       }
-      if (params.page !== undefined && params.page !== null) {
-        cleanParams['page'] = params.page;
-      }
-      if (params.size !== undefined && params.size !== null) {
-        cleanParams['size'] = params.size;
-      }
     }
 
-    return this.api.get<TaskResponse[]>(this.endpoint, cleanParams);
+    return this.api.get<PageData<TaskResponse>>(this.endpoint, cleanParams);
   }
 
   getById(id: string): Observable<TaskResponse> {

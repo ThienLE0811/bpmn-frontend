@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { BpmnProcess } from '@core/models/bpmn-process.model';
+import { PageData } from '@core/models';
 
 export interface BpmnQueryParams {
   processKey?: string;
@@ -9,6 +10,7 @@ export interface BpmnQueryParams {
   category?: string;
   status?: string;
   version?: number;
+  createdBy?: string;
   page?: number;
   size?: number;
   [key: string]: unknown;
@@ -21,8 +23,11 @@ export class BpmnApiService {
   private readonly api = inject(ApiService);
   private readonly endpoint = '/bpmn-processes';
 
-  getAll(params?: BpmnQueryParams): Observable<BpmnProcess[]> {
-    const cleanParams: Record<string, string | number> = {};
+  getAll(params?: BpmnQueryParams): Observable<PageData<BpmnProcess>> {
+    const cleanParams: Record<string, string | number> = {
+      page: params?.page !== undefined && params?.page !== null ? params.page : 1,
+      size: params?.size !== undefined && params?.size !== null ? params.size : 20,
+    };
 
     if (params) {
       if (params['processKey'] && String(params['processKey']).trim()) {
@@ -43,15 +48,9 @@ export class BpmnApiService {
       if (params['createdBy'] && String(params['createdBy']).trim()) {
         cleanParams['createdBy'] = String(params['createdBy']).trim();
       }
-      if (params['page'] !== undefined && params['page'] !== null) {
-        cleanParams['page'] = params['page'];
-      }
-      if (params['size'] !== undefined && params['size'] !== null) {
-        cleanParams['size'] = params['size'];
-      }
     }
 
-    return this.api.get<BpmnProcess[]>(this.endpoint, cleanParams);
+    return this.api.get<PageData<BpmnProcess>>(this.endpoint, cleanParams);
   }
 
   getById(id: string): Observable<BpmnProcess> {

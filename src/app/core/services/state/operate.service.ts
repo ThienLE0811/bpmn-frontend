@@ -7,7 +7,9 @@ import {
   ActivityExecution,
   OperateMetrics,
   OperateFilterParams,
-} from '@core/models/operate.model';
+  extractContent,
+  extractPageMetadata,
+} from '@core/models';
 import { OperateApiService } from '../api/operate-api.service';
 import { ApiErrorHandlerService } from '@shared/services';
 
@@ -29,12 +31,32 @@ export class OperateService {
   private readonly detailLoadingSignal = signal<boolean>(false);
   private readonly actionLoadingSignal = signal<boolean>(false);
   private readonly errorSignal = signal<string | null>(null);
+  private readonly totalElementsSignal = signal<number>(0);
+  private readonly totalPagesSignal = signal<number>(1);
+  private readonly currentPageSignal = signal<number>(1);
+  private readonly pageSizeSignal = signal<number>(20);
 
   readonly filterState = signal<string>('ALL');
   readonly searchTerm = signal<string>('');
 
   get instances() {
     return this.instancesSignal.asReadonly();
+  }
+
+  get totalElements() {
+    return this.totalElementsSignal.asReadonly();
+  }
+
+  get totalPages() {
+    return this.totalPagesSignal.asReadonly();
+  }
+
+  get currentPage() {
+    return this.currentPageSignal.asReadonly();
+  }
+
+  get pageSize() {
+    return this.pageSizeSignal.asReadonly();
   }
 
   get metrics() {
@@ -91,8 +113,14 @@ export class OperateService {
     };
 
     this.operateApi.getInstances(mergedFilters).subscribe({
-      next: (list) => {
+      next: (data) => {
+        const list = extractContent(data);
+        const meta = extractPageMetadata(data, list.length);
         this.instancesSignal.set(list);
+        this.totalElementsSignal.set(meta.totalElements);
+        this.totalPagesSignal.set(meta.totalPages);
+        this.currentPageSignal.set(meta.page);
+        this.pageSizeSignal.set(meta.size);
         this.loadingSignal.set(false);
       },
       error: (err) => {

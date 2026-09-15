@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
+import { PageData } from '@core/models';
 import {
   ProcessInstance,
   ProcessIncident,
@@ -222,6 +223,7 @@ const MOCK_AUDIT: Record<string, ActivityExecution[]> = {
 export class OperateApiService {
   private readonly api = inject(ApiService);
   private readonly baseEndpoint = '/operate';
+  private readonly instancesEndpoint = '/process-instances';
 
   private instancesStore = [...MOCK_INSTANCES];
 
@@ -244,17 +246,18 @@ export class OperateApiService {
     );
   }
 
-  getInstances(filters?: OperateFilterParams): Observable<ProcessInstance[]> {
-    const cleanParams: Record<string, string | number> = {};
+  getInstances(filters?: OperateFilterParams): Observable<PageData<ProcessInstance>> {
+    const cleanParams: Record<string, string | number> = {
+      page: filters?.page !== undefined && filters?.page !== null ? filters.page : 1,
+      size: filters?.size !== undefined && filters?.size !== null ? filters.size : 20,
+    };
     if (filters) {
-      if (filters.search) cleanParams['search'] = filters.search.trim();
+      if (filters.search && filters.search.trim()) cleanParams['search'] = filters.search.trim();
       if (filters.state && filters.state !== 'ALL') cleanParams['state'] = filters.state;
       if (filters.processDefinitionKey) cleanParams['processDefinitionKey'] = filters.processDefinitionKey;
-      if (filters.page) cleanParams['page'] = filters.page;
-      if (filters.size) cleanParams['size'] = filters.size;
     }
 
-    return this.api.get<ProcessInstance[]>(`${this.baseEndpoint}/process-instances`, cleanParams).pipe(
+    return this.api.get<PageData<ProcessInstance>>(this.instancesEndpoint, cleanParams).pipe(
       catchError(() => {
         let result = [...this.instancesStore];
         if (filters?.state && filters.state !== 'ALL') {
@@ -269,13 +272,23 @@ export class OperateApiService {
               item.processDefinitionKey.toLowerCase().includes(s),
           );
         }
-        return of(result);
+        const page = Number(cleanParams['page']);
+        const size = Number(cleanParams['size']);
+        const start = (page - 1) * size;
+        const pagedContent = result.slice(start, start + size);
+        return of({
+          content: pagedContent,
+          page,
+          size,
+          totalElements: result.length,
+          totalPages: Math.ceil(result.length / size) || 1,
+        });
       }),
     );
   }
 
   getInstanceDetail(id: string): Observable<ProcessInstance> {
-    return this.api.get<ProcessInstance>(`${this.baseEndpoint}/process-instances/${id}`).pipe(
+    return this.api.get<ProcessInstance>(`${this.instancesEndpoint}/${id}`).pipe(
       catchError(() => {
         const item = this.instancesStore.find((i) => i.id === id);
         if (item) {
@@ -287,7 +300,7 @@ export class OperateApiService {
   }
 
   getIncidents(instanceId: string): Observable<ProcessIncident[]> {
-    return this.api.get<ProcessIncident[]>(`${this.baseEndpoint}/process-instances/${instanceId}/incidents`).pipe(
+    return this.api.get<ProcessIncident[]>(`${this.instancesEndpoint}/${instanceId}/incidents`).pipe(
       catchError(() => {
         return of(MOCK_INCIDENTS[instanceId] || []);
       }),
@@ -295,7 +308,7 @@ export class OperateApiService {
   }
 
   getVariables(instanceId: string): Observable<ProcessVariable[]> {
-    return this.api.get<ProcessVariable[]>(`${this.baseEndpoint}/process-instances/${instanceId}/variables`).pipe(
+    return this.api.get<ProcessVariable[]>(`${this.instancesEndpoint}/${instanceId}/variables`).pipe(
       catchError(() => {
         return of(MOCK_VARIABLES[instanceId] || []);
       }),
@@ -303,7 +316,7 @@ export class OperateApiService {
   }
 
   getAuditTrail(instanceId: string): Observable<ActivityExecution[]> {
-    return this.api.get<ActivityExecution[]>(`${this.baseEndpoint}/process-instances/${instanceId}/audit-trail`).pipe(
+    return this.api.get<ActivityExecution[]>(`${this.instancesEndpoint}/${instanceId}/audit-trail`).pipe(
       catchError(() => {
         return of(MOCK_AUDIT[instanceId] || []);
       }),
@@ -330,7 +343,7 @@ export class OperateApiService {
   }
 
   cancelInstance(instanceId: string): Observable<void> {
-    return this.api.post<void>(`${this.baseEndpoint}/process-instances/${instanceId}/cancel`, {}).pipe(
+    return this.api.post<void>(`${this.instancesEndpoint}/${instanceId}/cancel`, {}).pipe(
       catchError(() => {
         const found = this.instancesStore.find((i) => i.id === instanceId);
         if (found) {

@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
-import { User, UserQueryParams, UserRole, UserStatus } from '@core/models/user.model';
+import { User, UserQueryParams, UserRole, UserStatus, extractContent, extractPageMetadata } from '@core/models';
 import { ApiErrorHandlerService } from '@shared/services';
 import { formatDateTime } from '@shared/utils';
 import { NzMessageService } from 'ng-zorro-antd/message';
@@ -18,9 +18,29 @@ export class UserService {
   private usersSignal = signal<User[]>([]);
   private loadingSignal = signal<boolean>(false);
   private errorSignal = signal<string | null>(null);
+  private totalElementsSignal = signal<number>(0);
+  private totalPagesSignal = signal<number>(1);
+  private currentPageSignal = signal<number>(1);
+  private pageSizeSignal = signal<number>(20);
 
   get users() {
     return this.usersSignal.asReadonly();
+  }
+
+  get totalElements() {
+    return this.totalElementsSignal.asReadonly();
+  }
+
+  get totalPages() {
+    return this.totalPagesSignal.asReadonly();
+  }
+
+  get currentPage() {
+    return this.currentPageSignal.asReadonly();
+  }
+
+  get pageSize() {
+    return this.pageSizeSignal.asReadonly();
   }
 
   get isLoading() {
@@ -37,9 +57,14 @@ export class UserService {
 
     this.userApi.getAll(params).subscribe({
       next: (data) => {
-        const list = Array.isArray(data) ? data : [];
+        const list = extractContent(data);
+        const meta = extractPageMetadata(data, list.length);
         this.allUsers = list;
         this.usersSignal.set(list);
+        this.totalElementsSignal.set(meta.totalElements);
+        this.totalPagesSignal.set(meta.totalPages);
+        this.currentPageSignal.set(meta.page);
+        this.pageSizeSignal.set(meta.size);
         this.loadingSignal.set(false);
       },
       error: (err) => {
@@ -48,6 +73,7 @@ export class UserService {
         this.errorSignal.set(errorMsg);
         this.allUsers = [];
         this.usersSignal.set([]);
+        this.totalElementsSignal.set(0);
         this.loadingSignal.set(false);
       },
     });

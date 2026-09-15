@@ -5,4 +5,5 @@ export * from './api-response.model';
 export * from './operate.model';
 export * from './auth.model';
 export * from './task.model';
+export * from './workflow.model';
 

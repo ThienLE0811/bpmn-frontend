@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { BpmnProcess } from '@core/models/bpmn-process.model';
+import { extractContent, extractPageMetadata } from '@core/models';
 import { ApiErrorHandlerService } from '@shared/services';
 import { formatIsoDateTime } from '@shared/utils';
 import { BpmnApiService, BpmnQueryParams } from '../api/bpmn-api.service';
@@ -16,11 +17,31 @@ export class BpmnProcessService {
   private processesSignal = signal<BpmnProcess[]>([]);
   private loadingSignal = signal<boolean>(false);
   private errorSignal = signal<string | null>(null);
+  private totalElementsSignal = signal<number>(0);
+  private totalPagesSignal = signal<number>(1);
+  private currentPageSignal = signal<number>(1);
+  private pageSizeSignal = signal<number>(20);
 
   constructor() {}
 
   get processes() {
     return this.processesSignal.asReadonly();
+  }
+
+  get totalElements() {
+    return this.totalElementsSignal.asReadonly();
+  }
+
+  get totalPages() {
+    return this.totalPagesSignal.asReadonly();
+  }
+
+  get currentPage() {
+    return this.currentPageSignal.asReadonly();
+  }
+
+  get pageSize() {
+    return this.pageSizeSignal.asReadonly();
   }
 
   get isLoading() {
@@ -49,9 +70,13 @@ export class BpmnProcessService {
 
     this.bpmnApi.getAll(params).subscribe({
       next: (data) => {
-        if (Array.isArray(data)) {
-          this.processesSignal.set(data);
-        }
+        const list = extractContent(data);
+        const meta = extractPageMetadata(data, list.length);
+        this.processesSignal.set(list);
+        this.totalElementsSignal.set(meta.totalElements);
+        this.totalPagesSignal.set(meta.totalPages);
+        this.currentPageSignal.set(meta.page);
+        this.pageSizeSignal.set(meta.size);
         this.loadingSignal.set(false);
       },
       error: (err) => {

@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { User, UserQueryParams, UserStatus } from '@core/models/user.model';
+import { PageData } from '@core/models';
 
 @Injectable({
   providedIn: 'root',
@@ -10,8 +11,11 @@ export class UserApiService {
   private readonly api = inject(ApiService);
   private readonly endpoint = '/users';
 
-  getAll(params?: UserQueryParams): Observable<User[]> {
-    const cleanParams: Record<string, string | number> = {};
+  getAll(params?: UserQueryParams): Observable<PageData<User>> {
+    const cleanParams: Record<string, string | number> = {
+      page: params?.page !== undefined && params?.page !== null ? params.page : 1,
+      size: params?.size !== undefined && params?.size !== null ? params.size : 20,
+    };
 
     if (params) {
       if (params['search'] && String(params['search']).trim()) {
@@ -32,15 +36,9 @@ export class UserApiService {
       if (params['status'] && params['status'] !== 'ALL') {
         cleanParams['status'] = String(params['status']).trim();
       }
-      if (params['page'] !== undefined && params['page'] !== null) {
-        cleanParams['page'] = params['page'];
-      }
-      if (params['size'] !== undefined && params['size'] !== null) {
-        cleanParams['size'] = params['size'];
-      }
     }
 
-    return this.api.get<User[]>(this.endpoint, cleanParams);
+    return this.api.get<PageData<User>>(this.endpoint, cleanParams);
   }
 
   getById(id: string): Observable<User> {

@@ -165,7 +165,7 @@ export class UsersListComponent implements OnInit {
   protected isLoading = this.userService.isLoading;
 
   // Computed statistics
-  protected totalCount = computed(() => this.users().length);
+  protected totalCount = computed(() => this.userService.totalElements() || this.users().length);
   protected activeCount = computed(() => this.users().filter((u) => u.status === 'ACTIVE').length);
   protected inactiveCount = computed(
     () => this.users().filter((u) => u.status === 'INACTIVE' || u.status === 'LOCKED').length,
@@ -177,12 +177,19 @@ export class UsersListComponent implements OnInit {
     this.isStatsOpen.update((v) => !v);
   }
 
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
+    this.search();
+  }
+
   search(): void {
     const m = this.filterModel();
     this.userService.loadUsers({
       search: m.search,
       role: m.role,
       status: m.status,
+      page: 1,
+      size: this.pageSize(),
     });
   }
 
