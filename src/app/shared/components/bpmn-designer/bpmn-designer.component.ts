@@ -17,7 +17,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import BpmnModeler from 'bpmn-js/lib/Modeler';
 import TokenSimulationModule from 'bpmn-js-token-simulation';
+import camundaModdleDescriptor from 'camunda-bpmn-moddle/resources/camunda.json';
 import { BpmnProcess } from '@core/models/bpmn-process.model';
+import { DmnDecision } from '@core/models/dmn-decision.model';
 import { DEFAULT_BPMN_XML } from '@shared/constants';
 import {
   DesignerHeaderComponent,
@@ -25,6 +27,8 @@ import {
 } from '../designer-header/designer-header.component';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzMessageService } from 'ng-zorro-antd/message';
+import { DmnApiService } from '@core/services/api/dmn-api.service';
+import { extractContent } from '@core/models';
 
 export interface BpmnElementProperties {
   id: string;
@@ -44,6 +48,9 @@ export interface BpmnElementProperties {
   delegateExpression?: string;
   javaClass?: string;
   calledElement?: string;
+  // Business Rule Task (DMN)
+  decisionRef?: string;
+  resultVariable?: string;
 }
 
 export interface BpmnTypeMeta {
@@ -66,6 +73,9 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
   @ViewChild('xmlTextarea') private xmlTextareaRef?: ElementRef<HTMLTextAreaElement>;
 
   private message = inject(NzMessageService);
+  private dmnApi = inject(DmnApiService);
+
+  protected dmnDecisionOptions = signal<DmnDecision[]>([]);
 
   @Input() processData: BpmnProcess | null = null;
   @Input() readOnly = false;
@@ -164,7 +174,12 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
       additionalModules: [
         TokenSimulationModule,
       ],
+      moddleExtensions: {
+        camunda: camundaModdleDescriptor,
+      },
     });
+
+    this.loadDmnDecisionOptions();
 
     const eventBus = this.bpmnModeler.get('eventBus');
 
@@ -234,6 +249,14 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
           bo.class || bo.get?.('camunda:class') || bo.$attrs?.['camunda:class'] || '';
         const calledElement = bo.calledElement || bo.get?.('calledElement') || '';
 
+        const decisionRef =
+          bo.decisionRef || bo.get?.('camunda:decisionRef') || bo.$attrs?.['camunda:decisionRef'] || '';
+        const resultVariable =
+          bo.resultVariable ||
+          bo.get?.('camunda:resultVariable') ||
+          bo.$attrs?.['camunda:resultVariable'] ||
+          '';
+
         this.selectedElement.set({
           id: element.id,
           name: bo.name || '',
@@ -249,6 +272,8 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
           delegateExpression,
           javaClass,
           calledElement,
+          decisionRef,
+          resultVariable,
         });
       } else {
         this.selectedElement.set(null);
@@ -261,6 +286,13 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
     this.initialProcessName = name;
     this.xmlContent.set(initialXml);
     this.importDiagram(initialXml);
+  }
+
+  private loadDmnDecisionOptions(): void {
+    this.dmnApi.getAll({ page: 1, size: 100 }).subscribe({
+      next: (data) => this.dmnDecisionOptions.set(extractContent(data)),
+      error: (err) => console.warn('Không thể tải danh sách DMN decision để gán cho Business Rule Task:', err),
+    });
   }
 
   ngOnDestroy(): void {
@@ -772,8 +804,11 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
           modeling.updateProperties(element, { conditionExpression: undefined });
         }
       } else {
+        // 'javaClass' is the panel's field name, but the real camunda moddle property is 'class'
+        // ('class' is awkward to use as a JS/TS identifier, hence the alias in BpmnElementProperties).
+        const moddlePropName = propName === 'javaClass' ? 'class' : propName;
         const updatePayload: Record<string, any> = {};
-        updatePayload[propName] = value || undefined;
+        updatePayload[moddlePropName] = value || undefined;
         modeling.updateProperties(element, updatePayload);
       }
 
@@ -957,12 +992,17 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
     return type === 'bpmn:CallActivity';
   }
 
+  isBusinessRuleTask(type?: string): boolean {
+    return type === 'bpmn:BusinessRuleTask';
+  }
+
   hasExecutionConfig(type?: string): boolean {
     return (
       this.isUserOrTask(type) ||
       this.isSequenceFlow(type) ||
       this.isServiceOrScript(type) ||
-      this.isCallActivity(type)
+      this.isCallActivity(type) ||
+      this.isBusinessRuleTask(type)
     );
   }
 

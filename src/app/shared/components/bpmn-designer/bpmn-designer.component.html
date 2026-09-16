@@ -419,6 +419,57 @@
                 </div>
               </div>
             }
+
+            <!-- Form dành cho Business Rule Task (DMN) -->
+            @if (isBusinessRuleTask(element.type)) {
+              <div class="section-card">
+                <div class="section-title">
+                  <span nz-icon nzType="table" nzTheme="outline"></span>
+                  <span>Liên kết DMN Decision</span>
+                </div>
+
+                <!-- Decision Ref -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Bảng quyết định (Decision)</span>
+                  </label>
+                  <div class="input-wrap">
+                    <span nz-icon nzType="branches" nzTheme="outline" class="input-icon"></span>
+                    <select
+                      class="form-input"
+                      [ngModel]="element.decisionRef"
+                      (ngModelChange)="updateSelectedElementProperty('decisionRef', $event)"
+                    >
+                      <option [ngValue]="undefined">-- Chưa chọn --</option>
+                      @for (decision of dmnDecisionOptions(); track decision.id) {
+                        <option [ngValue]="decision.decisionKey">
+                          {{ decision.decisionKey }} - {{ decision.name }}
+                        </option>
+                      }
+                    </select>
+                  </div>
+                  <span class="field-hint">Bảng DMN sẽ được đánh giá khi quy trình chạy tới bước này (camunda:decisionRef)</span>
+                </div>
+
+                <!-- Result Variable -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Biến lưu kết quả (Result Variable)</span>
+                  </label>
+                  <div class="input-wrap">
+                    <span nz-icon nzType="tag" nzTheme="outline" class="input-icon"></span>
+                    <input
+                      type="text"
+                      class="form-input"
+                      [ngModel]="element.resultVariable"
+                      (ngModelChange)="updateSelectedElementProperty('resultVariable', $event)"
+                      placeholder="VD: riskLevel"
+                    />
+                  </div>
+                  <span class="field-hint">Tên biến process sẽ nhận kết quả của bảng DMN (camunda:resultVariable)</span>
+                </div>
+              </div>
+            }
           }
 
           <!-- TAB 3: NÂNG CAO (ADVANCED) -->
@@ -457,6 +508,18 @@
                   <div class="raw-item">
                     <span class="k">Topic</span>
                     <span class="v">{{ element.topic }}</span>
+                  </div>
+                }
+                @if (element.decisionRef) {
+                  <div class="raw-item">
+                    <span class="k">Decision Ref</span>
+                    <span class="v code-val">{{ element.decisionRef }}</span>
+                  </div>
+                }
+                @if (element.resultVariable) {
+                  <div class="raw-item">
+                    <span class="k">Result Variable</span>
+                    <span class="v code-val">{{ element.resultVariable }}</span>
                   </div>
                 }
               </div>
