@@ -17,7 +17,15 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 import { TaskService, AuthService } from '@core/services';
 import { TaskResponse, getTaskStatusMeta } from '@core/models';
 import { TableAutoHeightDirective } from '@shared/directives';
-import { getAvatarColor, getUserInitials } from '@shared/utils';
+import {
+  getAvatarColor,
+  getUserInitials,
+  copyToClipboard,
+  sortByString,
+  sortByDate,
+  safeJsonParse,
+} from '@shared/utils';
+import { AvatarColorPipe, UserInitialsPipe, FormatDatePipe } from '@shared/pipes';
 
 @Component({
   selector: 'app-task-list',
@@ -37,6 +45,9 @@ import { getAvatarColor, getUserInitials } from '@shared/utils';
     NzPopconfirmModule,
     NzSwitchModule,
     TableAutoHeightDirective,
+    AvatarColorPipe,
+    UserInitialsPipe,
+    FormatDatePipe,
   ],
   templateUrl: './task-list.component.html',
   styleUrl: './task-list.component.scss',
@@ -173,17 +184,12 @@ export class TaskListComponent implements OnInit {
     const task = this.selectedTask();
     if (!task) return;
 
-    let variables: Record<string, unknown> = {};
-    const rawJson = this.completeVariablesJson().trim();
-
-    if (rawJson) {
-      try {
-        variables = JSON.parse(rawJson);
-      } catch {
-        this.message.error('Dữ liệu biến (Variables) không đúng định dạng JSON hợp lệ.');
-        return;
-      }
+    const parseRes = safeJsonParse(this.completeVariablesJson());
+    if (!parseRes.success) {
+      this.message.error('Dữ liệu biến (Variables) không đúng định dạng JSON hợp lệ.');
+      return;
     }
+    const variables = parseRes.data;
 
     this.isSubmitting.set(true);
     this.taskService.completeTask(task.id, variables).subscribe({
@@ -206,17 +212,11 @@ export class TaskListComponent implements OnInit {
   }
 
   copyToClipboard(text: string, event?: Event): void {
-    if (event) event.stopPropagation();
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(() => {
-        this.message.success(`Đã sao chép: ${text}`);
-      });
-    }
+    copyToClipboard(text, this.message, undefined, event);
   }
 
   // Sắp xếp bảng
-  sortName = (a: TaskResponse, b: TaskResponse): number => a.name.localeCompare(b.name);
-  sortStatus = (a: TaskResponse, b: TaskResponse): number => a.status.localeCompare(b.status);
-  sortCreatedAt = (a: TaskResponse, b: TaskResponse): number =>
-    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  sortName = sortByString<TaskResponse>('name');
+  sortStatus = sortByString<TaskResponse>('status');
+  sortCreatedAt = sortByDate<TaskResponse>('createdAt');
 }

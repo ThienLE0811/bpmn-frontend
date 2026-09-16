@@ -204,8 +204,8 @@
                   <!-- User Name & Avatar -->
                   <td>
                     <div class="user-cell">
-                      <div class="user-avatar" [style.background]="getAvatarColor(user.fullName)">
-                        {{ getUserInitials(user.fullName) }}
+                      <div class="user-avatar" [style.background]="user.fullName | avatarColor">
+                        {{ user.fullName | userInitials }}
                       </div>
                       <div class="user-meta">
                         <span class="user-fullname" [title]="user.fullName">{{
@@ -248,7 +248,7 @@
                   <td>
                     <div class="time-cell">
                       <span nz-icon nzType="calendar" nzTheme="outline" class="time-icon"></span>
-                      <span>{{ user.createdAt }}</span>
+                      <span>{{ user.createdAt | formatDate }}</span>
                     </div>
                   </td>
 
@@ -256,7 +256,7 @@
                   <td>
                     <div class="time-cell">
                       <span nz-icon nzType="sync" nzTheme="outline" class="time-icon"></span>
-                      <span>{{ user.updatedAt }}</span>
+                      <span>{{ user.updatedAt | formatDate }}</span>
                     </div>
                   </td>
 
@@ -557,8 +557,8 @@
         <div class="user-drawer-content">
           <!-- Profile Card -->
           <div class="drawer-profile-card">
-            <div class="drawer-avatar" [style.background]="getAvatarColor(user.fullName)">
-              {{ getUserInitials(user.fullName) }}
+            <div class="drawer-avatar" [style.background]="user.fullName | avatarColor">
+              {{ user.fullName | userInitials }}
             </div>
             <h3 class="drawer-name">{{ user.fullName }}</h3>
             <span class="drawer-username">@{{ user.username }}</span>
@@ -618,14 +618,14 @@
               <span class="info-label">
                 <span nz-icon nzType="calendar"></span> Ngày tạo tài khoản:
               </span>
-              <span class="info-value font-mono">{{ user.createdAt }}</span>
+              <span class="info-value font-mono">{{ user.createdAt | formatDate }}</span>
             </div>
 
             <div class="info-item">
               <span class="info-label">
                 <span nz-icon nzType="sync"></span> Cập nhật lần cuối:
               </span>
-              <span class="info-value font-mono">{{ user.updatedAt }}</span>
+              <span class="info-value font-mono">{{ user.updatedAt | formatDate }}</span>
             </div>
           </div>
 

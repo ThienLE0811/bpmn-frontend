@@ -7,7 +7,7 @@ $dmn-light: $primary-light;
 $shadow-dmn: $shadow-primary;
 
 .dmn-list-layout {
-  padding: 24px;
+  padding: 12px 12px 8px 12px;
   max-width: 100%;
   margin: 0 auto;
   width: 100%;
@@ -673,17 +673,6 @@ $shadow-dmn: $shadow-primary;
       }
     }
   }
-
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
 }
 
 /* Data Table with ng-zorro */
@@ -691,87 +680,6 @@ $shadow-dmn: $shadow-primary;
   width: 100%;
   overflow-x: auto;
   padding: 8px;
-
-  :host ::ng-deep {
-    .custom-nz-table {
-      .ant-table {
-        background: transparent;
-        color: $text;
-        font-size: 13.5px;
-      }
-
-      .ant-table-content {
-        scrollbar-width: thin;
-        scrollbar-color: #cbd5e1 transparent;
-
-        &::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
-        }
-
-        &::-webkit-scrollbar-track {
-          background: transparent;
-        }
-
-        &::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 4px;
-
-          &:hover {
-            background: #94a3b8;
-          }
-        }
-      }
-
-      .ant-table-thead > tr > th {
-        background: $bg-page;
-        color: $text-muted;
-        font-size: 12px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        padding: 14px 20px;
-        border-bottom: 1px solid $border;
-        position: sticky;
-        top: 0;
-        z-index: 2;
-        box-shadow: 0 1px 0 $border;
-
-        &.ant-table-column-has-sorters:hover {
-          background: $border;
-        }
-
-        .ant-table-column-sorters {
-          padding: 0;
-        }
-      }
-
-      .ant-table-tbody > tr > td {
-        padding: 16px 20px;
-        font-size: 13.5px;
-        border-bottom: 1px solid $border;
-        vertical-align: middle;
-      }
-
-      .ant-table-tbody > tr.table-row {
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-
-        &:hover > td {
-          background-color: $bg-page;
-        }
-      }
-
-      .ant-pagination {
-        padding: 16px 20px;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 8px;
-      }
-    }
-  }
 
   .code-badge {
     display: inline-block;
@@ -865,12 +773,7 @@ $shadow-dmn: $shadow-primary;
       font-size: 15px;
       transition: all 0.2s ease;
 
-      &.view:hover {
-        background: $dmn;
-        border-color: $dmn;
-        color: $white;
-      }
-
+      &.view:hover,
       &.edit:hover {
         background: $dmn;
         border-color: $dmn;
@@ -1666,173 +1569,6 @@ $shadow-dmn: $shadow-primary;
   }
 }
 
-/* Standalone / Fallback Sidebar Footer & Button Styles */
-.info-sidebar-footer {
-  padding: 10px 16px;
-  border-top: 1px solid $border;
-  background: $bg-page;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  flex-wrap: wrap;
-
-  button {
-    appearance: none;
-    -webkit-appearance: none;
-    outline: none;
-    font-family: inherit;
-    line-height: 1.4;
-  }
-}
-
-button.btn-footer-delete,
-.btn-footer-delete {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: $danger-light;
-  border: 1px solid $danger-light;
-  color: $danger;
-  margin-right: auto;
-
-  .anticon {
-    font-size: 13px;
-  }
-
-  &:hover:not(:disabled) {
-    background: $danger-light;
-    border-color: $danger;
-    color: $danger-hover;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px $shadow-danger;
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-}
-
-button.btn-footer-cancel,
-.btn-footer-cancel {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 13px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: $white;
-  border: 1px solid $border;
-  color: $text-muted;
-
-  &:hover:not(:disabled) {
-    background: $border;
-    color: $text;
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-}
-
-button.btn-footer-submit,
-.btn-footer-submit {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 14px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: $white;
-  border: none;
-
-  .anticon {
-    font-size: 13px;
-  }
-
-  &.create {
-    background: linear-gradient(135deg, $success 0%, #059669 100%);
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
-
-    &:hover:not(:disabled) {
-      background: linear-gradient(135deg, #059669 0%, #047857 100%);
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
-      transform: translateY(-1px);
-    }
-  }
-
-  &.save {
-    background: linear-gradient(135deg, $dmn 0%, $dmn-hover 100%);
-    box-shadow: 0 2px 8px $shadow-dmn;
-
-    &:hover:not(:disabled) {
-      background: linear-gradient(135deg, $dmn-hover 0%, #1e40af 100%);
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
-      transform: translateY(-1px);
-    }
-  }
-
-  &.edit {
-    background: $dmn-light;
-    border: 1px solid $dmn;
-    color: $dmn;
-
-    &:hover {
-      background: $dmn;
-      color: $white;
-    }
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    box-shadow: none;
-  }
-}
-
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
 @media (max-width: 1024px) {
   .modal-split-container {

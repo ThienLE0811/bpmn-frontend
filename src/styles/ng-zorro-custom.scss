@@ -489,3 +489,108 @@
     }
   }
 }
+
+/* ==========================================================================
+   4. Table Custom Styling (Centralized nz-table Overrides)
+   ========================================================================== */
+.ant-table-wrapper {
+  width: 100%;
+
+  .ant-table {
+    background: transparent !important;
+    color: $color-text-main !important;
+    font-size: 13.5px !important;
+  }
+
+  .ant-table-content {
+    scrollbar-width: thin;
+    scrollbar-color: $color-border-medium transparent;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: $color-border-medium;
+      border-radius: 4px;
+
+      &:hover {
+        background: $color-text-muted;
+      }
+    }
+  }
+
+  /* Table Header: uppercase, sticky, single bottom border */
+  .ant-table-thead > tr > th {
+    background: $color-bg-page !important;
+    color: $color-text-secondary !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    padding: 12px 18px !important;
+    border-bottom: 1px solid $color-border-default !important;
+    border-right: none !important;
+    border-left: none !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 2 !important;
+    box-shadow: 0 1px 0 $color-border-default !important;
+    white-space: nowrap !important;
+
+    &::before {
+      display: none !important;
+    }
+
+    &.ant-table-column-has-sorters:hover {
+      background: $color-bg-alt !important;
+    }
+
+    .ant-table-column-sorters {
+      padding: 0;
+    }
+  }
+
+  /* Table Body Data Cells */
+  .ant-table-tbody > tr > td {
+    padding: 13px 18px !important;
+    font-size: 13.5px !important;
+    color: $color-text-main !important;
+    border-bottom: 1px solid $color-border-subtle !important;
+    border-right: none !important;
+    border-left: none !important;
+    vertical-align: middle !important;
+  }
+
+  .ant-table-tbody > tr:last-child > td {
+    border-bottom: none !important;
+  }
+
+  .ant-table-tbody > tr {
+    transition: background-color 0.15s ease;
+
+    &:hover > td {
+      background-color: $color-bg-page !important;
+    }
+
+    &.table-row {
+      cursor: pointer;
+    }
+  }
+
+  /* Built-in Table Pagination */
+  .ant-pagination {
+    padding: 8px 16px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}
+

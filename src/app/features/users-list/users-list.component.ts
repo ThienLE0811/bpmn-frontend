@@ -21,8 +21,10 @@ import {
   getUserRoleMeta,
   getUserStatusMeta,
   checkPer,
+  sortByString,
 } from '@shared/utils';
 import { TableAutoHeightDirective } from '@shared/directives';
+import { AvatarColorPipe, UserInitialsPipe, FormatDatePipe } from '@shared/pipes';
 
 @Component({
   selector: 'app-users-list',
@@ -42,6 +44,9 @@ import { TableAutoHeightDirective } from '@shared/directives';
     NzTooltipModule,
     NzDrawerModule,
     TableAutoHeightDirective,
+    AvatarColorPipe,
+    UserInitialsPipe,
+    FormatDatePipe,
   ],
   templateUrl: './users-list.component.html',
   styleUrl: './users-list.component.scss',
@@ -217,13 +222,13 @@ export class UsersListComponent implements OnInit {
   }
 
   // Sorting comparators
-  protected sortFullName = (a: User, b: User): number => (a.fullName || '').localeCompare(b.fullName || '');
-  protected sortUsername = (a: User, b: User): number => (a.username || '').localeCompare(b.username || '');
-  protected sortEmail = (a: User, b: User): number => (a.email || '').localeCompare(b.email || '');
-  protected sortRole = (a: User, b: User): number => (a.role || '').localeCompare(b.role || '');
-  protected sortStatus = (a: User, b: User): number => (a.status || '').localeCompare(b.status || '');
-  protected sortCreatedAt = (a: User, b: User): number => (a.createdAt || '').localeCompare(b.createdAt || '');
-  protected sortUpdatedAt = (a: User, b: User): number => (a.updatedAt || '').localeCompare(b.updatedAt || '');
+  protected sortFullName = sortByString<User>('fullName');
+  protected sortUsername = sortByString<User>('username');
+  protected sortEmail = sortByString<User>('email');
+  protected sortRole = sortByString<User>('role');
+  protected sortStatus = sortByString<User>('status');
+  protected sortCreatedAt = sortByString<User>('createdAt');
+  protected sortUpdatedAt = sortByString<User>('updatedAt');
 
   openCreateModal(): void {
     if (!this.isAdmin()) {

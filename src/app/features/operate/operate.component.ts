@@ -25,7 +25,8 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 
 import { OperateService } from '@core/services';
 import { OperateProcessInstance, ProcessIncident, ProcessInstanceState } from '@core/models';
-import { formatDateTime } from '@shared/utils';
+import { formatDisplayDateTime } from '@shared/utils';
+import { FormatDatePipe } from '@shared/pipes';
 import { TableAutoHeightDirective } from '@shared/directives';
 import { OperateViewerComponent } from './operate-viewer/operate-viewer.component';
 
@@ -56,6 +57,7 @@ import { OperateViewerComponent } from './operate-viewer/operate-viewer.componen
     NzDividerModule,
     OperateViewerComponent,
     TableAutoHeightDirective,
+    FormatDatePipe,
   ],
   templateUrl: './operate.component.html',
   styleUrl: './operate.component.scss',
@@ -112,14 +114,7 @@ export class OperateComponent implements OnInit {
     this.message.info(`Đã hủy phiên thực thi ${instance.id}`);
   }
 
-  formatTime(dateStr?: string | null): string {
-    if (!dateStr) return '--';
-    // Nếu dateStr có định dạng dd/MM/yyyy thì hiển thị trực tiếp
-    if (/^\d{2}\/\d{2}\/\d{4}/.test(dateStr)) {
-      return dateStr;
-    }
-    return formatDateTime(dateStr);
-  }
+  readonly formatTime = formatDisplayDateTime;
 
   getStateTagColor(state: ProcessInstanceState | string): string {
     switch ((state || '').toUpperCase()) {

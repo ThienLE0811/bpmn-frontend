@@ -246,7 +246,7 @@ export class TableAutoHeightDirective implements AfterViewInit, OnDestroy {
       layoutBottomPadding = parseFloat(layoutStyle.paddingBottom) || 0;
     }
     if (layoutBottomPadding === 0) {
-      layoutBottomPadding = 24;
+      layoutBottomPadding = 8;
     }
 
     // 4. Nếu không nằm trong app-content (fallback độc lập), cần đo footer
@@ -259,8 +259,8 @@ export class TableAutoHeightDirective implements AfterViewInit, OnDestroy {
       }
     }
 
-    // 5. Buffer an toàn (16px) đảm bảo tổng chiều cao luôn nhỏ hơn visibleHeight
-    const safetyBuffer = 16;
+    // 5. Buffer an toàn (8px) đảm bảo tổng chiều cao luôn nhỏ hơn visibleHeight
+    const safetyBuffer = 8;
 
     const totalBottomGap =
       paginationHeight +

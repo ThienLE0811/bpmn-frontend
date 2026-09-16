@@ -47,3 +47,19 @@ export function formatIsoDateTime(date: Date | string | number = new Date()): st
   return d.toISOString().replace('T', ' ').substring(0, 16);
 }
 
+/**
+ * Định dạng hiển thị ngày giờ an toàn cho bảng/chi tiết (fallback về '--' nếu rỗng hoặc null)
+ * Giữ nguyên nếu đã ở định dạng dd/MM/yyyy hoặc dd/MM/yyyy HH:mm:ss
+ */
+export function formatDisplayDateTime(
+  dateStr?: string | number | Date | null,
+  fallback = '--',
+): string {
+  if (!dateStr) return fallback;
+  if (typeof dateStr === 'string' && /^\d{2}\/\d{2}\/\d{4}/.test(dateStr)) {
+    return dateStr;
+  }
+  const formatted = formatDateTime(dateStr);
+  return formatted || fallback;
+}
+

@@ -3,7 +3,9 @@
   <div class="page-title-bar">
     <div class="title-info">
       <h2>Danh sách Công việc & Tác vụ</h2>
-      <p>Quản lý, tiếp nhận và hoàn thành các tác vụ người dùng (BPMN User Tasks) trong quy trình.</p>
+      <p>
+        Quản lý, tiếp nhận và hoàn thành các tác vụ người dùng (BPMN User Tasks) trong quy trình.
+      </p>
     </div>
 
     <div class="title-actions">
@@ -149,12 +151,6 @@
           </div>
 
           <div class="toolbar-right">
-            <span class="count-summary">
-              Hiển thị <strong>{{ tasks().length }}</strong> công việc
-            </span>
-
-            <div class="toolbar-divider"></div>
-
             <button
               class="btn-refresh"
               (click)="loadTasks()"
@@ -162,7 +158,6 @@
               title="Tải lại danh sách"
             >
               <span nz-icon nzType="redo" nzTheme="outline" [nzSpin]="isLoading()"></span>
-              <span>Tải lại</span>
             </button>
           </div>
         </div>
@@ -246,9 +241,9 @@
                       <div class="assignee-cell">
                         <div
                           class="assignee-avatar"
-                          [style.background]="getAvatarColor(task.claimedBy)"
+                          [style.background]="task.claimedBy | avatarColor"
                         >
-                          {{ getUserInitials(task.claimedBy) }}
+                          {{ task.claimedBy | userInitials }}
                         </div>
                         <span class="assignee-name" [title]="task.claimedBy">
                           @{{ task.claimedBy }}
@@ -265,10 +260,10 @@
                   <!-- Created At -->
                   <td>
                     <div class="date-cell">
-                      <span class="date-text">{{ task.createdAt }}</span>
+                      <span class="date-text">{{ task.createdAt | formatDate }}</span>
                       @if (task.completedAt) {
                         <span class="sub-date" title="Thời gian hoàn thành">
-                          Hoàn tất: {{ task.completedAt }}
+                          Hoàn tất: {{ task.completedAt | formatDate }}
                         </span>
                       }
                     </div>
@@ -349,7 +344,9 @@
 
 <!-- Total Template for Table Pagination -->
 <ng-template #totalTemplate let-total>
-  <span class="table-total-text">Tổng cộng <strong>{{ total }}</strong> công việc</span>
+  <span class="table-total-text"
+    >Tổng cộng <strong>{{ total }}</strong> công việc</span
+  >
 </ng-template>
 
 <!-- Detail Drawer -->
@@ -476,12 +473,16 @@
               </div>
               <div class="step-content">
                 <div class="step-title">Khởi tạo tác vụ</div>
-                <div class="step-time">{{ task.createdAt }}</div>
+                <div class="step-time">{{ task.createdAt | formatDate }}</div>
               </div>
             </div>
 
             <!-- Step 2: Claimed -->
-            <div class="timeline-step" [class.completed]="!!task.claimedBy" [class.active]="!!task.claimedBy && task.status !== 'COMPLETED'">
+            <div
+              class="timeline-step"
+              [class.completed]="!!task.claimedBy"
+              [class.active]="!!task.claimedBy && task.status !== 'COMPLETED'"
+            >
               <div class="step-marker">
                 @if (task.claimedBy) {
                   <span nz-icon nzType="check"></span>
@@ -491,7 +492,9 @@
               </div>
               <div class="step-content">
                 <div class="step-title">
-                  {{ task.claimedBy ? 'Đã tiếp nhận bởi @' + task.claimedBy : 'Chờ người tiếp nhận' }}
+                  {{
+                    task.claimedBy ? 'Đã tiếp nhận bởi @' + task.claimedBy : 'Chờ người tiếp nhận'
+                  }}
                 </div>
                 @if (task.claimedAt) {
                   <div class="step-time">{{ task.claimedAt }}</div>
@@ -510,7 +513,11 @@
               </div>
               <div class="step-content">
                 <div class="step-title">
-                  {{ task.status === 'COMPLETED' ? 'Đã hoàn thành & Chuyển tiếp Engine' : 'Chờ hoàn tất' }}
+                  {{
+                    task.status === 'COMPLETED'
+                      ? 'Đã hoàn thành & Chuyển tiếp Engine'
+                      : 'Chờ hoàn tất'
+                  }}
                 </div>
                 @if (task.completedAt) {
                   <div class="step-time">{{ task.completedAt }}</div>
@@ -575,7 +582,8 @@
           <div class="alert-text">
             <strong>Kích hoạt chuyển tiếp quy trình BPMN</strong>
             <p>
-              Khi bạn hoàn tất tác vụ này, workflow engine sẽ tự động chuyển tiếp (advance) sang node tiếp theo theo đúng sơ đồ quy trình.
+              Khi bạn hoàn tất tác vụ này, workflow engine sẽ tự động chuyển tiếp (advance) sang
+              node tiếp theo theo đúng sơ đồ quy trình.
             </p>
           </div>
         </div>
@@ -591,7 +599,7 @@
             class="variables-textarea"
             [ngModel]="completeVariablesJson()"
             (ngModelChange)="completeVariablesJson.set($event)"
-            placeholder="{\n  &quot;approved&quot;: true,\n  &quot;comment&quot;: &quot;...&quot;\n}"
+            placeholder='{\n  "approved": true,\n  "comment": "..."\n}'
           ></textarea>
         </div>
       </div>
@@ -613,7 +621,11 @@
     <button class="btn btn-cancel" (click)="closeCompleteModal()" [disabled]="isSubmitting()">
       Hủy bỏ
     </button>
-    <button class="btn btn-confirm-complete" (click)="submitCompleteTask()" [disabled]="isSubmitting()">
+    <button
+      class="btn btn-confirm-complete"
+      (click)="submitCompleteTask()"
+      [disabled]="isSubmitting()"
+    >
       <span nz-icon [nzType]="isSubmitting() ? 'loading' : 'check'"></span>
       <span>Xác nhận & Chuyển tiếp Engine</span>
     </button>

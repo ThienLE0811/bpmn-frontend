@@ -189,6 +189,7 @@
             [nzNoResult]="emptyTemplate"
             nzSize="middle"
             class="custom-nz-table"
+            appTableAutoHeight
             (nzPageIndexChange)="onPageIndexChange($event)"
             (nzPageSizeChange)="onPageSizeChange($event)"
           >
@@ -303,9 +304,9 @@
                     <div class="user-cell">
                       <div
                         class="avatar-circle"
-                        [style.background-color]="getAvatarColor(item.startedBy)"
+                        [style.background-color]="item.startedBy | avatarColor"
                       >
-                        {{ getUserInitials(item.startedBy) }}
+                        {{ item.startedBy | userInitials }}
                       </div>
                       <span class="username-text">{{ item.startedBy }}</span>
                     </div>
@@ -313,13 +314,13 @@
 
                   <!-- Bắt đầu lúc -->
                   <td>
-                    <span class="date-text">{{ formatDisplayTime(item.startedAt) }}</span>
+                    <span class="date-text">{{ item.startedAt | formatDate }}</span>
                   </td>
 
                   <!-- Hoàn tất lúc -->
                   <td>
                     <span class="date-text" [class.empty-date]="!item.completedAt">
-                      {{ formatDisplayTime(item.completedAt) }}
+                      {{ item.completedAt | formatDate }}
                     </span>
                   </td>
 
@@ -547,9 +548,9 @@
                       <div class="user-cell">
                         <div
                           class="avatar-circle"
-                          [style.background-color]="getAvatarColor(inst.startedBy)"
+                          [style.background-color]="inst.startedBy | avatarColor"
                         >
-                          {{ getUserInitials(inst.startedBy) }}
+                          {{ inst.startedBy | userInitials }}
                         </div>
                         <span>{{ inst.startedBy }}</span>
                       </div>
@@ -565,10 +566,10 @@
                       }
                     </nz-descriptions-item>
                     <nz-descriptions-item nzTitle="Bắt đầu lúc">
-                      {{ formatDisplayTime(inst.startedAt) }}
+                      {{ inst.startedAt | formatDate }}
                     </nz-descriptions-item>
                     <nz-descriptions-item nzTitle="Hoàn tất lúc">
-                      {{ formatDisplayTime(inst.completedAt) }}
+                      {{ inst.completedAt | formatDate }}
                     </nz-descriptions-item>
                   </nz-descriptions>
                 </div>

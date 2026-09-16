@@ -14,6 +14,7 @@ import { DmnDecisionService } from '@core/services';
 import { DmnDecision } from '@core/models';
 import { DmnDesignerComponent } from '@shared/components/dmn-designer/dmn-designer.component';
 import { TableAutoHeightDirective } from '@shared/directives';
+import { sortByString, sortByNumber } from '@shared/utils';
 
 @Component({
   selector: 'app-dmn-list',
@@ -175,26 +176,13 @@ export class DmnListComponent implements OnInit {
   }
 
   // Table Sort Comparators
-  protected sortDecisionKey = (a: DmnDecision, b: DmnDecision): number =>
-    (a.decisionKey || '').localeCompare(b.decisionKey || '');
-
-  protected sortName = (a: DmnDecision, b: DmnDecision): number =>
-    (a.name || '').localeCompare(b.name || '');
-
-  protected sortCategory = (a: DmnDecision, b: DmnDecision): number =>
-    (a.category || '').localeCompare(b.category || '');
-
-  protected sortHitPolicy = (a: DmnDecision, b: DmnDecision): number =>
-    (a.hitPolicy || '').localeCompare(b.hitPolicy || '');
-
-  protected sortVersion = (a: DmnDecision, b: DmnDecision): number =>
-    (a.version || 0) - (b.version || 0);
-
-  protected sortStatus = (a: DmnDecision, b: DmnDecision): number =>
-    (a.status || '').localeCompare(b.status || '');
-
-  protected sortUpdatedAt = (a: DmnDecision, b: DmnDecision): number =>
-    (a.updatedAt || '').localeCompare(b.updatedAt || '');
+  protected sortDecisionKey = sortByString<DmnDecision>('decisionKey');
+  protected sortName = sortByString<DmnDecision>('name');
+  protected sortCategory = sortByString<DmnDecision>('category');
+  protected sortHitPolicy = sortByString<DmnDecision>('hitPolicy');
+  protected sortVersion = sortByNumber<DmnDecision>('version');
+  protected sortStatus = sortByString<DmnDecision>('status');
+  protected sortUpdatedAt = sortByString<DmnDecision>('updatedAt');
 
   onSideResize({ width }: NzResizeEvent): void {
     cancelAnimationFrame(this.resizeId);

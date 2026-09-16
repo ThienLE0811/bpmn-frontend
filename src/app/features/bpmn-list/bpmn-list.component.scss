@@ -1,7 +1,7 @@
 @use '../../../styles/colors' as *;
 
 .bpmn-list-layout {
-  padding: 24px;
+  padding: 12px 12px 8px 12px;
   width: 100%;
   max-width: 100%;
   display: flex;
@@ -752,17 +752,6 @@
       }
     }
   }
-
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
 }
 
 /* Data Table with ng-zorro */
@@ -770,87 +759,6 @@
   width: 100%;
   overflow-x: auto;
   padding: 8px;
-
-  :host ::ng-deep {
-    .custom-nz-table {
-      .ant-table {
-        background: transparent;
-        color: #0f172a;
-        font-size: 13.5px;
-      }
-
-      .ant-table-content {
-        scrollbar-width: thin;
-        scrollbar-color: #cbd5e1 transparent;
-
-        &::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
-        }
-
-        &::-webkit-scrollbar-track {
-          background: transparent;
-        }
-
-        &::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 4px;
-
-          &:hover {
-            background: #94a3b8;
-          }
-        }
-      }
-
-      .ant-table-thead > tr > th {
-        background: #f8fafc;
-        color: #475569;
-        font-size: 12px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        padding: 14px 20px;
-        border-bottom: 1px solid #e2e8f0;
-        position: sticky;
-        top: 0;
-        z-index: 2;
-        box-shadow: 0 1px 0 #e2e8f0;
-
-        &.ant-table-column-has-sorters:hover {
-          background: #f1f5f9;
-        }
-
-        .ant-table-column-sorters {
-          padding: 0;
-        }
-      }
-
-      .ant-table-tbody > tr > td {
-        padding: 16px 20px;
-        font-size: 13.5px;
-        border-bottom: 1px solid #f1f5f9;
-        vertical-align: middle;
-      }
-
-      .ant-table-tbody > tr.table-row {
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-
-        &:hover > td {
-          background-color: #f8fafc;
-        }
-      }
-
-      .ant-pagination {
-        padding: 16px 20px;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 8px;
-      }
-    }
-  }
 }
 
 /* List View Mode with nz-list */
@@ -1162,12 +1070,7 @@
     font-size: 15px;
     transition: all 0.2s ease;
 
-    &.view:hover {
-      background: $primary;
-      border-color: $primary;
-      color: $white;
-    }
-
+    &.view:hover,
     &.edit:hover {
       background: $primary;
       border-color: $primary;
@@ -1935,27 +1838,6 @@
   }
 }
 
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
 @media (max-width: 1024px) {
   .modal-split-container {

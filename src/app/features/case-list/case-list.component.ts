@@ -27,7 +27,16 @@ import {
   StartProcessInstanceRequest,
   BpmnProcess,
 } from '@core/models';
-import { getAvatarColor, getUserInitials, formatDateTime } from '@shared/utils';
+import {
+  getAvatarColor,
+  getUserInitials,
+  formatDisplayDateTime,
+  copyToClipboard,
+  sortByString,
+  safeJsonParse,
+} from '@shared/utils';
+import { AvatarColorPipe, UserInitialsPipe, FormatDatePipe } from '@shared/pipes';
+import { TableAutoHeightDirective } from '@shared/directives';
 import { OperateViewerComponent } from '../operate/operate-viewer/operate-viewer.component';
 
 export interface VariableRow {
@@ -57,6 +66,10 @@ export interface VariableRow {
     NzTimelineModule,
     NzSpinModule,
     NzEmptyModule,
+    TableAutoHeightDirective,
+    AvatarColorPipe,
+    UserInitialsPipe,
+    FormatDatePipe,
     OperateViewerComponent,
   ],
   templateUrl: './case-list.component.html',
@@ -270,22 +283,17 @@ export class CaseListComponent implements OnInit {
       return;
     }
 
-    let parsedVariables: Record<string, unknown> = {};
-    const rawJson = this.startVariablesJson().trim();
-    if (rawJson) {
-      try {
-        parsedVariables = JSON.parse(rawJson);
-        this.jsonError.set(null);
-      } catch (err) {
-        this.jsonError.set('Cú pháp JSON không hợp lệ. Vui lòng kiểm tra lại dấu ngoặc và dấu phẩy.');
-        this.message.error('Dữ liệu biến (Variables) không đúng định dạng JSON.');
-        return;
-      }
+    const parseRes = safeJsonParse(this.startVariablesJson());
+    if (!parseRes.success) {
+      this.jsonError.set('Cú pháp JSON không hợp lệ. Vui lòng kiểm tra lại dấu ngoặc và dấu phẩy.');
+      this.message.error('Dữ liệu biến (Variables) không đúng định dạng JSON.');
+      return;
     }
+    this.jsonError.set(null);
 
     const payload: StartProcessInstanceRequest = {
       processId,
-      variables: parsedVariables,
+      variables: parseRes.data,
     };
 
     this.caseService.startCase(payload).subscribe({
@@ -338,22 +346,10 @@ export class CaseListComponent implements OnInit {
   }
 
   copyToClipboard(text: string, event?: Event): void {
-    if (event) event.stopPropagation();
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(() => {
-        this.message.success(`Đã sao chép: ${text}`);
-      });
-    }
+    copyToClipboard(text, this.message, undefined, event);
   }
 
-  formatDisplayTime(dateStr?: string | null): string {
-    if (!dateStr) return '--';
-    // Nếu dateStr có định dạng dd/MM/yyyy HH:mm:ss thì hiển thị trực tiếp
-    if (/^\d{2}\/\d{2}\/\d{4}/.test(dateStr)) {
-      return dateStr;
-    }
-    return formatDateTime(dateStr);
-  }
+  readonly formatDisplayTime = formatDisplayDateTime;
 
   getProcessDisplayName(processId: string): string {
     const p = this.processes().find((item) => item.id === processId || item.processKey === processId);
@@ -361,16 +357,12 @@ export class CaseListComponent implements OnInit {
   }
 
   // Sắp xếp các cột bảng
-  sortId = (a: ProcessInstance, b: ProcessInstance): number => a.id.localeCompare(b.id);
+  sortId = sortByString<ProcessInstance>('id');
   sortProcess = (a: ProcessInstance, b: ProcessInstance): number =>
     this.getProcessDisplayName(a.processId).localeCompare(this.getProcessDisplayName(b.processId));
-  sortStatus = (a: ProcessInstance, b: ProcessInstance): number => a.status.localeCompare(b.status);
-  sortCurrentNode = (a: ProcessInstance, b: ProcessInstance): number =>
-    (a.currentNodeId || '').localeCompare(b.currentNodeId || '');
-  sortStartedBy = (a: ProcessInstance, b: ProcessInstance): number =>
-    a.startedBy.localeCompare(b.startedBy);
-  sortStartedAt = (a: ProcessInstance, b: ProcessInstance): number =>
-    a.startedAt.localeCompare(b.startedAt);
-  sortCompletedAt = (a: ProcessInstance, b: ProcessInstance): number =>
-    (a.completedAt || '').localeCompare(b.completedAt || '');
+  sortStatus = sortByString<ProcessInstance>('status');
+  sortCurrentNode = sortByString<ProcessInstance>('currentNodeId');
+  sortStartedBy = sortByString<ProcessInstance>('startedBy');
+  sortStartedAt = sortByString<ProcessInstance>('startedAt');
+  sortCompletedAt = sortByString<ProcessInstance>('completedAt');
 }

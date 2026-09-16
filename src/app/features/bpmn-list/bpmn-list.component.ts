@@ -16,6 +16,8 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 import { BpmnProcessService } from '@core/services';
 import { BpmnProcess, BpmnProcessStatus } from '@core/models';
 import { BpmnDesignerComponent } from '@shared/components/bpmn-designer/bpmn-designer.component';
+import { TableAutoHeightDirective } from '@shared/directives';
+import { sortByString, sortByNumber } from '@shared/utils';
 
 @Component({
   selector: 'app-bpmn-list',
@@ -35,6 +37,7 @@ import { BpmnDesignerComponent } from '@shared/components/bpmn-designer/bpmn-des
     NzModalModule,
     NzSpinModule,
     BpmnDesignerComponent,
+    TableAutoHeightDirective,
   ],
   templateUrl: './bpmn-list.component.html',
   styleUrl: './bpmn-list.component.scss',
@@ -145,24 +148,13 @@ export class BpmnListComponent implements OnInit {
   );
 
   // Table Sort Comparators
-  protected sortProcessKey = (a: BpmnProcess, b: BpmnProcess): number =>
-    a.processKey.localeCompare(b.processKey);
-
-  protected sortCategory = (a: BpmnProcess, b: BpmnProcess): number =>
-    a.category.localeCompare(b.category);
-
-  protected sortName = (a: BpmnProcess, b: BpmnProcess): number => a.name.localeCompare(b.name);
-
-  protected sortVersion = (a: BpmnProcess, b: BpmnProcess): number => a.version - b.version;
-
-  protected sortStatus = (a: BpmnProcess, b: BpmnProcess): number =>
-    a.status.localeCompare(b.status);
-
-  protected sortCreatedAt = (a: BpmnProcess, b: BpmnProcess): number =>
-    (a.createdAt || '').localeCompare(b.createdAt || '');
-
-  protected sortUpdatedAt = (a: BpmnProcess, b: BpmnProcess): number =>
-    (a.updatedAt || '').localeCompare(b.updatedAt || '');
+  protected sortProcessKey = sortByString<BpmnProcess>('processKey');
+  protected sortCategory = sortByString<BpmnProcess>('category');
+  protected sortName = sortByString<BpmnProcess>('name');
+  protected sortVersion = sortByNumber<BpmnProcess>('version');
+  protected sortStatus = sortByString<BpmnProcess>('status');
+  protected sortCreatedAt = sortByString<BpmnProcess>('createdAt');
+  protected sortUpdatedAt = sortByString<BpmnProcess>('updatedAt');
 
   search(): void {
     this.listPageIndex.set(1);
