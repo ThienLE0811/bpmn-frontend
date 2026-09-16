@@ -13,7 +13,11 @@
         (click)="toggleStats()"
         title="Xem thống kê tổng quan"
       >
-        <span nz-icon [nzType]="isStatsOpen() ? 'eye-invisible' : 'dashboard'" nzTheme="outline"></span>
+        <span
+          nz-icon
+          [nzType]="isStatsOpen() ? 'eye-invisible' : 'dashboard'"
+          nzTheme="outline"
+        ></span>
         <span>{{ isStatsOpen() ? 'Ẩn thống kê' : 'Xem thống kê' }}</span>
       </button>
 
@@ -501,7 +505,9 @@
                       <!-- Dòng 2: Mô tả & Thông tin ngày giờ, người tạo -->
                       <div class="item-meta-row">
                         @if (item.description) {
-                          <span class="item-desc" [title]="item.description">{{ item.description }}</span>
+                          <span class="item-desc" [title]="item.description">{{
+                            item.description
+                          }}</span>
                           <span class="meta-dot">·</span>
                         }
                         @if (item.createdAt) {
@@ -669,8 +675,13 @@
                           <span>Chỉnh sửa</span>
                         </span>
                       }
-                      <span class="version-pill" title="Phiên bản quy trình">v{{ selectedProcess()?.version || processFormModel().version || 1 }}</span>
-                      <span class="status-badge" [class]="processForm.status().value().toLowerCase()">
+                      <span class="version-pill" title="Phiên bản quy trình"
+                        >v{{ selectedProcess()?.version || processFormModel().version || 1 }}</span
+                      >
+                      <span
+                        class="status-badge"
+                        [class]="processForm.status().value().toLowerCase()"
+                      >
                         <span class="status-dot"></span>
                         @switch (processForm.status().value()) {
                           @case ('PUBLISHED') {
@@ -826,7 +837,9 @@
                       <input
                         type="text"
                         class="form-control readonly-input"
-                        [value]="'v' + (selectedProcess()?.version || processFormModel().version || 1)"
+                        [value]="
+                          'v' + (selectedProcess()?.version || processFormModel().version || 1)
+                        "
                         readonly
                         disabled
                         title="Phiên bản được máy chủ tự động quản lý và tăng dần"
@@ -841,10 +854,7 @@
                     <span>Trạng thái</span>
                   </label>
                   <div class="select-wrapper">
-                    <select
-                      class="form-control form-select"
-                      [formField]="processForm.status"
-                    >
+                    <select class="form-control form-select" [formField]="processForm.status">
                       <option value="DRAFT">Bản nháp</option>
                       <option value="PUBLISHED">Đã phát hành</option>
                       <option value="ARCHIVED">Lưu trữ</option>
@@ -917,7 +927,11 @@
                   (click)="submitFromSidebar()"
                   [disabled]="isSubmitting()"
                 >
-                  <span nz-icon [nzType]="isSubmitting() ? 'loading' : 'plus'" nzTheme="outline"></span>
+                  <span
+                    nz-icon
+                    [nzType]="isSubmitting() ? 'loading' : 'plus'"
+                    nzTheme="outline"
+                  ></span>
                   <span>{{ isSubmitting() ? 'Đang tạo...' : 'Tạo quy trình' }}</span>
                 </button>
                 <button
@@ -950,7 +964,11 @@
                   (click)="submitFromSidebar()"
                   [disabled]="isSubmitting()"
                 >
-                  <span nz-icon [nzType]="isSubmitting() ? 'loading' : 'save'" nzTheme="outline"></span>
+                  <span
+                    nz-icon
+                    [nzType]="isSubmitting() ? 'loading' : 'save'"
+                    nzTheme="outline"
+                  ></span>
                   <span>{{ isSubmitting() ? 'Đang lưu...' : 'Lưu thay đổi' }}</span>
                 </button>
                 <button
@@ -964,16 +982,50 @@
               } @else {
                 <button
                   type="button"
+                  class="btn-footer-submit deploy"
+                  nz-popconfirm
+                  [nzPopconfirmTitle]="
+                    selectedProcess()?.status === 'PUBLISHED'
+                      ? 'Quy trình này đã được phát hành trước đó. Bạn có chắc chắn muốn triển khai lại (Deploy) không?'
+                      : 'Bạn có chắc chắn muốn triển khai (Deploy) quy trình này để đưa vào vận hành?'
+                  "
+                  nzOkText="Triển khai"
+                  nzCancelText="Hủy"
+                  (nzOnConfirm)="deployProcessFromModal()"
+                  [disabled]="isDeploying() || isSubmitting()"
+                  [title]="
+                    selectedProcess()?.status === 'PUBLISHED'
+                      ? 'Triển khai lại quy trình'
+                      : 'Triển khai quy trình lên hệ thống'
+                  "
+                >
+                  <span
+                    nz-icon
+                    [nzType]="isDeploying() ? 'loading' : 'deployment-unit'"
+                    nzTheme="outline"
+                  ></span>
+                  <span>{{
+                    isDeploying()
+                      ? 'Đang triển khai...'
+                      : selectedProcess()?.status === 'PUBLISHED'
+                        ? 'Deploy lại'
+                        : 'Deploy'
+                  }}</span>
+                </button>
+                <button
+                  type="button"
                   class="btn-footer-submit edit"
                   (click)="switchToEditMode()"
+                  [disabled]="isDeploying()"
                 >
                   <span nz-icon nzType="edit" nzTheme="outline"></span>
-                  <span>Chuyển sang Chỉnh sửa</span>
+                  <span>Sửa</span>
                 </button>
                 <button
                   type="button"
                   class="btn-footer-cancel"
                   (click)="closeModal()"
+                  [disabled]="isDeploying()"
                 >
                   Đóng
                 </button>

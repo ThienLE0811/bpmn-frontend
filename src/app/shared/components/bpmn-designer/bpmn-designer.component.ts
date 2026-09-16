@@ -71,6 +71,7 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
   @Input() readOnly = false;
   @Input() saveLabel?: string;
   @Input() initialMode: DesignerMode = 'design';
+  @Input() showHeaderActions = false;
   @Output() save = new EventEmitter<{ name: string; xml: string }>();
   @Output() closed = new EventEmitter<void>();
 
@@ -129,6 +130,7 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
   });
 
   hasChanges(): boolean {
+    if (this.readOnly) return false;
     const isTitleChanged = this.processName() !== this.initialProcessName;
     return this.isModified() || isTitleChanged;
   }

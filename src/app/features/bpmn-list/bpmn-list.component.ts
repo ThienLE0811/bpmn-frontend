@@ -12,6 +12,7 @@ import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzListModule } from 'ng-zorro-antd/list';
 import { NzPaginationModule } from 'ng-zorro-antd/pagination';
+import { NzMessageService } from 'ng-zorro-antd/message';
 import { BpmnProcessService } from '@core/services';
 import { BpmnProcess, BpmnProcessStatus } from '@core/models';
 import { BpmnDesignerComponent } from '@shared/components/bpmn-designer/bpmn-designer.component';
@@ -43,6 +44,7 @@ export class BpmnListComponent implements OnInit {
 
   private bpmnService = inject(BpmnProcessService);
   private modal = inject(NzModalService);
+  private message = inject(NzMessageService);
 
   ngOnInit(): void {
     this.search();
@@ -52,6 +54,7 @@ export class BpmnListComponent implements OnInit {
   protected modalMode = signal<'view' | 'edit' | 'create'>('edit');
   protected initialDesignerMode = signal<'design' | 'xml'>('design');
   protected isDetailLoading = signal<boolean>(false);
+  protected isDeploying = signal<boolean>(false);
   protected isStatsOpen = signal<boolean>(false);
   protected selectedProcess = signal<BpmnProcess | null>(null);
   protected viewDisplayMode = signal<'table' | 'list'>('table');
@@ -293,6 +296,9 @@ export class BpmnListComponent implements OnInit {
   }
 
   protected hasUnsavedChanges(): boolean {
+    if (this.modalMode() === 'view') {
+      return false;
+    }
     const isDesignerDirty = this.designerComponent?.hasChanges() ?? false;
     const isFormDirty = this.checkFormDirty();
     return isDesignerDirty || isFormDirty;
@@ -312,7 +318,7 @@ export class BpmnListComponent implements OnInit {
   }
 
   closeModal(): void {
-    if (this.hasUnsavedChanges()) {
+    if (this.modalMode() !== 'view' && this.hasUnsavedChanges()) {
       this.modal.confirm({
         nzTitle: 'Xác nhận đóng',
         nzContent:
@@ -339,6 +345,7 @@ export class BpmnListComponent implements OnInit {
     this.initialFormModel = null;
     this.isDetailLoading.set(false);
     this.isSubmitting.set(false);
+    this.isDeploying.set(false);
   }
 
   submitFromSidebar(): void {
@@ -416,5 +423,35 @@ export class BpmnListComponent implements OnInit {
         this.isSubmitting.set(false);
       },
     });
+  }
+
+  deployProcessFromModal(): void {
+    const current = this.selectedProcess();
+    if (!current?.id) return;
+
+    this.isDeploying.set(true);
+    this.bpmnService
+      .updateProcess(current.id, {
+        name: current.name,
+        description: current.description,
+        category: current.category,
+        status: 'PUBLISHED',
+        bpmnXml: current.bpmnXml,
+      })
+      .subscribe({
+        next: (updated) => {
+          this.isDeploying.set(false);
+          const refreshed: BpmnProcess = updated || {
+            ...current,
+            status: 'PUBLISHED',
+            updatedAt: new Date().toISOString(),
+          };
+          this.selectedProcess.set(refreshed);
+          this.populateFormModel(refreshed);
+        },
+        error: () => {
+          this.isDeploying.set(false);
+        },
+      });
   }
 }

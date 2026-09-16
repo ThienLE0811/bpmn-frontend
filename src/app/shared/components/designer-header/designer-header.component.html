@@ -97,22 +97,24 @@
       <div class="divider"></div>
     }
 
-    <!-- Save & Close Primary Actions -->
-    <div class="btn-group">
-      @if (!readOnly()) {
-        <button class="btn btn-save" (click)="save.emit()" [title]="effectiveSaveLabel()">
-          <span nz-icon nzType="save" nzTheme="outline"></span>
-          {{ effectiveSaveLabel() }}
+    <!-- Save & Close Primary Actions (Hidden by default as managed by sidebar-footer) -->
+    @if (showSaveClose()) {
+      <div class="btn-group">
+        @if (!readOnly()) {
+          <button class="btn btn-save" (click)="save.emit()" [title]="effectiveSaveLabel()">
+            <span nz-icon nzType="save" nzTheme="outline"></span>
+            {{ effectiveSaveLabel() }}
+          </button>
+        }
+
+        <button class="btn btn-close" (click)="closed.emit()" [title]="closeTitle()">
+          <span nz-icon nzType="close" nzTheme="outline"></span>
+          Đóng
         </button>
-      }
+      </div>
 
-      <button class="btn btn-close" (click)="closed.emit()" [title]="closeTitle()">
-        <span nz-icon nzType="close" nzTheme="outline"></span>
-        Đóng
-      </button>
-    </div>
-
-    <div class="divider"></div>
+      <div class="divider"></div>
+    }
 
     <!-- File Actions Dropdown -->
     <div class="btn-group">

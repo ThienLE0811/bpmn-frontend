@@ -13,7 +13,11 @@
         (click)="toggleStats()"
         title="Xem thống kê tổng quan"
       >
-        <span nz-icon [nzType]="isStatsOpen() ? 'eye-invisible' : 'dashboard'" nzTheme="outline"></span>
+        <span
+          nz-icon
+          [nzType]="isStatsOpen() ? 'eye-invisible' : 'dashboard'"
+          nzTheme="outline"
+        ></span>
         <span>{{ isStatsOpen() ? 'Ẩn thống kê' : 'Xem thống kê' }}</span>
       </button>
 
@@ -246,7 +250,10 @@
                   <nz-option nzValue="PRIORITY" nzLabel="PRIORITY (P) - Ưu tiên"></nz-option>
                   <nz-option nzValue="ANY" nzLabel="ANY (A) - Bất kỳ"></nz-option>
                   <nz-option nzValue="COLLECT" nzLabel="COLLECT (C) - Tập hợp"></nz-option>
-                  <nz-option nzValue="RULE ORDER" nzLabel="RULE ORDER (R) - Theo thứ tự"></nz-option>
+                  <nz-option
+                    nzValue="RULE ORDER"
+                    nzLabel="RULE ORDER (R) - Theo thứ tự"
+                  ></nz-option>
                   <nz-option nzValue="OUTPUT ORDER" nzLabel="OUTPUT ORDER (O) - Đầu ra"></nz-option>
                 </nz-select>
               </div>
@@ -538,14 +545,16 @@
                           <span nz-icon nzType="eye" nzTheme="outline"></span>
                           <span>Chỉ xem</span>
                         </span>
-                      } @else if (modalMode() === 'edit') {
-                        <span class="mode-pill edit">
-                          <span nz-icon nzType="edit" nzTheme="outline"></span>
-                          <span>Chỉnh sửa</span>
-                        </span>
                       }
-                      <span class="version-pill" title="Phiên bản bảng quyết định">v{{ selectedDecision()?.version || decisionFormModel().version || 1 }}</span>
-                      <span class="status-badge" [class]="decisionForm.status().value().toLowerCase()">
+                      <span class="version-pill" title="Phiên bản bảng quyết định"
+                        >v{{
+                          selectedDecision()?.version || decisionFormModel().version || 1
+                        }}</span
+                      >
+                      <span
+                        class="status-badge"
+                        [class]="decisionForm.status().value().toLowerCase()"
+                      >
                         <span class="status-dot"></span>
                         @switch (decisionForm.status().value()) {
                           @case ('PUBLISHED') {
@@ -570,17 +579,6 @@
                   </p>
                 </div>
               </div>
-
-              @if (modalMode() === 'view') {
-                <button
-                  class="btn-switch-edit"
-                  (click)="switchToEditMode()"
-                  title="Chuyển sang chế độ cập nhật"
-                >
-                  <span nz-icon nzType="edit" nzTheme="outline"></span>
-                  <span>Chỉnh sửa</span>
-                </button>
-              }
             </div>
 
             <!-- Body Form Content -->
@@ -589,7 +587,9 @@
                 <!-- Mã bảng quyết định -->
                 <div
                   class="form-group"
-                  [class.has-error]="decisionForm.decisionKey().invalid() && decisionForm.decisionKey().touched()"
+                  [class.has-error]="
+                    decisionForm.decisionKey().invalid() && decisionForm.decisionKey().touched()
+                  "
                 >
                   <label class="form-label">
                     <span>Mã quyết định (Key)</span>
@@ -618,7 +618,9 @@
                       />
                     }
                   </div>
-                  @if (decisionForm.decisionKey().invalid() && decisionForm.decisionKey().touched()) {
+                  @if (
+                    decisionForm.decisionKey().invalid() && decisionForm.decisionKey().touched()
+                  ) {
                     @for (error of decisionForm.decisionKey().errors(); track error.kind) {
                       <div class="form-error-msg">
                         <span nz-icon nzType="info-circle" nzTheme="outline"></span>
@@ -679,7 +681,9 @@
                   <!-- Danh mục -->
                   <div
                     class="form-group"
-                    [class.has-error]="decisionForm.category().invalid() && decisionForm.category().touched()"
+                    [class.has-error]="
+                      decisionForm.category().invalid() && decisionForm.category().touched()
+                    "
                   >
                     <label class="form-label">
                       <span>Danh mục (Category)</span>
@@ -718,7 +722,9 @@
                       <input
                         type="text"
                         class="form-control readonly-input"
-                        [value]="'v' + (selectedDecision()?.version || decisionFormModel().version || 1)"
+                        [value]="
+                          'v' + (selectedDecision()?.version || decisionFormModel().version || 1)
+                        "
                         readonly
                         disabled
                         title="Phiên bản được máy chủ tự động quản lý và tăng dần"
@@ -774,7 +780,9 @@
                     </div>
                     <div class="meta-item">
                       <span class="meta-label">Người tạo:</span>
-                      <span class="meta-value">{{ selectedDecision()?.createdBy || 'System Admin' }}</span>
+                      <span class="meta-value">{{
+                        selectedDecision()?.createdBy || 'System Admin'
+                      }}</span>
                     </div>
                     <div class="meta-item">
                       <span class="meta-label">Người cập nhật:</span>
@@ -804,7 +812,11 @@
                   (click)="submitFromSidebar()"
                   [disabled]="isSubmitting()"
                 >
-                  <span nz-icon [nzType]="isSubmitting() ? 'loading' : 'plus'" nzTheme="outline"></span>
+                  <span
+                    nz-icon
+                    [nzType]="isSubmitting() ? 'loading' : 'plus'"
+                    nzTheme="outline"
+                  ></span>
                   <span>{{ isSubmitting() ? 'Đang tạo...' : 'Tạo DMN' }}</span>
                 </button>
                 <button
@@ -837,7 +849,11 @@
                   (click)="submitFromSidebar()"
                   [disabled]="isSubmitting()"
                 >
-                  <span nz-icon [nzType]="isSubmitting() ? 'loading' : 'save'" nzTheme="outline"></span>
+                  <span
+                    nz-icon
+                    [nzType]="isSubmitting() ? 'loading' : 'save'"
+                    nzTheme="outline"
+                  ></span>
                   <span>{{ isSubmitting() ? 'Đang lưu...' : 'Lưu thay đổi' }}</span>
                 </button>
                 <button
@@ -849,21 +865,11 @@
                   Hủy
                 </button>
               } @else {
-                <button
-                  type="button"
-                  class="btn-footer-submit edit"
-                  (click)="switchToEditMode()"
-                >
+                <button type="button" class="btn-footer-submit edit" (click)="switchToEditMode()">
                   <span nz-icon nzType="edit" nzTheme="outline"></span>
-                  <span>Chuyển sang Chỉnh sửa</span>
+                  <span>Sửa</span>
                 </button>
-                <button
-                  type="button"
-                  class="btn-footer-cancel"
-                  (click)="closeModal()"
-                >
-                  Đóng
-                </button>
+                <button type="button" class="btn-footer-cancel" (click)="closeModal()">Đóng</button>
               }
             </div>
           </aside>

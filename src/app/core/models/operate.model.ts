@@ -1,6 +1,6 @@
 export type ProcessInstanceState = 'ACTIVE' | 'COMPLETED' | 'CANCELED' | 'INCIDENT';
 
-export interface ProcessInstance {
+export interface OperateProcessInstance {
   id: string;
   processDefinitionKey: string;
   processDefinitionName: string;
@@ -13,6 +13,17 @@ export interface ProcessInstance {
   activeActivities: string[];
   incidentActivities: string[];
   completedActivities: string[];
+
+  // Backend fields preserved
+  processId?: string;
+  status?: string;
+  currentNodeId?: string | null;
+  startedBy?: string;
+  startedAt?: string;
+  completedAt?: string | null;
+  variables?: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ProcessIncident {

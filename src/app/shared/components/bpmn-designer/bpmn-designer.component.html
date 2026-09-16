@@ -13,6 +13,7 @@
     [showSimulation]="viewMode() === 'design' && !readOnly"
     [isSimulationActive]="isSimulationActive()"
     [isSimulationPaused]="isSimulationPaused()"
+    [showSaveClose]="showHeaderActions"
     (toggleSimulation)="toggleSimulation()"
     (simulationPlayPause)="onSimulationPlayPause()"
     (simulationReset)="onSimulationReset()"

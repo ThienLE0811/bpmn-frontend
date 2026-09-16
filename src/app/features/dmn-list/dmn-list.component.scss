@@ -1520,13 +1520,14 @@ $shadow-dmn: $shadow-primary;
 
     /* Sidebar Footer */
     .info-sidebar-footer {
-      padding: 14px 20px;
+      padding: 10px 16px;
       border-top: 1px solid $border;
       background: $bg-page;
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: 10px;
+      gap: 8px;
+      flex-wrap: wrap;
 
       button {
         appearance: none;
@@ -1540,10 +1541,10 @@ $shadow-dmn: $shadow-primary;
       .btn-footer-delete {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 9px 15px;
-        border-radius: 8px;
-        font-size: 13.5px;
+        gap: 5px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -1553,7 +1554,7 @@ $shadow-dmn: $shadow-primary;
         margin-right: auto;
 
         .anticon {
-          font-size: 14px;
+          font-size: 13px;
         }
 
         &:hover:not(:disabled) {
@@ -1578,10 +1579,10 @@ $shadow-dmn: $shadow-primary;
       .btn-footer-cancel {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 9px 16px;
-        border-radius: 8px;
-        font-size: 13.5px;
+        gap: 5px;
+        padding: 6px 13px;
+        border-radius: 6px;
+        font-size: 12px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -1604,10 +1605,10 @@ $shadow-dmn: $shadow-primary;
       .btn-footer-submit {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 9px 18px;
-        border-radius: 8px;
-        font-size: 13.5px;
+        gap: 5px;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 12px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -1615,7 +1616,7 @@ $shadow-dmn: $shadow-primary;
         border: none;
 
         .anticon {
-          font-size: 14px;
+          font-size: 13px;
         }
 
         &.create {
@@ -1667,13 +1668,14 @@ $shadow-dmn: $shadow-primary;
 
 /* Standalone / Fallback Sidebar Footer & Button Styles */
 .info-sidebar-footer {
-  padding: 14px 20px;
+  padding: 10px 16px;
   border-top: 1px solid $border;
   background: $bg-page;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
 
   button {
     appearance: none;
@@ -1688,10 +1690,10 @@ button.btn-footer-delete,
 .btn-footer-delete {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 9px 15px;
-  border-radius: 8px;
-  font-size: 13.5px;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1701,7 +1703,7 @@ button.btn-footer-delete,
   margin-right: auto;
 
   .anticon {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   &:hover:not(:disabled) {
@@ -1726,10 +1728,10 @@ button.btn-footer-cancel,
 .btn-footer-cancel {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 9px 16px;
-  border-radius: 8px;
-  font-size: 13.5px;
+  gap: 5px;
+  padding: 6px 13px;
+  border-radius: 6px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1752,10 +1754,10 @@ button.btn-footer-submit,
 .btn-footer-submit {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 9px 18px;
-  border-radius: 8px;
-  font-size: 13.5px;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1763,7 +1765,7 @@ button.btn-footer-submit,
   border: none;
 
   .anticon {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   &.create {

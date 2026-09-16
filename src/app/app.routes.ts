@@ -38,6 +38,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'cases',
+        loadComponent: () =>
+          import('./features/case-list/case-list.component').then(
+            (m) => m.CaseListComponent,
+          ),
+      },
+      {
         path: 'processes',
         loadComponent: () =>
           import('./features/bpmn-list/bpmn-list.component').then(

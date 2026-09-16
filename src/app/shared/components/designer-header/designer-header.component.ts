@@ -65,6 +65,9 @@ export class DesignerHeaderComponent {
   /** Whether token simulation is paused */
   isSimulationPaused = input<boolean>(true);
 
+  /** Whether to show Save and Close buttons in header (default false: handled by sidebar-footer) */
+  showSaveClose = input<boolean>(false);
+
   // Computed properties
   effectivePlaceholder = computed(() => {
     if (this.placeholder()) return this.placeholder()!;

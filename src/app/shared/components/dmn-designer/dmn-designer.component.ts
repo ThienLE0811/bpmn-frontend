@@ -52,6 +52,7 @@ export class DmnDesignerComponent implements AfterViewInit, OnDestroy, OnChanges
   private boundViewers = new WeakSet<any>();
 
   hasChanges(): boolean {
+    if (this.readOnly) return false;
     const isTitleChanged = this.decisionName().trim() !== this.initialDecisionName.trim();
     return this.isModified() || isTitleChanged;
   }

@@ -23,11 +23,10 @@
       </button>
 
       <button
-        nz-button
-        nzType="default"
-        [nzLoading]="operateService.isLoading()"
-        (click)="refresh()"
         class="action-btn"
+        (click)="refresh()"
+        [disabled]="operateService.isLoading()"
+        title="Làm mới dữ liệu"
       >
         <span nz-icon nzType="sync" [nzSpin]="operateService.isLoading()"></span>
         <span>Làm mới</span>
@@ -123,18 +122,20 @@
     <!-- Filter & Search Toolbar -->
     <div class="table-toolbar">
       <div class="toolbar-left">
-        <nz-input-wrapper [nzAllowClear]="true" class="search-input">
-          <span nzInputPrefix>
-            <span nz-icon nzType="search" nzTheme="outline"></span>
-          </span>
-          <input
-            type="text"
-            nz-input
-            placeholder="Tìm theo Mã phiên (ID), Tên quy trình..."
-            [ngModel]="searchInput()"
-            (ngModelChange)="onSearchChange($event)"
-          />
-        </nz-input-wrapper>
+        <div class="search-field">
+          <nz-input-wrapper [nzAllowClear]="true">
+            <span nzInputPrefix>
+              <span nz-icon nzType="search" nzTheme="outline" class="search-icon"></span>
+            </span>
+            <input
+              type="text"
+              nz-input
+              placeholder="Tìm theo Mã phiên (ID), Tên quy trình..."
+              [ngModel]="searchInput()"
+              (ngModelChange)="onSearchChange($event)"
+            />
+          </nz-input-wrapper>
+        </div>
 
         <nz-select
           class="status-select"
@@ -195,7 +196,7 @@
                 </a>
               </td>
               <td>
-                <div class="process-def-name">{{ item.processDefinitionName }}</div>
+                <div class="process-def-name">{{ item.processDefinitionName || item.processDefinitionKey }}</div>
                 <div class="process-def-key">{{ item.processDefinitionKey }}</div>
               </td>
               <td nzAlign="center">
@@ -227,11 +228,7 @@
               <td>
                 <div class="action-cell">
                   <button
-                    nz-button
-                    nzType="primary"
-                    nzGhost
-                    nzSize="small"
-                    class="action-icon-btn"
+                    class="action-icon-btn view-btn"
                     (click)="openDetail(item)"
                     nzTooltipTitle="Xem chi tiết & Sơ đồ Token"
                     nz-tooltip
@@ -241,11 +238,7 @@
 
                   @if (item.state === 'ACTIVE' || item.state === 'INCIDENT') {
                     <button
-                      nz-button
-                      nzType="default"
-                      nzDanger
-                      nzSize="small"
-                      class="action-icon-btn"
+                      class="action-icon-btn cancel-btn"
                       nz-popconfirm
                       nzPopconfirmTitle="Bạn có chắc chắn muốn hủy phiên thực thi này không?"
                       nzOkText="Hủy phiên"
@@ -285,7 +278,7 @@
           <span nz-icon nzType="branches" nzTheme="outline" class="icon"></span>
           <span class="title-text">Chi tiết phiên: {{ inst.id }}</span>
           <nz-tag [nzColor]="getStateTagColor(inst.state)">{{ getStateLabel(inst.state) }}</nz-tag>
-          <span class="sub-text">{{ inst.processDefinitionName }} (v{{ inst.processVersion }})</span>
+          <span class="sub-text">{{ inst.processDefinitionName || inst.processDefinitionKey }} (v{{ inst.processVersion }})</span>
         </div>
       }
     </ng-template>
@@ -294,9 +287,7 @@
       @if (operateService.selectedInstance(); as inst) {
         @if (inst.state === 'ACTIVE' || inst.state === 'INCIDENT') {
           <button
-            nz-button
-            nzDanger
-            nzSize="small"
+            class="btn-drawer-cancel"
             nz-popconfirm
             nzPopconfirmTitle="Hủy bỏ phiên thực thi quy trình này?"
             (nzOnConfirm)="cancelInstance(inst)"
@@ -316,6 +307,12 @@
               <span class="label">Mã quy trình:</span>
               <span class="value">{{ inst.processDefinitionKey }}</span>
             </div>
+            @if (inst.startedBy) {
+              <div class="summary-item">
+                <span class="label">Khởi tạo bởi:</span>
+                <span class="value">{{ inst.startedBy }}</span>
+              </div>
+            }
             <div class="summary-item">
               <span class="label">Thời điểm bắt đầu:</span>
               <span class="value">{{ formatTime(inst.startDate) }}</span>
@@ -326,7 +323,7 @@
             </div>
             <div class="summary-item">
               <span class="label">Node đang dừng:</span>
-              <span class="value active-highlight">{{ inst.activeActivities.length || '0' }} node</span>
+              <span class="value active-highlight">{{ inst.activeActivities?.length || 0 }} node</span>
             </div>
           </div>
 
@@ -337,9 +334,9 @@
               <div class="tab-content diagram-tab">
                 <app-operate-viewer
                   [xml]="inst.bpmnXml || null"
-                  [activeActivities]="inst.activeActivities"
-                  [incidentActivities]="inst.incidentActivities"
-                  [completedActivities]="inst.completedActivities"
+                  [activeActivities]="inst.activeActivities || []"
+                  [incidentActivities]="inst.incidentActivities || []"
+                  [completedActivities]="inst.completedActivities || []"
                 ></app-operate-viewer>
               </div>
             </nz-tab>
@@ -373,14 +370,12 @@
                             <nz-tag nzColor="red">{{ inc.errorType }}</nz-tag>
                           </div>
                           <button
-                            nz-button
-                            nzType="primary"
-                            nzDanger
-                            nzSize="small"
-                            [nzLoading]="operateService.isActionLoading()"
+                            class="btn-drawer-retry"
+                            [disabled]="operateService.isActionLoading()"
                             (click)="retryIncident(inc, inst.id)"
                           >
-                            <span nz-icon nzType="sync"></span> Thử lại (Retry Task)
+                            <span nz-icon nzType="sync" [nzSpin]="operateService.isActionLoading()"></span>
+                            <span>Thử lại (Retry Task)</span>
                           </button>
                         </div>
                         <div class="inc-message">

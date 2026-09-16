@@ -55,8 +55,30 @@
 
     .zoom-controls {
       display: flex;
-      gap: 4px;
+      gap: 6px;
       align-items: center;
+
+      button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        border: 1px solid #e2e8f0 !important;
+        background: #ffffff !important;
+        border-radius: 6px !important;
+        color: #475569 !important;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: #f8fafc !important;
+          border-color: #cbd5e1 !important;
+          color: #0f172a !important;
+          transform: translateY(-1px);
+        }
+      }
     }
   }
 

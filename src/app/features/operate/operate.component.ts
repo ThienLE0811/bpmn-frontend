@@ -24,7 +24,7 @@ import { NzDividerModule } from 'ng-zorro-antd/divider';
 import { NzMessageService } from 'ng-zorro-antd/message';
 
 import { OperateService } from '@core/services';
-import { ProcessInstance, ProcessIncident, ProcessInstanceState } from '@core/models';
+import { OperateProcessInstance, ProcessIncident, ProcessInstanceState } from '@core/models';
 import { formatDateTime } from '@shared/utils';
 import { TableAutoHeightDirective } from '@shared/directives';
 import { OperateViewerComponent } from './operate-viewer/operate-viewer.component';
@@ -92,7 +92,7 @@ export class OperateComponent implements OnInit {
     this.operateService.setFilterState(state);
   }
 
-  openDetail(instance: ProcessInstance): void {
+  openDetail(instance: OperateProcessInstance): void {
     this.operateService.selectInstance(instance);
     this.isDetailOpen.set(true);
   }
@@ -107,42 +107,57 @@ export class OperateComponent implements OnInit {
     this.message.success(`Đã gửi lệnh kích hoạt lại tác vụ: ${incident.activityName}`);
   }
 
-  cancelInstance(instance: ProcessInstance): void {
+  cancelInstance(instance: OperateProcessInstance): void {
     this.operateService.cancelInstance(instance.id);
     this.message.info(`Đã hủy phiên thực thi ${instance.id}`);
   }
 
-  formatTime(isoStr?: string | null): string {
-    return isoStr ? formatDateTime(isoStr) : '--';
+  formatTime(dateStr?: string | null): string {
+    if (!dateStr) return '--';
+    // Nếu dateStr có định dạng dd/MM/yyyy thì hiển thị trực tiếp
+    if (/^\d{2}\/\d{2}\/\d{4}/.test(dateStr)) {
+      return dateStr;
+    }
+    return formatDateTime(dateStr);
   }
 
-  getStateTagColor(state: ProcessInstanceState): string {
-    switch (state) {
+  getStateTagColor(state: ProcessInstanceState | string): string {
+    switch ((state || '').toUpperCase()) {
       case 'ACTIVE':
+      case 'RUNNING':
         return 'processing';
       case 'INCIDENT':
+      case 'SUSPENDED':
+      case 'FAILED':
         return 'error';
       case 'COMPLETED':
         return 'success';
       case 'CANCELED':
+      case 'CANCELLED':
+      case 'TERMINATED':
         return 'default';
       default:
         return 'default';
     }
   }
 
-  getStateLabel(state: ProcessInstanceState): string {
-    switch (state) {
+  getStateLabel(state: ProcessInstanceState | string): string {
+    switch ((state || '').toUpperCase()) {
       case 'ACTIVE':
+      case 'RUNNING':
         return 'Đang chạy';
       case 'INCIDENT':
+      case 'SUSPENDED':
+      case 'FAILED':
         return 'Sự cố (Incident)';
       case 'COMPLETED':
         return 'Hoàn thành';
       case 'CANCELED':
+      case 'CANCELLED':
+      case 'TERMINATED':
         return 'Đã hủy';
       default:
-        return state;
+        return state || 'Chưa xác định';
     }
   }
 }

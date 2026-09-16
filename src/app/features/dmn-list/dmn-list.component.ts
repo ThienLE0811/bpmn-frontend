@@ -287,6 +287,9 @@ export class DmnListComponent implements OnInit {
   }
 
   protected hasUnsavedChanges(): boolean {
+    if (this.modalMode() === 'view') {
+      return false;
+    }
     const isDesignerDirty = this.designerComponent?.hasChanges() ?? false;
     const isFormDirty = this.checkFormDirty();
     return isDesignerDirty || isFormDirty;
@@ -307,7 +310,7 @@ export class DmnListComponent implements OnInit {
   }
 
   closeModal(): void {
-    if (this.hasUnsavedChanges()) {
+    if (this.modalMode() !== 'view' && this.hasUnsavedChanges()) {
       this.modal.confirm({
         nzTitle: 'Xác nhận đóng',
         nzContent:

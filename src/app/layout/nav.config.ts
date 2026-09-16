@@ -34,8 +34,6 @@ export const NAV_ITEMS: NavItem[] = [
         label: 'Hồ sơ vụ việc (Cases)',
         icon: 'folder-open',
         route: '/cases',
-        disabled: true,
-        badge: 'Sắp có',
       },
     ],
   },

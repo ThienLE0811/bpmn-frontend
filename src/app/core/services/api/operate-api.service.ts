@@ -1,16 +1,17 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { ApiService } from './api.service';
-import { PageData } from '@core/models';
+import { PageData, extractContent, extractPageMetadata } from '@core/models';
 import {
-  ProcessInstance,
+  OperateProcessInstance,
   ProcessIncident,
   ProcessVariable,
   ActivityExecution,
   OperateMetrics,
   OperateFilterParams,
 } from '@core/models/operate.model';
+import { mapToOperateProcessInstance } from '@shared/utils';
 
 const SAMPLE_BPMN_ORDER_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
@@ -80,7 +81,7 @@ const SAMPLE_BPMN_ORDER_XML = `<?xml version="1.0" encoding="UTF-8"?>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>`;
 
-const MOCK_INSTANCES: ProcessInstance[] = [
+const MOCK_INSTANCES: OperateProcessInstance[] = [
   {
     id: 'inst-982410',
     processDefinitionKey: 'Process_OrderFulfillment',
@@ -246,18 +247,41 @@ export class OperateApiService {
     );
   }
 
-  getInstances(filters?: OperateFilterParams): Observable<PageData<ProcessInstance>> {
+  getInstances(filters?: OperateFilterParams): Observable<PageData<OperateProcessInstance>> {
     const cleanParams: Record<string, string | number> = {
       page: filters?.page !== undefined && filters?.page !== null ? filters.page : 1,
       size: filters?.size !== undefined && filters?.size !== null ? filters.size : 20,
     };
     if (filters) {
       if (filters.search && filters.search.trim()) cleanParams['search'] = filters.search.trim();
-      if (filters.state && filters.state !== 'ALL') cleanParams['state'] = filters.state;
-      if (filters.processDefinitionKey) cleanParams['processDefinitionKey'] = filters.processDefinitionKey;
+      if (filters.state && filters.state !== 'ALL') {
+        const s = filters.state.toUpperCase();
+        if (s === 'ACTIVE') {
+          cleanParams['status'] = 'RUNNING';
+        } else if (s === 'CANCELED') {
+          cleanParams['status'] = 'TERMINATED';
+        } else if (s === 'INCIDENT') {
+          cleanParams['status'] = 'SUSPENDED';
+        } else {
+          cleanParams['status'] = filters.state;
+        }
+      }
+      if (filters.processDefinitionKey) cleanParams['processId'] = filters.processDefinitionKey;
     }
 
-    return this.api.get<PageData<ProcessInstance>>(this.instancesEndpoint, cleanParams).pipe(
+    return this.api.get<PageData<any>>(this.instancesEndpoint, cleanParams).pipe(
+      map((res) => {
+        const rawList = extractContent(res);
+        const mappedList = rawList.map((item) => mapToOperateProcessInstance(item));
+        const meta = extractPageMetadata(res, mappedList.length);
+        return {
+          content: mappedList,
+          page: meta.page,
+          size: meta.size,
+          totalElements: meta.totalElements,
+          totalPages: meta.totalPages,
+        };
+      }),
       catchError(() => {
         let result = [...this.instancesStore];
         if (filters?.state && filters.state !== 'ALL') {
@@ -287,8 +311,9 @@ export class OperateApiService {
     );
   }
 
-  getInstanceDetail(id: string): Observable<ProcessInstance> {
-    return this.api.get<ProcessInstance>(`${this.instancesEndpoint}/${id}`).pipe(
+  getInstanceDetail(id: string): Observable<OperateProcessInstance> {
+    return this.api.get<any>(`${this.instancesEndpoint}/${id}`).pipe(
+      map((item) => mapToOperateProcessInstance(item)),
       catchError(() => {
         const item = this.instancesStore.find((i) => i.id === id);
         if (item) {
