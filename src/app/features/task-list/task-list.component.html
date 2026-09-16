@@ -564,13 +564,13 @@
   }
 </ng-template>
 
-<!-- Complete Task Modal with Process Variables -->
+<!-- Complete Task Modal with Process Variables & Dynamic Form -->
 <nz-modal
   [nzVisible]="isCompleteModalVisible()"
   [nzTitle]="modalTitleTpl"
   [nzFooter]="modalFooterTpl"
   (nzOnCancel)="closeCompleteModal()"
-  [nzWidth]="520"
+  [nzWidth]="700"
 >
   <ng-container *nzModalContent>
     @if (selectedTask(); as task) {
@@ -582,26 +582,17 @@
           <div class="alert-text">
             <strong>Kích hoạt chuyển tiếp quy trình BPMN</strong>
             <p>
-              Khi bạn hoàn tất tác vụ này, workflow engine sẽ tự động chuyển tiếp (advance) sang
-              node tiếp theo theo đúng sơ đồ quy trình.
+              Khi hoàn tất tác vụ <strong>{{ task.name }}</strong> (Node: <code>{{ task.nodeId }}</code>), các biến dữ liệu dưới đây sẽ được lưu vào phiên thực thi và engine tự động điều phối sang bước kế tiếp.
             </p>
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">
-            <span>Biến đầu ra quy trình (Process Variables - JSON):</span>
-            <span class="label-hint">Dữ liệu này sẽ được lưu vào phiên thực thi quy trình</span>
-          </label>
-          <textarea
-            nz-input
-            rows="6"
-            class="variables-textarea"
-            [ngModel]="completeVariablesJson()"
-            (ngModelChange)="completeVariablesJson.set($event)"
-            placeholder='{\n  "approved": true,\n  "comment": "..."\n}'
-          ></textarea>
-        </div>
+        <app-dynamic-form-renderer
+          [schema]="selectedTaskFormSchema()"
+          [initialValues]="taskFormVariables()"
+          (valuesChange)="onFormValuesChange($event)"
+          (validityChange)="isFormValid.set($event)"
+        ></app-dynamic-form-renderer>
       </div>
     }
   </ng-container>

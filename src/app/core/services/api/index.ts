@@ -6,4 +6,3 @@ export * from './operate-api.service';
 export * from './auth-api.service';
 export * from './task-api.service';
 export * from './case-api.service';
-export * from './workflow-api.service';

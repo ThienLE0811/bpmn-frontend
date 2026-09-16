@@ -304,6 +304,30 @@
                     </div>
                   </div>
                 </div>
+
+                <!-- Cấu hình Biểu mẫu gắn kèm (Form Key) -->
+                <div class="form-group">
+                  <label class="form-label">
+                    <span>Biểu mẫu gắn kèm (Form Key)</span>
+                  </label>
+                  <div class="input-wrap">
+                    <span nz-icon nzType="form" nzTheme="outline" class="input-icon"></span>
+                    <input
+                      type="text"
+                      class="form-input"
+                      [ngModel]="element.formKey"
+                      (ngModelChange)="updateSelectedElementProperty('formKey', $event)"
+                      list="registeredFormsList"
+                      placeholder="VD: form_order_fulfillment hoặc tự nhập"
+                    />
+                    <datalist id="registeredFormsList">
+                      @for (f of registeredForms(); track f.id) {
+                        <option [value]="f.id">{{ f.name }} ({{ f.id }})</option>
+                      }
+                    </datalist>
+                  </div>
+                  <span class="field-hint">Mã biểu mẫu tự động nạp khi người dùng xử lý tác vụ này (camunda:formKey)</span>
+                </div>
               </div>
             }
 
@@ -328,6 +352,23 @@
                   ></textarea>
                   <span class="field-hint">Hỗ trợ cú pháp JUEL / Spring Expression hoặc JavaScript</span>
                 </div>
+
+                @if (isOutgoingFromGateway(element.id)) {
+                  <div class="form-group">
+                    <label class="form-label default-flow-label">
+                      <input
+                        type="checkbox"
+                        [ngModel]="element.isDefaultFlow"
+                        (ngModelChange)="updateDefaultFlow($event)"
+                      />
+                      <span>Đặt làm luồng mặc định (Default Flow)</span>
+                    </label>
+                    <span class="field-hint">
+                      Luồng này sẽ được chọn khi không có nhánh điều kiện nào khác của cổng khớp. Thuộc tính
+                      <code>default</code> được ghi lên cổng nguồn (gateway), mỗi cổng chỉ có một luồng mặc định.
+                    </span>
+                  </div>
+                }
               </div>
             }
 

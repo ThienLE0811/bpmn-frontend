@@ -14,9 +14,10 @@ import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzMessageService } from 'ng-zorro-antd/message';
 
-import { TaskService, AuthService } from '@core/services';
-import { TaskResponse, getTaskStatusMeta } from '@core/models';
+import { TaskService, AuthService, FormSchemaService } from '@core/services';
+import { TaskResponse, getTaskStatusMeta, FormDefinition } from '@core/models';
 import { TableAutoHeightDirective } from '@shared/directives';
+import { DynamicFormRendererComponent } from '@shared/components/dynamic-form-renderer/dynamic-form-renderer.component';
 import {
   getAvatarColor,
   getUserInitials,
@@ -48,6 +49,7 @@ import { AvatarColorPipe, UserInitialsPipe, FormatDatePipe } from '@shared/pipes
     AvatarColorPipe,
     UserInitialsPipe,
     FormatDatePipe,
+    DynamicFormRendererComponent,
   ],
   templateUrl: './task-list.component.html',
   styleUrl: './task-list.component.scss',
@@ -55,6 +57,7 @@ import { AvatarColorPipe, UserInitialsPipe, FormatDatePipe } from '@shared/pipes
 export class TaskListComponent implements OnInit {
   protected readonly taskService = inject(TaskService);
   protected readonly authService = inject(AuthService);
+  protected readonly formSchemaService = inject(FormSchemaService);
   private readonly message = inject(NzMessageService);
 
   // Trạng thái UI
@@ -63,8 +66,11 @@ export class TaskListComponent implements OnInit {
   readonly isCompleteModalVisible = signal<boolean>(false);
   readonly isSubmitting = signal<boolean>(false);
 
-  // Dữ liệu chọn
+  // Dữ liệu chọn & Biểu mẫu động
   readonly selectedTask = signal<TaskResponse | null>(null);
+  readonly selectedTaskFormSchema = signal<FormDefinition | null>(null);
+  readonly taskFormVariables = signal<Record<string, unknown>>({});
+  readonly isFormValid = signal<boolean>(true);
   readonly completeVariablesJson = signal<string>(
     JSON.stringify({ approved: true, comment: 'Đã thẩm định hồ sơ đạt yêu cầu' }, null, 2),
   );
@@ -170,10 +176,28 @@ export class TaskListComponent implements OnInit {
   openCompleteModal(task: TaskResponse, event?: Event): void {
     if (event) event.stopPropagation();
     this.selectedTask.set(task);
-    this.completeVariablesJson.set(
-      JSON.stringify({ approved: true, comment: `Hoàn thành tác vụ ${task.name}` }, null, 2),
+
+    // Xác định Form thích hợp cho task
+    const schema = this.formSchemaService.getFormForTask(
+      task.nodeId,
+      undefined,
+      task.processInstanceId
     );
+    this.selectedTaskFormSchema.set(schema);
+
+    const initVals = this.formSchemaService.extractFormValues(schema, {
+      comment: `Hoàn thành tác vụ ${task.name}`,
+      approved: true,
+    });
+    this.taskFormVariables.set(initVals);
+    this.completeVariablesJson.set(JSON.stringify(initVals, null, 2));
+    this.isFormValid.set(true);
     this.isCompleteModalVisible.set(true);
+  }
+
+  onFormValuesChange(vals: Record<string, unknown>): void {
+    this.taskFormVariables.set(vals);
+    this.completeVariablesJson.set(JSON.stringify(vals, null, 2));
   }
 
   closeCompleteModal(): void {
@@ -184,12 +208,12 @@ export class TaskListComponent implements OnInit {
     const task = this.selectedTask();
     if (!task) return;
 
-    const parseRes = safeJsonParse(this.completeVariablesJson());
-    if (!parseRes.success) {
-      this.message.error('Dữ liệu biến (Variables) không đúng định dạng JSON hợp lệ.');
+    if (!this.isFormValid()) {
+      this.message.warning('Dữ liệu biểu mẫu chưa hợp lệ, vui lòng kiểm tra lại trước khi hoàn tất.');
       return;
     }
-    const variables = parseRes.data;
+
+    const variables = this.taskFormVariables();
 
     this.isSubmitting.set(true);
     this.taskService.completeTask(task.id, variables).subscribe({

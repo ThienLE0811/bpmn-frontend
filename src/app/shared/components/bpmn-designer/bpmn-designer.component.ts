@@ -28,6 +28,7 @@ import {
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { DmnApiService } from '@core/services/api/dmn-api.service';
+import { FormSchemaService } from '@core/services/state/form-schema.service';
 import { extractContent } from '@core/models';
 
 export interface BpmnElementProperties {
@@ -41,8 +42,10 @@ export interface BpmnElementProperties {
   candidateUsers?: string;
   dueDate?: string;
   priority?: string;
+  formKey?: string;
   // Sequence flow
   conditionExpression?: string;
+  isDefaultFlow?: boolean;
   // Service & Automation
   topic?: string;
   delegateExpression?: string;
@@ -74,8 +77,10 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
 
   private message = inject(NzMessageService);
   private dmnApi = inject(DmnApiService);
+  private formSchemaService = inject(FormSchemaService);
 
   protected dmnDecisionOptions = signal<DmnDecision[]>([]);
+  protected registeredForms = computed(() => this.formSchemaService.getRegisteredForms());
 
   @Input() processData: BpmnProcess | null = null;
   @Input() readOnly = false;
@@ -238,6 +243,8 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
           bo.dueDate || bo.get?.('camunda:dueDate') || bo.$attrs?.['camunda:dueDate'] || '';
         const priority =
           bo.priority || bo.get?.('camunda:priority') || bo.$attrs?.['camunda:priority'] || '';
+        const formKey =
+          bo.formKey || bo.get?.('camunda:formKey') || bo.$attrs?.['camunda:formKey'] || '';
 
         const topic = bo.topic || bo.get?.('camunda:topic') || bo.$attrs?.['camunda:topic'] || '';
         const delegateExpression =
@@ -257,6 +264,11 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
           bo.$attrs?.['camunda:resultVariable'] ||
           '';
 
+        // A gateway's `default` moddle property references the sequence-flow business
+        // object directly (not its id string) - compare by id to know if THIS flow is it.
+        const sourceDefault = element.source?.businessObject?.default;
+        const isDefaultFlow = !!sourceDefault && sourceDefault.id === bo.id;
+
         this.selectedElement.set({
           id: element.id,
           name: bo.name || '',
@@ -267,7 +279,9 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
           candidateUsers,
           dueDate,
           priority,
+          formKey,
           conditionExpression,
+          isDefaultFlow,
           topic,
           delegateExpression,
           javaClass,
@@ -817,6 +831,40 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
         [propName]: value,
       });
     }
+  }
+
+  /**
+   * "Default flow" lives on the gateway (source), not on the flow itself - it's the
+   * `bpmn:Gateway.default` moddle property, a reference to this SequenceFlow's business
+   * object. Written on the source element, distinct from the currently-selected flow.
+   */
+  updateDefaultFlow(isDefault: boolean): void {
+    const currentSel = this.selectedElement();
+    if (!currentSel) return;
+
+    const modeling = this.bpmnModeler.get('modeling');
+    const elementRegistry = this.bpmnModeler.get('elementRegistry');
+    const flowElement = elementRegistry.get(currentSel.id);
+    const sourceElement = flowElement?.source;
+    if (!sourceElement) return;
+
+    modeling.updateProperties(sourceElement, {
+      default: isDefault ? flowElement.businessObject : undefined,
+    });
+
+    this.selectedElement.set({
+      ...currentSel,
+      isDefaultFlow: isDefault,
+    });
+  }
+
+  isOutgoingFromGateway(elementId?: string): boolean {
+    if (!elementId || !this.bpmnModeler) return false;
+    const elementRegistry = this.bpmnModeler.get('elementRegistry');
+    const element = elementRegistry.get(elementId);
+    const source = element?.source;
+    const gatewayTypes = ['bpmn:ExclusiveGateway', 'bpmn:InclusiveGateway'];
+    return !!source && gatewayTypes.includes(source.type);
   }
 
   copyElementId(id: string): void {

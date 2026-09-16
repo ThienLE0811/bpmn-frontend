@@ -390,7 +390,7 @@
     [nzOkLoading]="isStarting()"
     nzOkText="Khởi động ngay"
     nzCancelText="Hủy bỏ"
-    [nzWidth]="680"
+    [nzWidth]="740"
   >
     <ng-container *nzModalContent>
       <div class="start-modal-form">
@@ -402,7 +402,7 @@
           </label>
           <nz-select
             [ngModel]="startProcessId()"
-            (ngModelChange)="startProcessId.set($event)"
+            (ngModelChange)="onStartProcessChange($event)"
             nzPlaceHolder="-- Chọn quy trình cần kích hoạt --"
             [nzShowSearch]="true"
             style="width: 100%"
@@ -415,19 +415,19 @@
             }
           </nz-select>
           <p class="form-hint">
-            Hệ thống sẽ nạp BPMN XML, khởi tạo đồ hình và bắt đầu chạy từ Start Event.
+            Hệ thống sẽ nạp sơ đồ BPMN tương ứng và tự động cấu hình Biểu mẫu khởi chạy bên dưới.
           </p>
         </div>
 
-        <!-- Initial Variables JSON Editor -->
+        <!-- Initial Variables Dynamic Form & Sample Pills -->
         <div class="form-group">
           <div class="label-with-actions">
             <label class="form-label">
-              <span nz-icon nzType="code"></span>
-              <span>Biến dữ liệu ban đầu (Variables JSON)</span>
+              <span nz-icon nzType="form"></span>
+              <span>Biểu mẫu Khởi chạy & Biến đầu vào</span>
             </label>
             <div class="sample-pills">
-              <span class="sample-intro">Mẫu nhanh:</span>
+              <span class="sample-intro">Mẫu quy trình nhanh:</span>
               <button
                 type="button"
                 class="pill-btn"
@@ -452,23 +452,15 @@
             </div>
           </div>
 
-          <textarea
-            nz-input
-            rows="7"
-            [ngModel]="startVariablesJson()"
-            (ngModelChange)="startVariablesJson.set($event); jsonError.set(null)"
-            placeholder='{"amount": 5000, "customer": "..."}'
-            class="code-textarea"
-          ></textarea>
+          <app-dynamic-form-renderer
+            [schema]="startFormSchema()"
+            [initialValues]="startFormVariables()"
+            (valuesChange)="onStartFormValuesChange($event)"
+            (validityChange)="isStartFormValid.set($event)"
+          ></app-dynamic-form-renderer>
 
-          @if (jsonError()) {
-            <div class="json-error-msg">
-              <span nz-icon nzType="close-circle" nzTheme="fill"></span>
-              <span>{{ jsonError() }}</span>
-            </div>
-          }
           <p class="form-hint">
-            Dữ liệu này sẽ được truyền vào context của quy trình và có thể truy xuất bởi các Task / Gateway.
+            Dữ liệu này sẽ được truyền vào context của quy trình và có thể truy xuất bởi các Task / Gateway tiếp theo.
           </p>
         </div>
       </div>

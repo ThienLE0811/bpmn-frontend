@@ -58,6 +58,8 @@ import {
   KeyOutline,
   TeamOutline,
   DownOutline,
+  CopyOutline,
+  FormOutline,
 } from '@ant-design/icons-angular/icons';
 
 import { routes } from './app.routes';
@@ -116,6 +118,8 @@ const icons = [
   KeyOutline,
   TeamOutline,
   DownOutline,
+  CopyOutline,
+  FormOutline,
 ];
 
 export const appConfig: ApplicationConfig = {

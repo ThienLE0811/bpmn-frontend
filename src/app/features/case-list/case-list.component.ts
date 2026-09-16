@@ -20,13 +20,15 @@ import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzEmptyModule } from 'ng-zorro-antd/empty';
 import { NzMessageService } from 'ng-zorro-antd/message';
 
-import { CaseService, BpmnProcessService, AuthService } from '@core/services';
+import { CaseService, BpmnProcessService, AuthService, FormSchemaService } from '@core/services';
 import {
   ProcessInstance,
   getCaseStatusMeta,
   StartProcessInstanceRequest,
   BpmnProcess,
+  FormDefinition,
 } from '@core/models';
+import { DynamicFormRendererComponent } from '@shared/components/dynamic-form-renderer/dynamic-form-renderer.component';
 import {
   getAvatarColor,
   getUserInitials,
@@ -71,6 +73,7 @@ export interface VariableRow {
     UserInitialsPipe,
     FormatDatePipe,
     OperateViewerComponent,
+    DynamicFormRendererComponent,
   ],
   templateUrl: './case-list.component.html',
   styleUrl: './case-list.component.scss',
@@ -79,6 +82,7 @@ export class CaseListComponent implements OnInit {
   protected readonly caseService = inject(CaseService);
   protected readonly bpmnService = inject(BpmnProcessService);
   protected readonly authService = inject(AuthService);
+  protected readonly formSchemaService = inject(FormSchemaService);
   private readonly router = inject(Router);
   private readonly message = inject(NzMessageService);
 
@@ -99,8 +103,11 @@ export class CaseListComponent implements OnInit {
     processId: 'ALL',
   });
 
-  // Modal khởi động Case mới
+  // Modal khởi động Case mới & Biểu mẫu động
   readonly startProcessId = signal<string>('');
+  readonly startFormSchema = signal<FormDefinition | null>(null);
+  readonly startFormVariables = signal<Record<string, unknown>>({});
+  readonly isStartFormValid = signal<boolean>(true);
   readonly startVariablesJson = signal<string>(
     JSON.stringify({ amount: 5000, customer: 'Khách hàng thử nghiệm', note: 'Khởi động từ portal' }, null, 2),
   );
@@ -219,13 +226,37 @@ export class CaseListComponent implements OnInit {
 
   // Khởi động case
   openStartModal(preselectProcessId?: string): void {
-    if (preselectProcessId) {
-      this.startProcessId.set(preselectProcessId);
-    } else if (this.processes().length > 0 && !this.startProcessId()) {
-      this.startProcessId.set(this.processes()[0].id || this.processes()[0].processKey);
+    let targetId = preselectProcessId;
+    if (!targetId && this.processes().length > 0) {
+      targetId = this.processes()[0].id || this.processes()[0].processKey;
+    }
+    if (targetId) {
+      this.startProcessId.set(targetId);
+      this.updateStartFormSchema(targetId);
     }
     this.jsonError.set(null);
     this.isStartModalVisible.set(true);
+  }
+
+  onStartProcessChange(processId: string): void {
+    this.startProcessId.set(processId);
+    this.updateStartFormSchema(processId);
+  }
+
+  updateStartFormSchema(processId: string): void {
+    const proc = this.processes().find((p) => p.id === processId || p.processKey === processId);
+    const keyToResolve = proc?.processKey || processId;
+    const schema = this.formSchemaService.getFormForProcessStart(keyToResolve);
+    this.startFormSchema.set(schema);
+    const initVals = this.formSchemaService.extractFormValues(schema);
+    this.startFormVariables.set(initVals);
+    this.startVariablesJson.set(JSON.stringify(initVals, null, 2));
+    this.isStartFormValid.set(true);
+  }
+
+  onStartFormValuesChange(vals: Record<string, unknown>): void {
+    this.startFormVariables.set(vals);
+    this.startVariablesJson.set(JSON.stringify(vals, null, 2));
   }
 
   closeStartModal(): void {
@@ -233,46 +264,15 @@ export class CaseListComponent implements OnInit {
   }
 
   applySampleVariables(sampleType: 'order' | 'loan' | 'leave'): void {
-    if (sampleType === 'order') {
-      this.startVariablesJson.set(
-        JSON.stringify(
-          {
-            orderId: `ORD-${Math.floor(10000 + Math.random() * 90000)}`,
-            amount: 5000000,
-            customer: 'Công ty Cổ phần Công nghệ ABC',
-            priority: 'HIGH',
-          },
-          null,
-          2,
-        ),
-      );
-    } else if (sampleType === 'loan') {
-      this.startVariablesJson.set(
-        JSON.stringify(
-          {
-            applicantName: 'Trần Văn Hoàng',
-            loanAmount: 150000000,
-            termMonths: 24,
-            creditScore: 680,
-          },
-          null,
-          2,
-        ),
-      );
-    } else if (sampleType === 'leave') {
-      this.startVariablesJson.set(
-        JSON.stringify(
-          {
-            employeeName: this.authService.currentUser()?.fullName || 'Nguyễn Văn A',
-            leaveType: 'Nghỉ phép năm',
-            days: 2,
-            reason: 'Nghỉ phép cá nhân',
-          },
-          null,
-          2,
-        ),
-      );
+    let targetKey = 'Process_OrderFulfillment';
+    if (sampleType === 'loan') targetKey = 'Process_LoanApproval';
+    if (sampleType === 'leave') targetKey = 'Process_LeaveRequest';
+
+    const found = this.processes().find((p) => p.processKey === targetKey || p.id === targetKey);
+    if (found) {
+      this.startProcessId.set(found.id || found.processKey);
     }
+    this.updateStartFormSchema(targetKey);
     this.jsonError.set(null);
   }
 
@@ -283,17 +283,14 @@ export class CaseListComponent implements OnInit {
       return;
     }
 
-    const parseRes = safeJsonParse(this.startVariablesJson());
-    if (!parseRes.success) {
-      this.jsonError.set('Cú pháp JSON không hợp lệ. Vui lòng kiểm tra lại dấu ngoặc và dấu phẩy.');
-      this.message.error('Dữ liệu biến (Variables) không đúng định dạng JSON.');
+    if (!this.isStartFormValid()) {
+      this.message.warning('Dữ liệu biểu mẫu khởi tạo chưa hợp lệ. Vui lòng kiểm tra lại.');
       return;
     }
-    this.jsonError.set(null);
 
     const payload: StartProcessInstanceRequest = {
       processId,
-      variables: parseRes.data,
+      variables: this.startFormVariables(),
     };
 
     this.caseService.startCase(payload).subscribe({

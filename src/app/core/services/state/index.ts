@@ -5,3 +5,4 @@ export * from './operate.service';
 export * from './auth.service';
 export * from './task.service';
 export * from './case.service';
+export * from './form-schema.service';

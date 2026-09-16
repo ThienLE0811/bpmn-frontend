@@ -1,0 +1,326 @@
+<div class="dynamic-form-container">
+  <!-- Header: Title, Category & Mode Switcher -->
+  <div class="form-header-bar">
+    <div class="header-left">
+      @if (schema(); as s) {
+        <div class="schema-info">
+          <div class="schema-title-row">
+            <span nz-icon nzType="form" nzTheme="outline" class="schema-icon"></span>
+            <span class="schema-name">{{ s.name }}</span>
+            @if (s.category) {
+              <nz-tag nzColor="blue" class="category-tag">{{ s.category }}</nz-tag>
+            }
+          </div>
+          @if (s.description) {
+            <p class="schema-desc">{{ s.description }}</p>
+          }
+        </div>
+      } @else {
+        <div class="schema-info">
+          <div class="schema-title-row">
+            <span nz-icon nzType="appstore" nzTheme="outline" class="schema-icon"></span>
+            <span class="schema-name">Biểu mẫu Tự động Suy diễn</span>
+            <nz-tag nzColor="orange" class="category-tag">Tự động</nz-tag>
+          </div>
+          <p class="schema-desc">Tự động nhận diện cấu trúc trường từ biến quy trình hiện tại</p>
+        </div>
+      }
+    </div>
+
+    @if (showModeSwitch()) {
+      <div class="header-right">
+        <div class="mode-switch-group">
+          <button
+            type="button"
+            class="mode-btn"
+            [class.active]="activeMode() === 'form'"
+            (click)="switchMode('form')"
+            title="Xem và nhập liệu dạng Form trực quan"
+          >
+            <span nz-icon nzType="form" nzTheme="outline"></span>
+            <span>Biểu mẫu</span>
+          </button>
+          <button
+            type="button"
+            class="mode-btn"
+            [class.active]="activeMode() === 'json'"
+            (click)="switchMode('json')"
+            title="Xem và chỉnh sửa trực tiếp mã JSON"
+          >
+            <span nz-icon nzType="code" nzTheme="outline"></span>
+            <span>Mã JSON</span>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Content 1: Visual Form UI Mode -->
+  @if (activeMode() === 'form') {
+    <div class="form-body-wrapper">
+      @if (allFields().length === 0) {
+        <div class="empty-form-state">
+          <span nz-icon nzType="inbox" class="empty-icon"></span>
+          <p class="empty-text">Chưa có trường dữ liệu nào được định nghĩa</p>
+          <button class="btn-add-initial" (click)="toggleAddField()">
+            <span nz-icon nzType="plus"></span>
+            <span>Thêm trường đầu tiên</span>
+          </button>
+        </div>
+      } @else {
+        <div nz-row [nzGutter]="[16, 16]" class="fields-grid">
+          @for (field of allFields(); track field.key) {
+            <div nz-col [nzSpan]="field.colSpan || 24" class="field-col">
+              <div class="field-card" [class.is-boolean]="field.type === 'boolean'">
+                <!-- Field Label Row -->
+                <div class="field-label-row">
+                  <label class="field-label">
+                    <span class="label-text">{{ field.label }}</span>
+                    @if (field.required) {
+                      <span class="required-mark" title="Bắt buộc nhập">*</span>
+                    }
+                  </label>
+
+                  <div class="field-meta-actions">
+                    <code class="var-key-pill" [title]="'Tên biến hệ thống: ' + field.key">
+                      {{ field.key }}
+                    </code>
+
+                    <!-- Xóa trường nếu là trường thêm động -->
+                    @if (!readOnly() && dynamicFields().length > 0) {
+                      @for (df of dynamicFields(); track df.key) {
+                        @if (df.key === field.key) {
+                          <button
+                            type="button"
+                            class="btn-remove-dynamic-field"
+                            (click)="removeDynamicField(field.key, $event)"
+                            title="Xóa trường tùy chỉnh này"
+                          >
+                            <span nz-icon nzType="delete" nzTheme="outline"></span>
+                          </button>
+                        }
+                      }
+                    }
+                  </div>
+                </div>
+
+                <!-- Field Control by Type -->
+                <div class="field-control-wrapper">
+                  <!-- Type 1: Boolean Switch -->
+                  @if (field.type === 'boolean') {
+                    <div class="switch-control-box">
+                      <nz-switch
+                        [ngModel]="formValues()[field.key]"
+                        (ngModelChange)="onFieldChange(field.key, $event)"
+                        [nzDisabled]="readOnly() || field.disabled"
+                      ></nz-switch>
+                      <span
+                        class="switch-state-badge"
+                        [class.active]="formValues()[field.key]"
+                      >
+                        {{ formValues()[field.key] ? 'Đồng ý / Chấp thuận' : 'Không đồng ý / Tắt' }}
+                      </span>
+                    </div>
+                  }
+
+                  <!-- Type 2: Currency (VNĐ) -->
+                  @else if (field.type === 'currency') {
+                    <div class="currency-input-box">
+                      <nz-input-number
+                        class="form-control-input"
+                        [ngModel]="formValues()[field.key]"
+                        (ngModelChange)="onFieldChange(field.key, $event)"
+                        [nzMin]="field.min ?? 0"
+                        [nzMax]="field.max ?? 99999999999"
+                        [nzStep]="field.step ?? 100000"
+                        [nzFormatter]="formatterVnd"
+                        [nzParser]="parserVnd"
+                        [nzDisabled]="readOnly() || field.disabled"
+                      ></nz-input-number>
+                    </div>
+                  }
+
+                  <!-- Type 3: Number -->
+                  @else if (field.type === 'number') {
+                    <nz-input-number
+                      class="form-control-input"
+                      [ngModel]="formValues()[field.key]"
+                      (ngModelChange)="onFieldChange(field.key, $event)"
+                      [nzMin]="field.min ?? -999999999"
+                      [nzMax]="field.max ?? 999999999"
+                      [nzStep]="field.step ?? 1"
+                      [nzDisabled]="readOnly() || field.disabled"
+                    ></nz-input-number>
+                  }
+
+                  <!-- Type 4: Select Dropdown -->
+                  @else if (field.type === 'select') {
+                    <nz-select
+                      class="form-control-select"
+                      [ngModel]="formValues()[field.key]"
+                      (ngModelChange)="onFieldChange(field.key, $event)"
+                      [nzDisabled]="readOnly() || field.disabled"
+                      nzPlaceHolder="-- Chọn giá trị --"
+                    >
+                      @for (opt of field.options; track opt.value) {
+                        <nz-option [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
+                      }
+                    </nz-select>
+                  }
+
+                  <!-- Type 5: Date Picker -->
+                  @else if (field.type === 'date') {
+                    <nz-date-picker
+                      class="form-control-date"
+                      [ngModel]="formValues()[field.key]"
+                      (ngModelChange)="onFieldChange(field.key, $event)"
+                      [nzDisabled]="readOnly() || field.disabled"
+                      nzFormat="dd/MM/yyyy"
+                      nzPlaceHolder="Chọn ngày"
+                    ></nz-date-picker>
+                  }
+
+                  <!-- Type 6: Textarea -->
+                  @else if (field.type === 'textarea') {
+                    <textarea
+                      nz-input
+                      rows="3"
+                      class="form-control-textarea"
+                      [ngModel]="formValues()[field.key]"
+                      (ngModelChange)="onFieldChange(field.key, $event)"
+                      [placeholder]="field.placeholder || 'Nhập nội dung...'"
+                      [disabled]="readOnly() || !!field.disabled"
+                    ></textarea>
+                  }
+
+                  <!-- Type 7: Text (Default) -->
+                  @else {
+                    <input
+                      nz-input
+                      type="text"
+                      class="form-control-text"
+                      [ngModel]="formValues()[field.key]"
+                      (ngModelChange)="onFieldChange(field.key, $event)"
+                      [placeholder]="field.placeholder || 'Nhập thông tin...'"
+                      [disabled]="readOnly() || !!field.disabled"
+                    />
+                  }
+                </div>
+
+                <!-- Field Help Text -->
+                @if (field.helpText) {
+                  <span class="field-help-hint">
+                    <span nz-icon nzType="info-circle" nzTheme="outline"></span>
+                    {{ field.helpText }}
+                  </span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Add Custom Variable Section -->
+      @if (allowAddField() && !readOnly()) {
+        <div class="add-field-section">
+          @if (!isAddingField()) {
+            <button type="button" class="btn-toggle-add-field" (click)="toggleAddField()">
+              <span nz-icon nzType="plus" nzTheme="outline"></span>
+              <span>Bổ sung thêm biến quy trình (Add Variable)</span>
+            </button>
+          } @else {
+            <div class="add-field-card">
+              <div class="add-field-header">
+                <span class="card-title">Thêm trường biến quy trình tùy chỉnh</span>
+                <button class="btn-close-mini" (click)="toggleAddField()">
+                  <span nz-icon nzType="close"></span>
+                </button>
+              </div>
+
+              <div nz-row [nzGutter]="12" class="add-field-inputs">
+                <div nz-col [nzSpan]="8">
+                  <label class="sub-label">Tên mã biến (Key)*:</label>
+                  <input
+                    nz-input
+                    placeholder="VD: discountPercent"
+                    [ngModel]="newFieldKey()"
+                    (ngModelChange)="newFieldKey.set($event)"
+                  />
+                </div>
+                <div nz-col [nzSpan]="8">
+                  <label class="sub-label">Tiêu đề hiển thị:</label>
+                  <input
+                    nz-input
+                    placeholder="VD: Phần trăm giảm giá"
+                    [ngModel]="newFieldLabel()"
+                    (ngModelChange)="newFieldLabel.set($event)"
+                  />
+                </div>
+                <div nz-col [nzSpan]="8">
+                  <label class="sub-label">Kiểu dữ liệu:</label>
+                  <nz-select
+                    style="width: 100%;"
+                    [ngModel]="newFieldType()"
+                    (ngModelChange)="newFieldType.set($event)"
+                  >
+                    @for (t of availableFieldTypes; track t.value) {
+                      <nz-option [nzValue]="t.value" [nzLabel]="t.label"></nz-option>
+                    }
+                  </nz-select>
+                </div>
+              </div>
+
+              <div class="add-field-actions">
+                <button class="btn-cancel-field" (click)="toggleAddField()">Hủy</button>
+                <button class="btn-confirm-field" (click)="confirmAddField()">
+                  <span nz-icon nzType="check"></span>
+                  <span>Thêm trường</span>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Content 2: JSON Editor Mode -->
+  @if (activeMode() === 'json') {
+    <div class="json-editor-wrapper">
+      <div class="json-toolbar">
+        <div class="json-tip">
+          <span nz-icon nzType="info-circle" nzTheme="outline"></span>
+          <span>Dữ liệu JSON sẽ tự động đồng bộ ngay tức khắc khi bạn quay lại tab Biểu mẫu</span>
+        </div>
+        <div class="json-actions">
+          <button type="button" class="btn-json-action" (click)="formatJson()" title="Làm đẹp mã JSON">
+            <span nz-icon nzType="form" nzTheme="outline"></span>
+            <span>Định dạng (Format)</span>
+          </button>
+          <button type="button" class="btn-json-action" (click)="copyJson()" title="Sao chép JSON">
+            <span nz-icon nzType="copy" nzTheme="outline"></span>
+            <span>Sao chép</span>
+          </button>
+        </div>
+      </div>
+
+      @if (jsonError()) {
+        <div class="json-error-banner">
+          <span nz-icon nzType="exclamation-circle" nzTheme="fill" class="error-icon"></span>
+          <span class="error-text">{{ jsonError() }}</span>
+        </div>
+      }
+
+      <div class="editor-area">
+        <textarea
+          class="raw-json-textarea"
+          [ngModel]="jsonText()"
+          (ngModelChange)="onJsonTextChange($event)"
+          rows="12"
+          spellcheck="false"
+          placeholder='{\n  "key": "value"\n}'
+        ></textarea>
+      </div>
+    </div>
+  }
+</div>
