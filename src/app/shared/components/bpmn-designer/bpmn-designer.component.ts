@@ -54,7 +54,33 @@ export interface BpmnElementProperties {
   // Business Rule Task (DMN)
   decisionRef?: string;
   resultVariable?: string;
+  // Timer Event (Start / Intermediate Catch / Boundary)
+  hasTimer?: boolean;
+  timerType?: TimerType | '';
+  timerValue?: string;
+  isInterrupting?: boolean;
 }
+
+export type TimerType = 'timeDuration' | 'timeDate' | 'timeCycle';
+
+export interface TimerPreset {
+  label: string;
+  value: string;
+}
+
+export interface TimerSummary {
+  valid: boolean;
+  text: string;
+}
+
+const TIMER_TYPES: TimerType[] = ['timeDuration', 'timeDate', 'timeCycle'];
+
+const ISO_DURATION_REGEX =
+  /^P(?!$)(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?(?:T(?=\d)(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?)?$/;
+const ISO_DATE_TIME_REGEX =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$/;
+const ISO_CYCLE_REGEX = /^R(\d*)\/(?:([^/]+)\/)?(P[^/]+)$/;
+const EXPRESSION_REGEX = /^[$#]\{.+\}$/;
 
 export interface BpmnTypeMeta {
   label: string;
@@ -81,6 +107,31 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
 
   protected dmnDecisionOptions = signal<DmnDecision[]>([]);
   protected registeredForms = computed(() => this.formSchemaService.getRegisteredForms());
+
+  protected readonly timerPresets: Record<TimerType, TimerPreset[]> = {
+    timeDuration: [
+      { label: '5 phút', value: 'PT5M' },
+      { label: '30 phút', value: 'PT30M' },
+      { label: '1 giờ', value: 'PT1H' },
+      { label: '4 giờ', value: 'PT4H' },
+      { label: '1 ngày', value: 'P1D' },
+      { label: '3 ngày', value: 'P3D' },
+      { label: '1 tuần', value: 'P1W' },
+    ],
+    timeDate: [],
+    timeCycle: [
+      { label: 'Mỗi giờ', value: 'R/PT1H' },
+      { label: 'Mỗi ngày', value: 'R/P1D' },
+      { label: '3 lần, cách 10 phút', value: 'R3/PT10M' },
+      { label: '9h sáng hằng ngày (cron)', value: '0 0 9 * * ?' },
+    ],
+  };
+
+  protected timerSummary = computed<TimerSummary | null>(() => {
+    const el = this.selectedElement();
+    if (!el?.hasTimer) return null;
+    return this.describeTimer(el.timerType, el.timerValue);
+  });
 
   @Input() processData: BpmnProcess | null = null;
   @Input() readOnly = false;
@@ -112,6 +163,7 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
   protected copiedXml = signal<boolean>(false);
   protected isSyncing = signal<boolean>(false);
   private isSyncingFromXml = false;
+  private isApplyingSidebarEdit = false;
   private modelerToXmlTimer: any = null;
   private xmlToModelerTimer: any = null;
 
@@ -215,83 +267,16 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
         this.isModified.set(true);
         this.scheduleModelerToXmlSync();
       }
+      // Undo/redo and canvas-side edits (direct label editing, ...) don't touch the selection,
+      // so the sidebar would keep showing stale values without this re-read.
+      if (!this.isApplyingSidebarEdit) {
+        this.refreshSelectedElement();
+      }
     });
 
     this.bpmnModeler.on('selection.changed', (e: any) => {
-      const selection = e.newSelection;
-      if (selection && selection.length > 0) {
-        const element = selection[0];
-        const bo = element.businessObject;
-
-        const documentation = bo.documentation?.[0]?.text || '';
-        const conditionExpression =
-          bo.conditionExpression?.body || bo.conditionExpression?.text || '';
-
-        const assignee =
-          bo.assignee || bo.get?.('camunda:assignee') || bo.$attrs?.['camunda:assignee'] || '';
-        const candidateGroups =
-          bo.candidateGroups ||
-          bo.get?.('camunda:candidateGroups') ||
-          bo.$attrs?.['camunda:candidateGroups'] ||
-          '';
-        const candidateUsers =
-          bo.candidateUsers ||
-          bo.get?.('camunda:candidateUsers') ||
-          bo.$attrs?.['camunda:candidateUsers'] ||
-          '';
-        const dueDate =
-          bo.dueDate || bo.get?.('camunda:dueDate') || bo.$attrs?.['camunda:dueDate'] || '';
-        const priority =
-          bo.priority || bo.get?.('camunda:priority') || bo.$attrs?.['camunda:priority'] || '';
-        const formKey =
-          bo.formKey || bo.get?.('camunda:formKey') || bo.$attrs?.['camunda:formKey'] || '';
-
-        const topic = bo.topic || bo.get?.('camunda:topic') || bo.$attrs?.['camunda:topic'] || '';
-        const delegateExpression =
-          bo.delegateExpression ||
-          bo.get?.('camunda:delegateExpression') ||
-          bo.$attrs?.['camunda:delegateExpression'] ||
-          '';
-        const javaClass =
-          bo.class || bo.get?.('camunda:class') || bo.$attrs?.['camunda:class'] || '';
-        const calledElement = bo.calledElement || bo.get?.('calledElement') || '';
-
-        const decisionRef =
-          bo.decisionRef || bo.get?.('camunda:decisionRef') || bo.$attrs?.['camunda:decisionRef'] || '';
-        const resultVariable =
-          bo.resultVariable ||
-          bo.get?.('camunda:resultVariable') ||
-          bo.$attrs?.['camunda:resultVariable'] ||
-          '';
-
-        // A gateway's `default` moddle property references the sequence-flow business
-        // object directly (not its id string) - compare by id to know if THIS flow is it.
-        const sourceDefault = element.source?.businessObject?.default;
-        const isDefaultFlow = !!sourceDefault && sourceDefault.id === bo.id;
-
-        this.selectedElement.set({
-          id: element.id,
-          name: bo.name || '',
-          type: element.type,
-          documentation,
-          assignee,
-          candidateGroups,
-          candidateUsers,
-          dueDate,
-          priority,
-          formKey,
-          conditionExpression,
-          isDefaultFlow,
-          topic,
-          delegateExpression,
-          javaClass,
-          calledElement,
-          decisionRef,
-          resultVariable,
-        });
-      } else {
-        this.selectedElement.set(null);
-      }
+      const element = e.newSelection?.[0];
+      this.selectedElement.set(element ? this.readElementProperties(element) : null);
     });
 
     const initialXml = this.processData?.bpmnXml || DEFAULT_BPMN_XML;
@@ -300,6 +285,108 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
     this.initialProcessName = name;
     this.xmlContent.set(initialXml);
     this.importDiagram(initialXml);
+  }
+
+  private refreshSelectedElement(): void {
+    const currentSel = this.selectedElement();
+    if (!currentSel) return;
+
+    const element = this.bpmnModeler.get('elementRegistry').get(currentSel.id);
+    this.selectedElement.set(element ? this.readElementProperties(element) : null);
+  }
+
+  /**
+   * Runs a sidebar-originated modeling command without re-reading the selection afterwards:
+   * the sidebar already holds the raw typed value, while the XML may store it trimmed - re-reading
+   * mid-typing would strip trailing spaces out from under the cursor.
+   */
+  private applySidebarEdit(edit: () => void): void {
+    this.isApplyingSidebarEdit = true;
+    try {
+      edit();
+    } finally {
+      this.isApplyingSidebarEdit = false;
+    }
+  }
+
+  private readElementProperties(element: any): BpmnElementProperties {
+    const bo = element.businessObject;
+
+    const documentation = bo.documentation?.[0]?.text || '';
+    const conditionExpression =
+      bo.conditionExpression?.body || bo.conditionExpression?.text || '';
+
+    const assignee =
+      bo.assignee || bo.get?.('camunda:assignee') || bo.$attrs?.['camunda:assignee'] || '';
+    const candidateGroups =
+      bo.candidateGroups ||
+      bo.get?.('camunda:candidateGroups') ||
+      bo.$attrs?.['camunda:candidateGroups'] ||
+      '';
+    const candidateUsers =
+      bo.candidateUsers ||
+      bo.get?.('camunda:candidateUsers') ||
+      bo.$attrs?.['camunda:candidateUsers'] ||
+      '';
+    const dueDate =
+      bo.dueDate || bo.get?.('camunda:dueDate') || bo.$attrs?.['camunda:dueDate'] || '';
+    const priority =
+      bo.priority || bo.get?.('camunda:priority') || bo.$attrs?.['camunda:priority'] || '';
+    const formKey =
+      bo.formKey || bo.get?.('camunda:formKey') || bo.$attrs?.['camunda:formKey'] || '';
+
+    const topic = bo.topic || bo.get?.('camunda:topic') || bo.$attrs?.['camunda:topic'] || '';
+    const delegateExpression =
+      bo.delegateExpression ||
+      bo.get?.('camunda:delegateExpression') ||
+      bo.$attrs?.['camunda:delegateExpression'] ||
+      '';
+    const javaClass =
+      bo.class || bo.get?.('camunda:class') || bo.$attrs?.['camunda:class'] || '';
+    const calledElement = bo.calledElement || bo.get?.('calledElement') || '';
+
+    const decisionRef =
+      bo.decisionRef || bo.get?.('camunda:decisionRef') || bo.$attrs?.['camunda:decisionRef'] || '';
+    const resultVariable =
+      bo.resultVariable ||
+      bo.get?.('camunda:resultVariable') ||
+      bo.$attrs?.['camunda:resultVariable'] ||
+      '';
+
+    // A gateway's `default` moddle property references the sequence-flow business
+    // object directly (not its id string) - compare by id to know if THIS flow is it.
+    const sourceDefault = element.source?.businessObject?.default;
+    const isDefaultFlow = !!sourceDefault && sourceDefault.id === bo.id;
+
+    const timerDef = this.getTimerDefinition(bo);
+    const timerType = timerDef ? TIMER_TYPES.find((t) => timerDef[t]) || '' : '';
+    const timerValue = timerType ? timerDef[timerType]?.body || '' : '';
+
+    return {
+      id: element.id,
+      name: bo.name || '',
+      type: element.type,
+      documentation,
+      assignee,
+      candidateGroups,
+      candidateUsers,
+      dueDate,
+      priority,
+      formKey,
+      conditionExpression,
+      isDefaultFlow,
+      topic,
+      delegateExpression,
+      javaClass,
+      calledElement,
+      decisionRef,
+      resultVariable,
+      hasTimer: !!timerDef,
+      timerType,
+      timerValue,
+      // cancelActivity defaults to true in the BPMN schema - only an explicit false is non-interrupting
+      isInterrupting: bo.cancelActivity !== false,
+    };
   }
 
   private loadDmnDecisionOptions(): void {
@@ -771,7 +858,7 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
     const element = elementRegistry.get(currentSel.id);
 
     if (element) {
-      modeling.updateLabel(element, newName);
+      this.applySidebarEdit(() => modeling.updateLabel(element, newName));
       this.selectedElement.set({
         ...currentSel,
         name: newName,
@@ -790,7 +877,7 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
 
     if (element) {
       const doc = docText ? [bpmnFactory.create('bpmn:Documentation', { text: docText })] : [];
-      modeling.updateProperties(element, { documentation: doc });
+      this.applySidebarEdit(() => modeling.updateProperties(element, { documentation: doc }));
       this.selectedElement.set({
         ...currentSel,
         documentation: docText,
@@ -808,23 +895,21 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
     const element = elementRegistry.get(currentSel.id);
 
     if (element) {
+      let updatePayload: Record<string, any>;
       if (propName === 'conditionExpression') {
-        if (value && value.trim()) {
-          const formalExpression = bpmnFactory.create('bpmn:FormalExpression', {
-            body: value.trim(),
-          });
-          modeling.updateProperties(element, { conditionExpression: formalExpression });
-        } else {
-          modeling.updateProperties(element, { conditionExpression: undefined });
-        }
+        updatePayload = {
+          conditionExpression:
+            value && value.trim()
+              ? bpmnFactory.create('bpmn:FormalExpression', { body: value.trim() })
+              : undefined,
+        };
       } else {
         // 'javaClass' is the panel's field name, but the real camunda moddle property is 'class'
         // ('class' is awkward to use as a JS/TS identifier, hence the alias in BpmnElementProperties).
         const moddlePropName = propName === 'javaClass' ? 'class' : propName;
-        const updatePayload: Record<string, any> = {};
-        updatePayload[moddlePropName] = value || undefined;
-        modeling.updateProperties(element, updatePayload);
+        updatePayload = { [moddlePropName]: value || undefined };
       }
+      this.applySidebarEdit(() => modeling.updateProperties(element, updatePayload));
 
       this.selectedElement.set({
         ...currentSel,
@@ -848,14 +933,143 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
     const sourceElement = flowElement?.source;
     if (!sourceElement) return;
 
-    modeling.updateProperties(sourceElement, {
-      default: isDefault ? flowElement.businessObject : undefined,
-    });
+    this.applySidebarEdit(() =>
+      modeling.updateProperties(sourceElement, {
+        default: isDefault ? flowElement.businessObject : undefined,
+      }),
+    );
 
     this.selectedElement.set({
       ...currentSel,
       isDefaultFlow: isDefault,
     });
+  }
+
+  /**
+   * Timer config lives on the nested `bpmn:TimerEventDefinition`, not on the event itself.
+   * Exactly one of timeDuration / timeDate / timeCycle is kept, each as a `bpmn:FormalExpression`.
+   * The chosen type is written even with an empty body so it survives re-selecting the element.
+   */
+  updateTimerDefinition(changes: { timerType?: TimerType | ''; timerValue?: string }): void {
+    const currentSel = this.selectedElement();
+    if (!currentSel) return;
+
+    const modeling = this.bpmnModeler.get('modeling');
+    const bpmnFactory = this.bpmnModeler.get('bpmnFactory');
+    const elementRegistry = this.bpmnModeler.get('elementRegistry');
+    const element = elementRegistry.get(currentSel.id);
+    const timerDef = this.getTimerDefinition(element?.businessObject);
+    if (!timerDef) return;
+
+    const timerType = changes.timerType ?? currentSel.timerType ?? '';
+    const timerValue = changes.timerValue ?? currentSel.timerValue ?? '';
+
+    const updatePayload: Record<string, any> = {};
+    TIMER_TYPES.forEach((t) => (updatePayload[t] = undefined));
+    if (timerType) {
+      updatePayload[timerType] = bpmnFactory.create('bpmn:FormalExpression', {
+        body: timerValue.trim() || undefined,
+      });
+    }
+    this.applySidebarEdit(() => modeling.updateModdleProperties(element, timerDef, updatePayload));
+
+    this.selectedElement.set({
+      ...currentSel,
+      timerType,
+      timerValue,
+    });
+  }
+
+  /** Ghi timeDate từ ô chọn ngày giờ (datetime-local trả về dạng yyyy-MM-ddTHH:mm, thiếu giây). */
+  updateTimerDateFromPicker(localValue: string): void {
+    if (!localValue) return;
+    const value = localValue.length === 16 ? `${localValue}:00` : localValue;
+    this.updateTimerDefinition({ timerValue: value });
+  }
+
+  updateBoundaryInterrupting(isInterrupting: boolean): void {
+    const currentSel = this.selectedElement();
+    if (!currentSel) return;
+
+    const modeling = this.bpmnModeler.get('modeling');
+    const elementRegistry = this.bpmnModeler.get('elementRegistry');
+    const element = elementRegistry.get(currentSel.id);
+    if (!element) return;
+
+    // Omit the attribute for the schema default (true) to keep the XML clean
+    this.applySidebarEdit(() =>
+      modeling.updateProperties(element, { cancelActivity: isInterrupting ? undefined : false }),
+    );
+
+    this.selectedElement.set({
+      ...currentSel,
+      isInterrupting,
+    });
+  }
+
+  /** Giá trị cho ô datetime-local - chỉ khi timerValue đang là ngày giờ ISO hợp lệ. */
+  toDateTimeLocal(value?: string): string {
+    if (!value || !ISO_DATE_TIME_REGEX.test(value)) return '';
+    return value.substring(0, 16);
+  }
+
+  private getTimerDefinition(bo: any): any {
+    return bo?.eventDefinitions?.find((d: any) => d.$type === 'bpmn:TimerEventDefinition');
+  }
+
+  private describeTimer(timerType?: TimerType | '', rawValue?: string): TimerSummary {
+    const value = (rawValue || '').trim();
+    if (!timerType) {
+      return { valid: false, text: 'Chưa chọn kiểu hẹn giờ - engine sẽ từ chối deploy quy trình.' };
+    }
+    if (!value) {
+      return { valid: false, text: 'Chưa nhập giá trị hẹn giờ.' };
+    }
+    if (EXPRESSION_REGEX.test(value)) {
+      return { valid: true, text: 'Giá trị được tính từ biểu thức khi quy trình chạy.' };
+    }
+
+    if (timerType === 'timeDuration') {
+      const duration = this.describeDuration(value);
+      return duration
+        ? { valid: true, text: `Kích hoạt sau ${duration}.` }
+        : { valid: false, text: 'Sai định dạng ISO 8601 Duration (VD: PT30M, P1DT2H).' };
+    }
+
+    if (timerType === 'timeDate') {
+      const date = new Date(value);
+      return ISO_DATE_TIME_REGEX.test(value) && !isNaN(date.getTime())
+        ? { valid: true, text: `Kích hoạt vào lúc ${date.toLocaleString('vi-VN')}.` }
+        : { valid: false, text: 'Sai định dạng ISO 8601 Date (VD: 2026-12-31T17:00:00).' };
+    }
+
+    const cycle = ISO_CYCLE_REGEX.exec(value);
+    if (cycle) {
+      const [, repeat, start, period] = cycle;
+      const interval = this.describeDuration(period);
+      if (interval) {
+        const times = repeat ? `Lặp ${repeat} lần` : 'Lặp vô hạn';
+        const startText = start ? `, bắt đầu từ ${start}` : '';
+        return { valid: true, text: `${times}, mỗi ${interval}${startText}.` };
+      }
+    }
+    // Camunda also accepts Quartz cron expressions (6-7 fields) for timeCycle
+    const cronFields = value.split(/\s+/).length;
+    if (cronFields === 6 || cronFields === 7) {
+      return { valid: true, text: 'Lịch chạy theo biểu thức cron.' };
+    }
+    return { valid: false, text: 'Sai định dạng chu kỳ (VD: R3/PT10M hoặc cron "0 0 9 * * ?").' };
+  }
+
+  private describeDuration(value: string): string | null {
+    const match = ISO_DURATION_REGEX.exec(value);
+    if (!match) return null;
+    const units = ['năm', 'tháng', 'tuần', 'ngày', 'giờ', 'phút', 'giây'];
+    const parts = match
+      .slice(1)
+      .map((amount, i) => (amount && Number(amount) > 0 ? `${amount} ${units[i]}` : null))
+      .filter(Boolean);
+    return parts.length ? parts.join(' ') : null;
   }
 
   isOutgoingFromGateway(elementId?: string): boolean {
@@ -1044,13 +1258,19 @@ export class BpmnDesignerComponent implements AfterViewInit, OnDestroy, OnChange
     return type === 'bpmn:BusinessRuleTask';
   }
 
-  hasExecutionConfig(type?: string): boolean {
+  isBoundaryEvent(type?: string): boolean {
+    return type === 'bpmn:BoundaryEvent';
+  }
+
+  hasExecutionConfig(element: BpmnElementProperties): boolean {
+    const type = element.type;
     return (
       this.isUserOrTask(type) ||
       this.isSequenceFlow(type) ||
       this.isServiceOrScript(type) ||
       this.isCallActivity(type) ||
-      this.isBusinessRuleTask(type)
+      this.isBusinessRuleTask(type) ||
+      !!element.hasTimer
     );
   }
 
