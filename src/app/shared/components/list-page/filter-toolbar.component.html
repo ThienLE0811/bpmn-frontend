@@ -1,0 +1,60 @@
+<div class="table-toolbar">
+  <div class="toolbar-left">
+    <div class="quick-search">
+      <nz-input-wrapper [nzAllowClear]="true">
+        <span nzInputPrefix>
+          <span nz-icon nzType="search" class="filter-icon"></span>
+        </span>
+        <input
+          type="text"
+          nz-input
+          [placeholder]="placeholder()"
+          [ngModel]="searchText()"
+          (ngModelChange)="searchText.set($event ?? '')"
+          (keyup.enter)="searchSubmit.emit()"
+        />
+      </nz-input-wrapper>
+    </div>
+
+    <ng-content />
+
+    <button
+      type="button"
+      class="btn-search-trigger"
+      (click)="searchSubmit.emit()"
+      [disabled]="loading()"
+      title="Tìm kiếm"
+    >
+      <span nz-icon nzType="search" nzTheme="outline"></span>
+      <span>Tìm kiếm</span>
+    </button>
+
+    @if (filtered()) {
+      <button
+        type="button"
+        class="btn-reset-filter"
+        (click)="filtersReset.emit()"
+        [disabled]="loading()"
+        title="Xóa tất cả bộ lọc"
+      >
+        <span nz-icon nzType="clear" nzTheme="outline"></span>
+        <span>Đặt lại</span>
+      </button>
+    }
+  </div>
+
+  <div class="toolbar-right">
+    <ng-content select="[toolbarRight]" />
+    @if (showRefresh()) {
+      <button
+        type="button"
+        class="btn-refresh"
+        (click)="reload.emit()"
+        [disabled]="loading()"
+        title="Tải lại danh sách"
+      >
+        <span nz-icon nzType="redo" nzTheme="outline" [nzSpin]="loading()"></span>
+      </button>
+    }
+  </div>
+</div>

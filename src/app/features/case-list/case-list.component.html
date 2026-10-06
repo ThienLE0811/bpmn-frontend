@@ -1,176 +1,110 @@
 <div class="cases-layout">
-  <!-- Page Header Title Bar -->
-  <div class="page-title-bar">
-    <div class="title-info">
-      <div class="header-badge-row">
-        <span class="category-badge">Workspace</span>
-        <span class="dot-separator">•</span>
-        <span class="sub-category">Quy trình vận hành</span>
-      </div>
-      <h2>Quản lý Hồ sơ Vụ việc (Cases / Instances)</h2>
-      <p>Theo dõi các phiên thực thi quy trình BPMN đã được kích hoạt, giám sát bước xử lý hiện tại và khởi động vụ việc mới.</p>
+  <app-page-header
+    title="Quản lý Hồ sơ Vụ việc (Cases / Instances)"
+    description="Theo dõi các phiên thực thi quy trình BPMN đã được kích hoạt, giám sát bước xử lý hiện tại và khởi động vụ việc mới."
+    [(statsOpen)]="isStatsOpen"
+  >
+    <div pageEyebrow class="header-badge-row">
+      <span class="category-badge">Workspace</span>
+      <span class="dot-separator">•</span>
+      <span class="sub-category">Quy trình vận hành</span>
     </div>
 
-    <div class="title-actions">
-      <button
-        class="btn btn-outline-stats"
-        [class.active]="isStatsOpen()"
-        (click)="toggleStats()"
-        title="Xem thống kê tổng quan"
-      >
-        <span
-          nz-icon
-          [nzType]="isStatsOpen() ? 'eye-invisible' : 'dashboard'"
-          nzTheme="outline"
-        ></span>
-        <span>{{ isStatsOpen() ? 'Ẩn thống kê' : 'Xem thống kê' }}</span>
-      </button>
+    <button
+      class="btn btn-outline-refresh"
+      (click)="loadCases()"
+      [disabled]="isLoading()"
+      title="Làm mới dữ liệu"
+    >
+      <span nz-icon nzType="sync" [nzSpin]="isLoading()"></span>
+      <span>Làm mới</span>
+    </button>
 
-      <button
-        class="btn btn-outline-refresh"
-        (click)="loadCases()"
-        [disabled]="isLoading()"
-        title="Làm mới dữ liệu"
-      >
-        <span nz-icon nzType="sync" [nzSpin]="isLoading()"></span>
-        <span>Làm mới</span>
-      </button>
-
-      <button
-        class="btn btn-primary-start"
-        (click)="openStartModal()"
-        title="Khởi động Case mới"
-      >
-        <span nz-icon nzType="play-circle" nzTheme="fill"></span>
-        <span>Khởi động Case mới</span>
-      </button>
-    </div>
-  </div>
+    <button class="btn btn-primary-start" (click)="openStartModal()" title="Khởi động Case mới">
+      <span nz-icon nzType="play-circle" nzTheme="fill"></span>
+      <span>Khởi động Case mới</span>
+    </button>
+  </app-page-header>
 
   <!-- Main Content Area -->
   <main class="main-content">
     <div class="content-container">
-      <!-- Collapsible Overview Stats Grid -->
       @if (isStatsOpen()) {
         <section class="stats-grid">
-          <div
-            class="stat-card"
-            [class.active-filter]="filterModel().status === 'ALL'"
+          <app-stat-card
+            icon="folder-open"
+            label="Tổng số hồ sơ (Cases)"
+            [value]="totalCount()"
+            tone="neutral"
+            [clickable]="true"
+            [active]="filterModel().status === 'ALL'"
             (click)="onStatusFilterChange('ALL')"
-          >
-            <div class="stat-icon total">
-              <span nz-icon nzType="folder-open" nzTheme="outline"></span>
-            </div>
-            <div class="stat-info">
-              <span class="stat-label">Tổng số hồ sơ (Cases)</span>
-              <span class="stat-value">{{ totalCount() }}</span>
-            </div>
-          </div>
-
-          <div
-            class="stat-card running-card"
-            [class.active-filter]="filterModel().status === 'RUNNING'"
+          />
+          <app-stat-card
+            icon="sync"
+            label="Đang chạy (RUNNING)"
+            [value]="runningCount()"
+            [iconSpin]="true"
+            [highlightValue]="true"
+            [pulse]="runningCount() > 0"
+            [clickable]="true"
+            [active]="filterModel().status === 'RUNNING'"
             (click)="onStatusFilterChange('RUNNING')"
-          >
-            <div class="stat-icon in-progress">
-              <span nz-icon nzType="sync" [nzSpin]="true" nzTheme="outline"></span>
-            </div>
-            <div class="stat-info">
-              <span class="stat-label">Đang chạy (RUNNING)</span>
-              <span class="stat-value text-running">{{ runningCount() }}</span>
-            </div>
-            @if (runningCount() > 0) {
-              <span class="pulse-indicator"></span>
-            }
-          </div>
-
-          <div
-            class="stat-card completed-card"
-            [class.active-filter]="filterModel().status === 'COMPLETED'"
+          />
+          <app-stat-card
+            icon="check-circle"
+            label="Đã hoàn thành"
+            [value]="completedCount()"
+            tone="success"
+            [highlightValue]="true"
+            [clickable]="true"
+            [active]="filterModel().status === 'COMPLETED'"
             (click)="onStatusFilterChange('COMPLETED')"
-          >
-            <div class="stat-icon completed">
-              <span nz-icon nzType="check-circle" nzTheme="outline"></span>
-            </div>
-            <div class="stat-info">
-              <span class="stat-label">Đã hoàn thành</span>
-              <span class="stat-value text-completed">{{ completedCount() }}</span>
-            </div>
-          </div>
+          />
         </section>
       }
 
       <!-- Table Section Card -->
       <section class="table-card">
-        <!-- Main Quick Toolbar -->
-        <div class="table-toolbar">
-          <div class="toolbar-left">
-            <!-- Quick Search Input -->
-            <div class="filter-field quick-search">
-              <nz-input-wrapper [nzAllowClear]="true">
-                <span nzInputPrefix>
-                  <span nz-icon nzType="search" class="filter-icon"></span>
-                </span>
-                <input
-                  type="text"
-                  nz-input
-                  placeholder="Tìm theo Mã Case, Quy trình, Node ID, Người tạo..."
-                  [ngModel]="filterModel().search"
-                  (ngModelChange)="filterModel.update((m) => ({ ...m, search: $event }))"
-                  (keyup.enter)="search()"
-                />
-              </nz-input-wrapper>
-            </div>
-
-            <!-- Quick Filter by Trạng thái -->
-            <div class="filter-field quick-status">
-              <nz-select
-                class="filter-select"
-                [ngModel]="filterModel().status"
-                (ngModelChange)="onStatusFilterChange($event)"
-                nzPlaceHolder="Trạng thái"
-                style="width: 170px"
-              >
-                <nz-option nzValue="ALL" nzLabel="Tất cả trạng thái"></nz-option>
-                <nz-option nzValue="RUNNING" nzLabel="Đang chạy (RUNNING)"></nz-option>
-                <nz-option nzValue="COMPLETED" nzLabel="Đã hoàn thành"></nz-option>
-                <nz-option nzValue="SUSPENDED" nzLabel="Tạm dừng"></nz-option>
-              </nz-select>
-            </div>
-
-            <!-- Quick Filter by BPMN Process -->
-            <div class="filter-field quick-process">
-              <nz-select
-                class="filter-select"
-                [ngModel]="filterModel().processId"
-                (ngModelChange)="onProcessFilterChange($event)"
-                nzPlaceHolder="Quy trình BPMN"
-                [nzShowSearch]="true"
-                style="width: 220px"
-              >
-                <nz-option nzValue="ALL" nzLabel="Tất cả quy trình"></nz-option>
-                @for (proc of processes(); track proc.id) {
-                  <nz-option [nzValue]="proc.id" [nzLabel]="proc.name || proc.processKey"></nz-option>
-                }
-              </nz-select>
-            </div>
-
-            <!-- Nút Tìm kiếm -->
-            <button class="btn-search-trigger" (click)="search()" [disabled]="isLoading()" title="Tìm kiếm">
-              <span nz-icon nzType="search" nzTheme="outline"></span>
-              <span>Tìm kiếm</span>
-            </button>
-
-            <!-- Reset Filters -->
-            @if (isFiltered()) {
-              <button class="btn-clear-filters" (click)="resetFilters()" title="Xóa bộ lọc">
-                <span nz-icon nzType="close-circle" nzTheme="fill"></span>
-                <span>Đặt lại</span>
-              </button>
-            }
+        <app-filter-toolbar
+          placeholder="Tìm theo Mã Case, Quy trình, Node ID, Người tạo..."
+          [searchText]="filterModel().search"
+          (searchTextChange)="filter.patch({ search: $event })"
+          [filtered]="isFiltered()"
+          [loading]="isLoading()"
+          [showRefresh]="false"
+          (searchSubmit)="search()"
+          (filtersReset)="resetFilters()"
+        >
+          <div class="filter-field">
+            <nz-select
+              class="filter-select"
+              [ngModel]="filterModel().status"
+              (ngModelChange)="onStatusFilterChange($event)"
+              nzPlaceHolder="Trạng thái"
+            >
+              <nz-option nzValue="ALL" nzLabel="Tất cả trạng thái"></nz-option>
+              <nz-option nzValue="RUNNING" nzLabel="Đang chạy (RUNNING)"></nz-option>
+              <nz-option nzValue="COMPLETED" nzLabel="Đã hoàn thành"></nz-option>
+              <nz-option nzValue="SUSPENDED" nzLabel="Tạm dừng"></nz-option>
+            </nz-select>
           </div>
 
-        </div>
+          <div class="filter-field quick-process">
+            <nz-select
+              class="filter-select"
+              [ngModel]="filterModel().processId"
+              (ngModelChange)="onProcessFilterChange($event)"
+              nzPlaceHolder="Quy trình BPMN"
+              [nzShowSearch]="true"
+            >
+              <nz-option nzValue="ALL" nzLabel="Tất cả quy trình"></nz-option>
+              @for (proc of processes(); track proc.id) {
+                <nz-option [nzValue]="proc.id" [nzLabel]="proc.name || proc.processKey"></nz-option>
+              }
+            </nz-select>
+          </div>
+        </app-filter-toolbar>
 
         <!-- Data Table Container -->
         <div class="table-responsive">
@@ -237,10 +171,8 @@
 
                   <!-- Trạng thái -->
                   <td>
-                    <span class="status-pill" [class]="item.status.toLowerCase()">
-                      <span class="dot"></span>
-                      <span>{{ getCaseStatusMeta(item.status).label }}</span>
-                    </span>
+                    @let statusMeta = getCaseStatusMeta(item.status);
+                    <app-status-pill [label]="statusMeta.label" [tone]="statusMeta.tone" />
                   </td>
 
                   <!-- Bước hiện tại -->

@@ -1,0 +1,73 @@
+/* ==========================================================================
+   KHUNG TRANG DANH SÁCH DÙNG CHUNG (src/styles/_list-page.scss)
+   Dùng trong stylesheet của từng trang: `@use 'list-page';`
+
+   Các rule ở đây cố ý để PHẲNG (không lồng dưới .table-toolbar / .toolbar-left...):
+   những phần tử như .filter-field được trang chiếu vào bên trong <app-filter-toolbar>,
+   mà với ViewEncapsulation mặc định, selector lồng qua phần tử của component con sẽ không khớp.
+   ========================================================================== */
+@use 'colors' as *;
+
+/* Layout gốc (.xxx-layout / .main-content) vẫn để ở từng trang: hai nhóm trang có kiểu khác nhau
+   (thanh header + vùng cuộn riêng vs layout có padding) và appTableAutoHeight phụ thuộc vào nó. */
+
+/* Lưới <app-stat-card> - tự xếp 3 hay 4 thẻ theo độ rộng */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+/* Khung card chứa toolbar + bảng */
+.table-card {
+  background: $white;
+  border: 1px solid $border;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Ô lọc nhanh chiếu vào <app-filter-toolbar> */
+.filter-field {
+  width: 175px;
+
+  &.quick-process {
+    width: 220px;
+  }
+}
+
+.filter-select {
+  width: 100%;
+
+  ::ng-deep .ant-select-selector {
+    border-radius: 8px !important;
+    border-color: $border !important;
+    height: 34px !important;
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    color: $text;
+    transition: all 0.2s ease;
+
+    .ant-select-selection-item {
+      line-height: 32px;
+    }
+  }
+
+  &:hover ::ng-deep .ant-select-selector {
+    border-color: #cbd5e1 !important;
+  }
+
+  &.ant-select-focused ::ng-deep .ant-select-selector {
+    border-color: $primary !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+  }
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: $border;
+}

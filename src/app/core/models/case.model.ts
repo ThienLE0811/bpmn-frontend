@@ -1,3 +1,5 @@
+import { StatusTone } from './status-meta.model';
+
 export type ProcessInstanceStatus = 'RUNNING' | 'COMPLETED' | 'SUSPENDED' | 'TERMINATED' | string;
 
 export interface ProcessInstance {
@@ -32,6 +34,7 @@ export interface ProcessInstanceQueryParams {
 
 export interface CaseStatusMeta {
   key: string;
+  tone: StatusTone;
   label: string;
   color: string;
   tagColor: string;
@@ -46,6 +49,7 @@ export function getCaseStatusMeta(status: string | null | undefined): CaseStatus
     case 'ACTIVE':
       return {
         key: 'RUNNING',
+        tone: 'info',
         label: 'Đang chạy',
         color: '#2563eb',
         tagColor: 'blue',
@@ -55,6 +59,7 @@ export function getCaseStatusMeta(status: string | null | undefined): CaseStatus
     case 'COMPLETED':
       return {
         key: 'COMPLETED',
+        tone: 'success',
         label: 'Hoàn thành',
         color: '#10b981',
         tagColor: 'green',
@@ -64,6 +69,7 @@ export function getCaseStatusMeta(status: string | null | undefined): CaseStatus
     case 'SUSPENDED':
       return {
         key: 'SUSPENDED',
+        tone: 'warning',
         label: 'Tạm dừng',
         color: '#f59e0b',
         tagColor: 'orange',
@@ -74,6 +80,7 @@ export function getCaseStatusMeta(status: string | null | undefined): CaseStatus
     case 'CANCELED':
       return {
         key: 'TERMINATED',
+        tone: 'danger',
         label: 'Đã chấm dứt',
         color: '#ef4444',
         tagColor: 'red',
@@ -83,6 +90,7 @@ export function getCaseStatusMeta(status: string | null | undefined): CaseStatus
     default:
       return {
         key: s || 'UNKNOWN',
+        tone: 'neutral',
         label: status || 'Chưa xác định',
         color: '#64748b',
         tagColor: 'default',

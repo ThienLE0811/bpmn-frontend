@@ -8,3 +8,4 @@ export * from './task.model';
 export * from './case.model';
 export * from './form-schema.model';
 
+export * from './status-meta.model';

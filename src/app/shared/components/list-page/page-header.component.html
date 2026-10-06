@@ -1,0 +1,29 @@
+<div class="page-title-bar">
+  <div class="title-info">
+    <ng-content select="[pageEyebrow]" />
+    <h2>{{ title() }}</h2>
+    @if (description()) {
+      <p>{{ description() }}</p>
+    }
+  </div>
+
+  <div class="title-actions">
+    @if (showStatsToggle()) {
+      <button
+        type="button"
+        class="btn-outline-stats"
+        [class.active]="statsOpen()"
+        (click)="statsOpen.set(!statsOpen())"
+        title="Xem thống kê tổng quan"
+      >
+        <span
+          nz-icon
+          [nzType]="statsOpen() ? 'eye-invisible' : 'dashboard'"
+          nzTheme="outline"
+        ></span>
+        <span>{{ statsOpen() ? 'Ẩn thống kê' : 'Xem thống kê' }}</span>
+      </button>
+    }
+    <ng-content />
+  </div>
+</div>

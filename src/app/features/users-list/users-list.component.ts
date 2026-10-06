@@ -20,7 +20,13 @@ import {
   getUserStatusMeta,
   checkPer,
   sortByString,
+  createListFilter,
 } from '@shared/utils';
+import {
+  PageHeaderComponent,
+  StatCardComponent,
+  FilterToolbarComponent,
+} from '@shared/components/list-page';
 import { TableAutoHeightDirective } from '@shared/directives';
 import { AvatarColorPipe, UserInitialsPipe, FormatDatePipe } from '@shared/pipes';
 
@@ -43,6 +49,9 @@ import { AvatarColorPipe, UserInitialsPipe, FormatDatePipe } from '@shared/pipes
     AvatarColorPipe,
     UserInitialsPipe,
     FormatDatePipe,
+    PageHeaderComponent,
+    StatCardComponent,
+    FilterToolbarComponent,
   ],
   templateUrl: './users-list.component.html',
   styleUrl: './users-list.component.scss',
@@ -115,23 +124,10 @@ export class UsersListComponent implements OnInit {
     password?: string;
   } | null = null;
 
-  // Filter signal model
-  protected readonly filterModel = signal({
-    search: '',
-    role: 'ALL',
-    status: 'ALL',
-  });
-
-  protected readonly activeFilterCount = computed(() => {
-    const m = this.filterModel();
-    let count = 0;
-    if (m.search.trim()) count++;
-    if (m.role !== 'ALL') count++;
-    if (m.status !== 'ALL') count++;
-    return count;
-  });
-
-  protected readonly isFiltered = computed(() => this.activeFilterCount() > 0);
+  // Bộ lọc
+  protected readonly filter = createListFilter({ search: '', role: 'ALL', status: 'ALL' });
+  protected readonly filterModel = this.filter.model;
+  protected readonly isFiltered = this.filter.isFiltered;
 
   // User form signal
   protected readonly passwordVisible = signal<boolean>(false);
@@ -168,10 +164,6 @@ export class UsersListComponent implements OnInit {
   );
   protected developerCount = computed(() => this.users().filter((u) => u.role === 'DEVELOPER').length);
 
-  toggleStats(): void {
-    this.isStatsOpen.update((v) => !v);
-  }
-
   onPageIndexChange(page: number): void {
     // nz-table cũng phát pageIndexChange khi đổi pageSize - tránh gọi API 2 lần
     if (page === this.pageIndex()) return;
@@ -191,21 +183,17 @@ export class UsersListComponent implements OnInit {
   }
 
   resetFilters(): void {
-    this.filterModel.set({
-      search: '',
-      role: 'ALL',
-      status: 'ALL',
-    });
+    this.filter.reset();
     this.search();
   }
 
   onRoleFilterChange(role: string): void {
-    this.filterModel.update((m) => ({ ...m, role }));
+    this.filter.patch({ role });
     this.search();
   }
 
   onStatusFilterChange(status: string): void {
-    this.filterModel.update((m) => ({ ...m, status }));
+    this.filter.patch({ status });
     this.search();
   }
 

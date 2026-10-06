@@ -1,9 +1,8 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzIconModule } from 'ng-zorro-antd/icon';
-import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
@@ -15,11 +14,12 @@ import { TaskService, FormSchemaService } from '@core/services';
 import { TaskResponse, getTaskStatusMeta, FormDefinition } from '@core/models';
 import { TableAutoHeightDirective } from '@shared/directives';
 import { DynamicFormRendererComponent } from '@shared/components/dynamic-form-renderer/dynamic-form-renderer.component';
+import { copyToClipboard, sortByString, sortByDate, createListFilter } from '@shared/utils';
 import {
-  copyToClipboard,
-  sortByString,
-  sortByDate,
-} from '@shared/utils';
+  PageHeaderComponent,
+  StatCardComponent,
+  FilterToolbarComponent,
+} from '@shared/components/list-page';
 import { AvatarColorPipe, UserInitialsPipe, FormatDatePipe } from '@shared/pipes';
 
 @Component({
@@ -30,7 +30,6 @@ import { AvatarColorPipe, UserInitialsPipe, FormatDatePipe } from '@shared/pipes
     FormsModule,
     NzTableModule,
     NzIconModule,
-    NzInputModule,
     NzSelectModule,
     NzTagModule,
     NzDrawerModule,
@@ -41,6 +40,9 @@ import { AvatarColorPipe, UserInitialsPipe, FormatDatePipe } from '@shared/pipes
     UserInitialsPipe,
     FormatDatePipe,
     DynamicFormRendererComponent,
+    PageHeaderComponent,
+    StatCardComponent,
+    FilterToolbarComponent,
   ],
   templateUrl: './task-list.component.html',
   styleUrl: './task-list.component.scss',
@@ -63,15 +65,9 @@ export class TaskListComponent implements OnInit {
   readonly isFormValid = signal<boolean>(true);
 
   // Bộ lọc
-  readonly filterModel = signal<{
-    search: string;
-    status: string;
-    mine: boolean;
-  }>({
-    search: '',
-    status: 'ALL',
-    mine: false,
-  });
+  readonly filter = createListFilter({ search: '', status: 'ALL', mine: false });
+  readonly filterModel = this.filter.model;
+  readonly isFiltered = this.filter.isFiltered;
 
   readonly pageIndex = signal<number>(1);
   readonly pageSize = signal<number>(10);
@@ -86,12 +82,6 @@ export class TaskListComponent implements OnInit {
   readonly createdCount = this.taskService.createdCount;
   readonly claimedCount = this.taskService.claimedCount;
   readonly completedCount = this.taskService.completedCount;
-
-  // Kiểm tra có đang áp dụng bộ lọc hay không
-  readonly isFiltered = computed(() => {
-    const f = this.filterModel();
-    return !!f.search.trim() || f.status !== 'ALL' || f.mine;
-  });
 
   // Helpers
   readonly getTaskStatusMeta = getTaskStatusMeta;
@@ -131,26 +121,18 @@ export class TaskListComponent implements OnInit {
   }
 
   resetFilters(): void {
-    this.filterModel.set({
-      search: '',
-      status: 'ALL',
-      mine: false,
-    });
+    this.filter.reset();
     this.search();
   }
 
   toggleMineOnly(val: boolean): void {
-    this.filterModel.update((m) => ({ ...m, mine: val }));
+    this.filter.patch({ mine: val });
     this.search();
   }
 
   onStatusFilterChange(status: string): void {
-    this.filterModel.update((m) => ({ ...m, status }));
+    this.filter.patch({ status });
     this.search();
-  }
-
-  toggleStats(): void {
-    this.isStatsOpen.set(!this.isStatsOpen());
   }
 
   // Drawer chi tiết

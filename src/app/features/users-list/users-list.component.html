@@ -1,176 +1,70 @@
 <div class="users-list-layout">
-  <!-- Page Header Title Area -->
-  <div class="page-title-bar">
-    <div class="title-info">
-      <h2>Quản lý Danh sách Người dùng</h2>
-      <p>Quản lý tài khoản, vai trò và phân quyền người dùng trong nền tảng BPMN & DMN.</p>
-    </div>
-
-    <div class="title-actions">
-      <button
-        class="btn btn-outline-stats"
-        [class.active]="isStatsOpen()"
-        (click)="toggleStats()"
-        title="Xem thống kê tổng quan"
-      >
-        <span
-          nz-icon
-          [nzType]="isStatsOpen() ? 'eye-invisible' : 'dashboard'"
-          nzTheme="outline"
-        ></span>
-        <span>{{ isStatsOpen() ? 'Ẩn thống kê' : 'Xem thống kê' }}</span>
-      </button>
-
-      <button
-        class="btn btn-user-glow"
-        [disabled]="!isAdmin()"
-        (click)="openCreateModal()"
-      >
-        <span nz-icon nzType="user-add" nzTheme="outline"></span>
-        <span>Thêm người dùng</span>
-      </button>
-    </div>
-  </div>
+  <app-page-header
+    variant="plain"
+    title="Quản lý Danh sách Người dùng"
+    description="Quản lý tài khoản, vai trò và phân quyền người dùng trong nền tảng BPMN & DMN."
+    [(statsOpen)]="isStatsOpen"
+  >
+    <button class="btn btn-user-glow" [disabled]="!isAdmin()" (click)="openCreateModal()">
+      <span nz-icon nzType="user-add" nzTheme="outline"></span>
+      <span>Thêm người dùng</span>
+    </button>
+  </app-page-header>
 
   <!-- Main Content View -->
   <main class="main-content">
     <div class="content-container">
-      <!-- Overview Stat Cards (Collapsible) -->
       @if (isStatsOpen()) {
         <section class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon total">
-              <span nz-icon nzType="team" nzTheme="outline"></span>
-            </div>
-            <div class="stat-info">
-              <span class="stat-label">Tổng số Người dùng</span>
-              <span class="stat-value">{{ totalCount() }}</span>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon active-users">
-              <span nz-icon nzType="check-circle" nzTheme="outline"></span>
-            </div>
-            <div class="stat-info">
-              <span class="stat-label">Đang hoạt động</span>
-              <span class="stat-value">{{ activeCount() }}</span>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon inactive-users">
-              <span nz-icon nzType="stop" nzTheme="outline"></span>
-            </div>
-            <div class="stat-info">
-              <span class="stat-label">Tạm khóa / Ngừng</span>
-              <span class="stat-value">{{ inactiveCount() }}</span>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon developer-users">
-              <span nz-icon nzType="code" nzTheme="outline"></span>
-            </div>
-            <div class="stat-info">
-              <span class="stat-label">Lập trình viên (Dev)</span>
-              <span class="stat-value">{{ developerCount() }}</span>
-            </div>
-          </div>
+          <app-stat-card icon="team" label="Tổng số Người dùng" [value]="totalCount()" />
+          <app-stat-card icon="check-circle" label="Đang hoạt động" [value]="activeCount()" tone="success" />
+          <app-stat-card icon="stop" label="Tạm khóa / Ngừng" [value]="inactiveCount()" tone="warning" />
+          <app-stat-card icon="code" label="Lập trình viên (Dev)" [value]="developerCount()" tone="info" />
         </section>
       }
 
       <!-- Table Section Card -->
       <section class="table-card">
-        <!-- Main Quick Toolbar -->
-        <div class="table-toolbar">
-          <div class="toolbar-left">
-            <!-- Quick Search Input -->
-            <div class="filter-field quick-search">
-              <nz-input-wrapper [nzAllowClear]="true">
-                <span nzInputPrefix>
-                  <span nz-icon nzType="search" class="filter-icon"></span>
-                </span>
-                <input
-                  type="text"
-                  nz-input
-                  placeholder="Tìm theo tên, username, email..."
-                  [ngModel]="filterModel().search"
-                  (ngModelChange)="filterModel.update((m) => ({ ...m, search: $event }))"
-                  (keyup.enter)="search()"
-                />
-              </nz-input-wrapper>
-            </div>
-
-            <!-- Quick Filter by Vai trò -->
-            <div class="filter-field quick-role">
-              <nz-select
-                [ngModel]="filterModel().role"
-                (ngModelChange)="onRoleFilterChange($event)"
-                class="filter-select"
-                nzPlaceHolder="Vai trò"
-              >
-                <nz-option nzValue="ALL" nzLabel="Tất cả vai trò"></nz-option>
-                <nz-option nzValue="ADMIN" nzLabel="Quản trị viên (Admin)"></nz-option>
-                <nz-option nzValue="DEVELOPER" nzLabel="Lập trình viên (Developer)"></nz-option>
-                <nz-option nzValue="MANAGER" nzLabel="Quản lý (Manager)"></nz-option>
-                <nz-option nzValue="DESIGNER" nzLabel="Thiết kế quy trình (Designer)"></nz-option>
-                <nz-option nzValue="VIEWER" nzLabel="Người xem (Viewer)"></nz-option>
-              </nz-select>
-            </div>
-
-            <!-- Quick Filter by Trạng thái -->
-            <div class="filter-field quick-status">
-              <nz-select
-                [ngModel]="filterModel().status"
-                (ngModelChange)="onStatusFilterChange($event)"
-                class="filter-select status-select"
-                nzPlaceHolder="Trạng thái"
-              >
-                <nz-option nzValue="ALL" nzLabel="Tất cả trạng thái"></nz-option>
-                <nz-option nzValue="ACTIVE" nzLabel="Đang hoạt động"></nz-option>
-                <nz-option nzValue="INACTIVE" nzLabel="Tạm dừng"></nz-option>
-                <nz-option nzValue="LOCKED" nzLabel="Đã khóa"></nz-option>
-              </nz-select>
-            </div>
-
-            <!-- Nút Tìm kiếm trigger -->
-            <button
-              class="btn-search-trigger"
-              (click)="search()"
-              [disabled]="isLoading()"
-              title="Tìm kiếm"
+        <app-filter-toolbar
+          placeholder="Tìm theo tên, username, email..."
+          [searchText]="filterModel().search"
+          (searchTextChange)="filter.patch({ search: $event })"
+          [filtered]="isFiltered()"
+          [loading]="isLoading()"
+          (searchSubmit)="search()"
+          (filtersReset)="resetFilters()"
+          (reload)="loadUsers()"
+        >
+          <div class="filter-field">
+            <nz-select
+              [ngModel]="filterModel().role"
+              (ngModelChange)="onRoleFilterChange($event)"
+              class="filter-select"
+              nzPlaceHolder="Vai trò"
             >
-              <span nz-icon nzType="search" nzTheme="outline"></span>
-              <span>Tìm kiếm</span>
-            </button>
-
-            <!-- Nút Đặt lại nhanh -->
-            @if (isFiltered()) {
-              <button
-                class="btn-reset-filter"
-                (click)="resetFilters()"
-                [disabled]="isLoading()"
-                title="Xóa tất cả bộ lọc"
-              >
-                <span nz-icon nzType="clear" nzTheme="outline"></span>
-                <span>Đặt lại</span>
-              </button>
-            }
+              <nz-option nzValue="ALL" nzLabel="Tất cả vai trò"></nz-option>
+              <nz-option nzValue="ADMIN" nzLabel="Quản trị viên (Admin)"></nz-option>
+              <nz-option nzValue="DEVELOPER" nzLabel="Lập trình viên (Developer)"></nz-option>
+              <nz-option nzValue="MANAGER" nzLabel="Quản lý (Manager)"></nz-option>
+              <nz-option nzValue="DESIGNER" nzLabel="Thiết kế quy trình (Designer)"></nz-option>
+              <nz-option nzValue="VIEWER" nzLabel="Người xem (Viewer)"></nz-option>
+            </nz-select>
           </div>
 
-          <div class="toolbar-right">
-            <button
-              class="btn-refresh"
-              (click)="loadUsers()"
-              [disabled]="isLoading()"
-              title="Tải lại danh sách"
+          <div class="filter-field">
+            <nz-select
+              [ngModel]="filterModel().status"
+              (ngModelChange)="onStatusFilterChange($event)"
+              class="filter-select"
+              nzPlaceHolder="Trạng thái"
             >
-              <span nz-icon nzType="reload" [nzSpin]="isLoading()"></span>
-              <span>Làm mới</span>
-            </button>
+              <nz-option nzValue="ALL" nzLabel="Tất cả trạng thái"></nz-option>
+              <nz-option nzValue="ACTIVE" nzLabel="Đang hoạt động"></nz-option>
+              <nz-option nzValue="INACTIVE" nzLabel="Tạm dừng"></nz-option>
+              <nz-option nzValue="LOCKED" nzLabel="Đã khóa"></nz-option>
+            </nz-select>
           </div>
-        </div>
+        </app-filter-toolbar>
 
         <!-- Data Table Area -->
         <div class="table-wrapper">

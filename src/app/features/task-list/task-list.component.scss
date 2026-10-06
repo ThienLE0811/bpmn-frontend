@@ -1,91 +1,11 @@
+@use 'list-page';
+
 .tasks-layout {
   display: flex;
   flex-direction: column;
   height: 100%;
   background-color: #f8fafc;
   overflow: hidden;
-}
-
-/* Page Header Title Bar */
-.page-title-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
-  flex-shrink: 0;
-
-  .title-info {
-    h2 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 700;
-      color: #0f172a;
-      letter-spacing: -0.01em;
-    }
-
-    p {
-      margin: 4px 0 0 0;
-      font-size: 13px;
-      color: #64748b;
-    }
-  }
-
-  .title-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-    .btn-outline-stats {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border-radius: 10px;
-      border: 1px solid #e2e8f0;
-      background: #ffffff;
-      color: #334155;
-      font-size: 13.5px;
-      font-weight: 500;
-      cursor: pointer;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-      transition: all 0.2s ease;
-
-      .anticon {
-        font-size: 15px;
-        color: #64748b;
-        transition: color 0.2s ease;
-      }
-
-      &:hover {
-        background: #f8fafc;
-        border-color: #cbd5e1;
-        color: #0f172a;
-        transform: translateY(-1px);
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
-
-        .anticon {
-          color: #2563eb;
-        }
-      }
-
-      &.active {
-        background: #eff6ff;
-        border-color: #2563eb;
-        color: #2563eb;
-        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
-
-        .anticon {
-          color: #2563eb;
-        }
-      }
-
-      &:active {
-        transform: translateY(0);
-      }
-    }
-  }
 }
 
 /* Main Content Area */
@@ -104,356 +24,51 @@
   }
 }
 
-/* Overview Stats Grid */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+/* Nút "Công việc của tôi" - được chiếu vào <app-filter-toolbar> nên phải để ở cấp ngoài cùng */
+.btn-mine-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 
-  @media (max-width: 1024px) {
-    grid-template-columns: repeat(2, 1fr);
+  .anticon {
+    font-size: 13px;
   }
 
-  @media (max-width: 640px) {
-    grid-template-columns: 1fr;
+  .toggle-check-icon {
+    font-size: 11px;
+    color: #2563eb;
   }
 
-  .stat-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  &:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f172a;
+  }
 
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
-    }
+  &.active {
+    border-color: #2563eb;
+    color: #2563eb;
+    background: #eff6ff;
+    font-weight: 600;
+  }
 
-    .stat-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      flex-shrink: 0;
-
-      &.total {
-        background: #eff6ff;
-        color: #2563eb;
-      }
-
-      &.pending {
-        background: #fef3c7;
-        color: #d97706;
-      }
-
-      &.in-progress {
-        background: #e0e7ff;
-        color: #4f46e5;
-      }
-
-      &.completed {
-        background: #d1fae5;
-        color: #059669;
-      }
-    }
-
-    .stat-info {
-      display: flex;
-      flex-direction: column;
-
-      .stat-label {
-        font-size: 13px;
-        font-weight: 500;
-        color: #64748b;
-      }
-
-      .stat-value {
-        font-size: 24px;
-        font-weight: 700;
-        color: #0f172a;
-        line-height: 1.2;
-        margin-top: 2px;
-      }
-    }
+  &:active {
+    transform: translateY(1px);
   }
 }
 
-/* Table Section Card */
 .table-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-
-  .table-toolbar {
-    padding: 12px 16px;
-    border-bottom: 1px solid #e2e8f0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-
-    .toolbar-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      flex: 1;
-
-      .filter-field {
-        &.quick-search {
-          width: 280px;
-          min-width: 200px;
-        }
-
-        &.quick-status {
-          width: 180px;
-        }
-
-        ::ng-deep .ant-input-affix-wrapper {
-          border-radius: 8px;
-          padding: 5px 10px;
-          border-color: #e2e8f0;
-          font-size: 13px;
-          transition: all 0.2s ease;
-
-          .filter-icon {
-            color: #94a3b8;
-            font-size: 14px;
-          }
-
-          &:hover {
-            border-color: #cbd5e1;
-          }
-
-          &:focus,
-          &.ant-input-affix-wrapper-focused {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-          }
-        }
-
-        .filter-select {
-          width: 100%;
-
-          ::ng-deep .ant-select-selector {
-            border-radius: 8px !important;
-            border-color: #e2e8f0 !important;
-            height: 34px !important;
-            display: flex;
-            align-items: center;
-            font-size: 13px;
-            color: #0f172a;
-            transition: all 0.2s ease;
-
-            .ant-select-selection-item {
-              line-height: 32px;
-            }
-          }
-
-          &:hover ::ng-deep .ant-select-selector {
-            border-color: #cbd5e1 !important;
-          }
-
-          &.ant-select-focused ::ng-deep .ant-select-selector {
-            border-color: #2563eb !important;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
-          }
-        }
-      }
-
-      .btn-mine-toggle {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        height: 34px;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-        background: #ffffff;
-        color: #64748b;
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-
-        .anticon {
-          font-size: 13px;
-        }
-
-        .toggle-check-icon {
-          font-size: 11px;
-          color: #2563eb;
-        }
-
-        &:hover {
-          background: #f8fafc;
-          border-color: #cbd5e1;
-          color: #0f172a;
-        }
-
-        &.active {
-          border-color: #2563eb;
-          color: #2563eb;
-          background: #eff6ff;
-          font-weight: 600;
-        }
-
-        &:active {
-          transform: translateY(1px);
-        }
-      }
-
-      .btn-search-trigger {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 14px;
-        height: 34px;
-        border-radius: 8px;
-        background: #2563eb;
-        color: #ffffff;
-        font-size: 13px;
-        font-weight: 600;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
-
-        .anticon {
-          font-size: 13px;
-        }
-
-        &:hover:not(:disabled) {
-          background: #1d4ed8;
-          transform: translateY(-1px);
-          box-shadow: 0 4px 10px rgba(37, 99, 235, 0.35);
-        }
-
-        &:active:not(:disabled) {
-          transform: translateY(0);
-        }
-
-        &:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-      }
-
-      .btn-reset-filter {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        height: 34px;
-        font-size: 12.5px;
-        font-weight: 500;
-        color: #ef4444;
-        background: #fef2f2;
-        border: 1px solid #fee2e2;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-
-        .anticon {
-          font-size: 13px;
-        }
-
-        &:hover:not(:disabled) {
-          background: #fef2f2;
-          border-color: #ef4444;
-          color: #dc2626;
-        }
-
-        &:active:not(:disabled) {
-          transform: translateY(1px);
-        }
-
-        &:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-      }
-    }
-
-    .toolbar-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-
-      .count-summary {
-        font-size: 13px;
-        color: #64748b;
-
-        strong {
-          color: #0f172a;
-          font-weight: 600;
-        }
-      }
-
-      .toolbar-divider {
-        width: 1px;
-        height: 20px;
-        background: #e2e8f0;
-      }
-
-      .btn-refresh {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 13px;
-        height: 34px;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        color: #64748b;
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-
-        .anticon {
-          font-size: 13.5px;
-          color: #64748b;
-          transition: color 0.2s ease;
-        }
-
-        &:hover:not(:disabled) {
-          background: #f8fafc;
-          border-color: #cbd5e1;
-          color: #0f172a;
-
-          .anticon {
-            color: #2563eb;
-          }
-        }
-
-        &:active:not(:disabled) {
-          transform: translateY(1px);
-        }
-
-        &:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-      }
-    }
-  }
-
   .table-wrapper {
     width: 100%;
     overflow-x: auto;

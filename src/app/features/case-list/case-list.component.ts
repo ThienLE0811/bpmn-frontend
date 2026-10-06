@@ -5,7 +5,6 @@ import { Router } from '@angular/router';
 
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzIconModule } from 'ng-zorro-antd/icon';
-import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
@@ -29,7 +28,14 @@ import {
   formatDisplayDateTime,
   copyToClipboard,
   sortByString,
+  createListFilter,
 } from '@shared/utils';
+import {
+  PageHeaderComponent,
+  StatCardComponent,
+  FilterToolbarComponent,
+  StatusPillComponent,
+} from '@shared/components/list-page';
 import { AvatarColorPipe, UserInitialsPipe, FormatDatePipe } from '@shared/pipes';
 import { TableAutoHeightDirective } from '@shared/directives';
 import { OperateViewerComponent } from '../operate/operate-viewer/operate-viewer.component';
@@ -48,7 +54,6 @@ export interface VariableRow {
     FormsModule,
     NzTableModule,
     NzIconModule,
-    NzInputModule,
     NzSelectModule,
     NzTagModule,
     NzDrawerModule,
@@ -64,6 +69,10 @@ export interface VariableRow {
     FormatDatePipe,
     OperateViewerComponent,
     DynamicFormRendererComponent,
+    PageHeaderComponent,
+    StatCardComponent,
+    FilterToolbarComponent,
+    StatusPillComponent,
   ],
   templateUrl: './case-list.component.html',
   styleUrl: './case-list.component.scss',
@@ -82,15 +91,9 @@ export class CaseListComponent implements OnInit {
   readonly selectedDrawerTab = signal<number>(0);
 
   // Bộ lọc
-  readonly filterModel = signal<{
-    search: string;
-    status: string;
-    processId: string;
-  }>({
-    search: '',
-    status: 'ALL',
-    processId: 'ALL',
-  });
+  readonly filter = createListFilter({ search: '', status: 'ALL', processId: 'ALL' });
+  readonly filterModel = this.filter.model;
+  readonly isFiltered = this.filter.isFiltered;
 
   // Modal khởi động Case mới & Biểu mẫu động
   readonly startProcessId = signal<string>('');
@@ -113,12 +116,6 @@ export class CaseListComponent implements OnInit {
   readonly totalCount = this.caseService.totalCount;
   readonly runningCount = this.caseService.runningCount;
   readonly completedCount = this.caseService.completedCount;
-
-  // Kiểm tra bộ lọc
-  readonly isFiltered = computed(() => {
-    const f = this.filterModel();
-    return !!f.search.trim() || f.status !== 'ALL' || f.processId !== 'ALL';
-  });
 
   // Chuyển đổi biến sang dạng bảng
   readonly selectedCaseVariables = computed<VariableRow[]>(() => {
@@ -176,21 +173,17 @@ export class CaseListComponent implements OnInit {
   }
 
   resetFilters(): void {
-    this.filterModel.set({
-      search: '',
-      status: 'ALL',
-      processId: 'ALL',
-    });
+    this.filter.reset();
     this.search();
   }
 
   onStatusFilterChange(status: string): void {
-    this.filterModel.update((m) => ({ ...m, status }));
+    this.filter.patch({ status });
     this.search();
   }
 
   onProcessFilterChange(processId: string): void {
-    this.filterModel.update((m) => ({ ...m, processId }));
+    this.filter.patch({ processId });
     this.search();
   }
 
@@ -204,10 +197,6 @@ export class CaseListComponent implements OnInit {
       page,
       size,
     });
-  }
-
-  toggleStats(): void {
-    this.isStatsOpen.set(!this.isStatsOpen());
   }
 
   // Khởi động case

@@ -1,0 +1,47 @@
+@mixin tone($bg, $text, $border, $dot) {
+  background: $bg;
+  color: $text;
+  border-color: $border;
+
+  .dot {
+    background: $dot;
+  }
+}
+
+:host {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+:host(.tone-info) {
+  @include tone(#eff6ff, #2563eb, #bfdbfe, #3b82f6);
+}
+
+:host(.tone-success) {
+  @include tone(#ecfdf5, #059669, #a7f3d0, #10b981);
+}
+
+:host(.tone-warning) {
+  @include tone(#fffbeb, #d97706, #fde68a, #f59e0b);
+}
+
+:host(.tone-danger) {
+  @include tone(#fef2f2, #dc2626, #fecaca, #ef4444);
+}
+
+:host(.tone-neutral) {
+  @include tone(#f1f5f9, #64748b, #cbd5e1, #94a3b8);
+}
