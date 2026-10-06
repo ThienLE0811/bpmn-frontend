@@ -89,7 +89,7 @@
             </thead>
             <tbody>
               @for (task of taskTable.data; track task.id) {
-                <tr class="table-row" (click)="openDetailDrawer(task)">
+                <tr class="table-row" (click)="detailDrawer.open(task)">
                   <!-- Task Name & Node ID -->
                   <td>
                     <div class="task-info-cell">
@@ -183,7 +183,7 @@
                         </span>
                       } @else {
                         <!-- Nút Nhận việc (Claim) - Khi chưa nhận -->
-                        @if (!task.claimedBy || task.status === 'CREATED') {
+                        @if (canClaim(task)) {
                           <button
                             class="btn-action btn-claim"
                             (click)="claimTask(task, $event)"
@@ -197,7 +197,7 @@
                         <!-- Nút Hoàn thành (Complete) -->
                         <button
                           class="btn-action btn-complete"
-                          (click)="openCompleteModal(task, $event)"
+                          (click)="$event.stopPropagation(); completeModal.open(task)"
                           nz-tooltip
                           nzTooltipTitle="Hoàn thành công việc & Chuyển tiếp quy trình"
                         >
@@ -208,7 +208,7 @@
                       <!-- Nút Xem chi tiết -->
                       <button
                         class="btn-action btn-detail"
-                        (click)="openDetailDrawer(task)"
+                        (click)="detailDrawer.open(task)"
                         nz-tooltip
                         nzTooltipTitle="Xem chi tiết công việc"
                       >
@@ -249,276 +249,5 @@
   >
 </ng-template>
 
-<!-- Detail Drawer -->
-<nz-drawer
-  [nzVisible]="isDrawerOpen()"
-  [nzWidth]="540"
-  [nzTitle]="drawerTitleTpl"
-  [nzFooter]="drawerFooterTpl"
-  (nzOnClose)="closeDetailDrawer()"
->
-  <ng-container *nzDrawerContent>
-    @if (selectedTask(); as task) {
-      <div class="task-detail-content">
-        <!-- Header status banner -->
-        @let meta = getTaskStatusMeta(task.status);
-        <div class="detail-status-banner" [style.border-left-color]="meta.color">
-          <div class="status-left">
-            <span class="status-label">Trạng thái hiện tại:</span>
-            <nz-tag [nzColor]="meta.tagColor" class="status-tag">
-              <span nz-icon [nzType]="meta.icon"></span>
-              {{ meta.label }}
-            </nz-tag>
-          </div>
-          <span class="task-id-code">{{ task.id }}</span>
-        </div>
-
-        <!-- Section: General Info -->
-        <div class="detail-section">
-          <h4 class="section-heading">Thông tin Công việc</h4>
-          <div class="prop-list">
-            <div class="prop-item">
-              <span class="prop-label">Tên tác vụ:</span>
-              <span class="prop-value strong">{{ task.name }}</span>
-            </div>
-            <div class="prop-item">
-              <span class="prop-label">BPMN Node ID:</span>
-              <span class="prop-value">
-                <span class="node-badge">
-                  <span nz-icon nzType="apartment"></span>
-                  {{ task.nodeId }}
-                </span>
-              </span>
-            </div>
-            <div class="prop-item">
-              <span class="prop-label">Mô tả công việc:</span>
-              <span class="prop-value desc-text">
-                {{ task.description || 'Không có mô tả chi tiết.' }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Section: Process Details -->
-        <div class="detail-section">
-          <h4 class="section-heading">Phiên Quy trình (Process Instance)</h4>
-          <div class="prop-list">
-            <div class="prop-item">
-              <span class="prop-label">Process Instance ID:</span>
-              <span class="prop-value font-mono">
-                {{ task.processInstanceId }}
-                <button
-                  class="btn-copy-mini"
-                  (click)="copyToClipboard(task.processInstanceId)"
-                  title="Sao chép"
-                >
-                  <span nz-icon nzType="copy"></span>
-                </button>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Section: Execution & Assignment -->
-        <div class="detail-section">
-          <h4 class="section-heading">Phân công & Tiếp nhận</h4>
-          <div class="prop-list">
-            <div class="prop-item">
-              <span class="prop-label">Người tiếp nhận:</span>
-              <span class="prop-value">
-                @if (task.claimedBy) {
-                  <span class="user-chip">
-                    <span nz-icon nzType="user"></span>
-                    @{{ task.claimedBy }}
-                  </span>
-                } @else {
-                  <span class="text-muted">Chưa có người tiếp nhận</span>
-                }
-              </span>
-            </div>
-            @if (task.claimedAt) {
-              <div class="prop-item">
-                <span class="prop-label">Thời điểm nhận việc:</span>
-                <span class="prop-value">{{ task.claimedAt }}</span>
-              </div>
-            }
-            @if (task.completedBy) {
-              <div class="prop-item">
-                <span class="prop-label">Người hoàn thành:</span>
-                <span class="prop-value">
-                  <span class="user-chip completed-chip">
-                    <span nz-icon nzType="check"></span>
-                    @{{ task.completedBy }}
-                  </span>
-                </span>
-              </div>
-            }
-            @if (task.completedAt) {
-              <div class="prop-item">
-                <span class="prop-label">Thời điểm hoàn thành:</span>
-                <span class="prop-value">{{ task.completedAt }}</span>
-              </div>
-            }
-          </div>
-        </div>
-
-        <!-- Section: Timeline -->
-        <div class="detail-section">
-          <h4 class="section-heading">Tiến trình Xử lý</h4>
-          <div class="task-timeline">
-            <!-- Step 1: Created -->
-            <div class="timeline-step completed">
-              <div class="step-marker">
-                <span nz-icon nzType="check"></span>
-              </div>
-              <div class="step-content">
-                <div class="step-title">Khởi tạo tác vụ</div>
-                <div class="step-time">{{ task.createdAt | formatDate }}</div>
-              </div>
-            </div>
-
-            <!-- Step 2: Claimed -->
-            <div
-              class="timeline-step"
-              [class.completed]="!!task.claimedBy"
-              [class.active]="!!task.claimedBy && task.status !== 'COMPLETED'"
-            >
-              <div class="step-marker">
-                @if (task.claimedBy) {
-                  <span nz-icon nzType="check"></span>
-                } @else {
-                  <span nz-icon nzType="clock-circle"></span>
-                }
-              </div>
-              <div class="step-content">
-                <div class="step-title">
-                  {{
-                    task.claimedBy ? 'Đã tiếp nhận bởi @' + task.claimedBy : 'Chờ người tiếp nhận'
-                  }}
-                </div>
-                @if (task.claimedAt) {
-                  <div class="step-time">{{ task.claimedAt }}</div>
-                }
-              </div>
-            </div>
-
-            <!-- Step 3: Completed -->
-            <div class="timeline-step" [class.completed]="task.status === 'COMPLETED'">
-              <div class="step-marker">
-                @if (task.status === 'COMPLETED') {
-                  <span nz-icon nzType="check"></span>
-                } @else {
-                  <span nz-icon nzType="forward"></span>
-                }
-              </div>
-              <div class="step-content">
-                <div class="step-title">
-                  {{
-                    task.status === 'COMPLETED'
-                      ? 'Đã hoàn thành & Chuyển tiếp Engine'
-                      : 'Chờ hoàn tất'
-                  }}
-                </div>
-                @if (task.completedAt) {
-                  <div class="step-time">{{ task.completedAt }}</div>
-                }
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    }
-  </ng-container>
-</nz-drawer>
-
-<!-- Drawer Title Template -->
-<ng-template #drawerTitleTpl>
-  <div class="drawer-header-title">
-    <span nz-icon nzType="check-square" class="header-icon"></span>
-    <span>Chi tiết Tác vụ Người dùng</span>
-  </div>
-</ng-template>
-
-<!-- Drawer Footer Template -->
-<ng-template #drawerFooterTpl>
-  @if (selectedTask(); as task) {
-    <div class="drawer-footer-actions">
-      @if (task.status !== 'COMPLETED' && (!task.claimedBy || task.status === 'CREATED')) {
-        <button class="btn btn-claim-drawer" (click)="claimTask(task)">
-          <span nz-icon nzType="check-square"></span>
-          <span>Nhận việc</span>
-        </button>
-      }
-
-      @if (task.status !== 'COMPLETED') {
-        <button class="btn btn-complete-drawer" (click)="openCompleteModal(task)">
-          <span nz-icon nzType="check-circle"></span>
-          <span>Hoàn thành công việc</span>
-        </button>
-      }
-
-      <button class="btn btn-close-drawer" (click)="closeDetailDrawer()">
-        <span>Đóng</span>
-      </button>
-    </div>
-  }
-</ng-template>
-
-<!-- Complete Task Modal with Process Variables & Dynamic Form -->
-<nz-modal
-  [nzVisible]="isCompleteModalVisible()"
-  [nzTitle]="modalTitleTpl"
-  [nzFooter]="modalFooterTpl"
-  (nzOnCancel)="closeCompleteModal()"
-  [nzWidth]="700"
->
-  <ng-container *nzModalContent>
-    @if (selectedTask(); as task) {
-      <div class="complete-modal-body">
-        <div class="advance-engine-alert">
-          <div class="alert-icon">
-            <span nz-icon nzType="rocket" nzTheme="outline"></span>
-          </div>
-          <div class="alert-text">
-            <strong>Kích hoạt chuyển tiếp quy trình BPMN</strong>
-            <p>
-              Khi hoàn tất tác vụ <strong>{{ task.name }}</strong> (Node: <code>{{ task.nodeId }}</code>), các biến dữ liệu dưới đây sẽ được lưu vào phiên thực thi và engine tự động điều phối sang bước kế tiếp.
-            </p>
-          </div>
-        </div>
-
-        <app-dynamic-form-renderer
-          [schema]="selectedTaskFormSchema()"
-          [initialValues]="taskFormVariables()"
-          (valuesChange)="onFormValuesChange($event)"
-          (validityChange)="isFormValid.set($event)"
-        ></app-dynamic-form-renderer>
-      </div>
-    }
-  </ng-container>
-</nz-modal>
-
-<!-- Modal Title Template -->
-<ng-template #modalTitleTpl>
-  <div class="modal-header-title">
-    <span nz-icon nzType="check-circle" class="title-icon"></span>
-    <span>Xác nhận Hoàn thành Công việc</span>
-  </div>
-</ng-template>
-
-<!-- Modal Footer Template -->
-<ng-template #modalFooterTpl>
-  <div class="modal-footer-actions">
-    <button class="btn btn-cancel" (click)="closeCompleteModal()" [disabled]="isSubmitting()">
-      Hủy bỏ
-    </button>
-    <button
-      class="btn btn-confirm-complete"
-      (click)="submitCompleteTask()"
-      [disabled]="isSubmitting()"
-    >
-      <span nz-icon [nzType]="isSubmitting() ? 'loading' : 'check'"></span>
-      <span>Xác nhận & Chuyển tiếp Engine</span>
-    </button>
-  </div>
-</ng-template>
+<app-task-detail-drawer #detailDrawer (completeRequested)="completeModal.open($event)" />
+<app-task-complete-modal #completeModal />

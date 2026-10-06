@@ -5,7 +5,7 @@
     description="Quản lý tài khoản, vai trò và phân quyền người dùng trong nền tảng BPMN & DMN."
     [(statsOpen)]="isStatsOpen"
   >
-    <button class="btn btn-user-glow" [disabled]="!isAdmin()" (click)="openCreateModal()">
+    <button class="btn btn-user-glow" [disabled]="!isAdmin()" (click)="userFormModal.openCreate()">
       <span nz-icon nzType="user-add" nzTheme="outline"></span>
       <span>Thêm người dùng</span>
     </button>
@@ -98,7 +98,7 @@
             </thead>
             <tbody>
               @for (user of userTable.data; track user.id) {
-                <tr class="table-row" (click)="openDetailDrawer(user)">
+                <tr class="table-row" (click)="detailDrawer.open(user)">
                   <!-- User Name & Avatar -->
                   <td>
                     <div class="user-cell">
@@ -174,7 +174,7 @@
 
                       <nz-dropdown-menu #actionMenu="nzDropdownMenu">
                         <ul nz-menu class="custom-dropdown-menu">
-                          <li nz-menu-item (click)="openDetailDrawer(user)">
+                          <li nz-menu-item (click)="detailDrawer.open(user)">
                             <span
                               nz-icon
                               nzType="eye"
@@ -186,8 +186,8 @@
 
                           <li
                             nz-menu-item
-                            [nzDisabled]="!canEditUser(user)"
-                            (click)="canEditUser(user) && openEditModal(user, $event)"
+                            [nzDisabled]="!canEdit(user)"
+                            (click)="canEdit(user) && userFormModal.openEdit(user)"
                           >
                             <span
                               nz-icon
@@ -216,7 +216,7 @@
 
                           <li nz-menu-divider></li>
 
-                          @if (canDeleteUser(user)) {
+                          @if (canDelete(user)) {
                             <li
                               nz-menu-item
                               nzDanger
@@ -266,301 +266,10 @@
     </div>
   </main>
 
-  <!-- Create / Edit User Modal -->
-  <nz-modal
-    [nzVisible]="isModalOpen()"
-    [nzTitle]="modalTitleTemplate"
-    [nzContent]="modalContentTemplate"
-    [nzFooter]="modalFooterTemplate"
-    (nzOnCancel)="closeModal()"
-    [nzMaskClosable]="!isSubmitting()"
-    [nzClosable]="!isSubmitting()"
-    [nzWidth]="560"
-    [nzCentered]="true"
-  >
-    <ng-template #modalTitleTemplate>
-      <div class="modal-header-custom">
-        <span nz-icon [nzType]="selectedUser() ? 'edit' : 'user-add'" nzTheme="outline"></span>
-        <span>{{ selectedUser() ? 'Cập nhật Thông tin Người dùng' : 'Thêm Người dùng Mới' }}</span>
-      </div>
-    </ng-template>
-
-    <ng-template #modalContentTemplate>
-      <div class="user-form-container">
-        <div class="form-row two-cols">
-          <div class="form-group">
-            <label class="form-label required">Tên đăng nhập (Username)</label>
-            <nz-input-wrapper>
-              <span nzInputPrefix><span nz-icon nzType="user"></span></span>
-              <input
-                type="text"
-                nz-input
-                placeholder="vd: thienlv"
-                [readOnly]="!!selectedUser() || isSubmitting()"
-                [formField]="userForm.username"
-              />
-            </nz-input-wrapper>
-            @if (userForm.username().touched() && userForm.username().invalid()) {
-              <div class="form-error-msg">
-                @for (err of userForm.username().errors(); track err.message) {
-                  <span>{{ err.message }}</span>
-                }
-              </div>
-            }
-          </div>
-
-          <div class="form-group">
-            <label class="form-label required">Họ và tên</label>
-            <nz-input-wrapper>
-              <span nzInputPrefix><span nz-icon nzType="idcard"></span></span>
-              <input
-                type="text"
-                nz-input
-                placeholder="vd: Le Van Thien"
-                [readOnly]="isSubmitting()"
-                [formField]="userForm.fullName"
-              />
-            </nz-input-wrapper>
-            @if (userForm.fullName().touched() && userForm.fullName().invalid()) {
-              <div class="form-error-msg">
-                @for (err of userForm.fullName().errors(); track err.message) {
-                  <span>{{ err.message }}</span>
-                }
-              </div>
-            }
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label required">Email</label>
-          <nz-input-wrapper>
-            <span nzInputPrefix><span nz-icon nzType="mail"></span></span>
-            <input
-              type="email"
-              nz-input
-              placeholder="vd: thienlv@paraline.io"
-              [readOnly]="isSubmitting()"
-              [formField]="userForm.email"
-            />
-          </nz-input-wrapper>
-          @if (userForm.email().touched() && userForm.email().invalid()) {
-            <div class="form-error-msg">
-              @for (err of userForm.email().errors(); track err.message) {
-                <span>{{ err.message }}</span>
-              }
-            </div>
-          }
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" [class.required]="!selectedUser()">
-            {{ selectedUser() ? 'Mật khẩu mới (Để trống nếu không đổi)' : 'Mật khẩu' }}
-          </label>
-          <nz-input-wrapper>
-            <span nzInputPrefix><span nz-icon nzType="lock"></span></span>
-            <input
-              [type]="passwordVisible() ? 'text' : 'password'"
-              nz-input
-              [placeholder]="
-                selectedUser()
-                  ? 'Nhập mật khẩu mới nếu muốn đổi'
-                  : 'Nhập mật khẩu (tối thiểu 3 ký tự)'
-              "
-              [readOnly]="isSubmitting()"
-              [formField]="userForm.password"
-            />
-            <span nzInputSuffix>
-              <button
-                type="button"
-                class="password-toggle-btn"
-                (click)="togglePasswordVisibility()"
-                tabindex="-1"
-                [title]="passwordVisible() ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'"
-              >
-                <span
-                  nz-icon
-                  [nzType]="passwordVisible() ? 'eye-invisible' : 'eye'"
-                  nzTheme="outline"
-                ></span>
-              </button>
-            </span>
-          </nz-input-wrapper>
-          @if (passwordError()) {
-            <div class="form-error-msg">
-              <span>{{ passwordError() }}</span>
-            </div>
-          }
-        </div>
-
-        <div class="form-row two-cols">
-          <div class="form-group">
-            <label class="form-label required">Vai trò hệ thống</label>
-            <nz-select
-              [formField]="userForm.role"
-              class="form-select"
-              [nzDisabled]="isSubmitting() || (!isAdmin() && !!selectedUser())"
-            >
-              <nz-option nzValue="ADMIN" nzLabel="Quản trị viên (ADMIN)"></nz-option>
-              <nz-option nzValue="DEVELOPER" nzLabel="Lập trình viên (DEVELOPER)"></nz-option>
-              <nz-option nzValue="MANAGER" nzLabel="Quản lý (MANAGER)"></nz-option>
-              <nz-option nzValue="DESIGNER" nzLabel="Thiết kế quy trình (DESIGNER)"></nz-option>
-              <nz-option nzValue="VIEWER" nzLabel="Người xem (VIEWER)"></nz-option>
-            </nz-select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label required">Trạng thái tài khoản</label>
-            <nz-select
-              [formField]="userForm.status"
-              class="form-select"
-              [nzDisabled]="isSubmitting() || (!isAdmin() && !!selectedUser())"
-            >
-              <nz-option nzValue="ACTIVE" nzLabel="Đang hoạt động (ACTIVE)"></nz-option>
-              <nz-option nzValue="INACTIVE" nzLabel="Tạm dừng (INACTIVE)"></nz-option>
-              <nz-option nzValue="LOCKED" nzLabel="Đã khóa (LOCKED)"></nz-option>
-            </nz-select>
-          </div>
-        </div>
-      </div>
-    </ng-template>
-
-    <ng-template #modalFooterTemplate>
-      <div class="modal-footer-custom">
-        <button class="btn btn-outline" (click)="closeModal()" [disabled]="isSubmitting()">
-          Hủy bỏ
-        </button>
-        <button class="btn btn-primary" (click)="saveUser()" [disabled]="isSubmitting()">
-          @if (isSubmitting()) {
-            <span nz-icon nzType="loading" nzTheme="outline"></span>
-            <span>Đang xử lý...</span>
-          } @else {
-            <span nz-icon nzType="save" nzTheme="outline"></span>
-            <span>{{ selectedUser() ? 'Lưu thay đổi' : 'Tạo người dùng' }}</span>
-          }
-        </button>
-      </div>
-    </ng-template>
-  </nz-modal>
-
-  <!-- User Detail Drawer -->
-  <nz-drawer
-    [nzVisible]="isDetailDrawerOpen()"
-    nzPlacement="right"
-    [nzWidth]="420"
-    nzTitle="Hồ sơ Chi tiết Người dùng"
-    (nzOnClose)="closeDetailDrawer()"
-  >
-    <ng-container *nzDrawerContent>
-      @if (detailUser(); as user) {
-        <div class="user-drawer-content">
-          <!-- Profile Card -->
-          <div class="drawer-profile-card">
-            <div class="drawer-avatar" [style.background]="user.fullName | avatarColor">
-              {{ user.fullName | userInitials }}
-            </div>
-            <h3 class="drawer-name">{{ user.fullName }}</h3>
-            <span class="drawer-username">@{{ user.username }}</span>
-
-            <div class="drawer-badges">
-              @let roleInfo = getRoleBadgeInfo(user.role);
-              <div [class]="roleInfo.class">
-                <span nz-icon [nzType]="roleInfo.icon" nzTheme="outline"></span>
-                <span>{{ roleInfo.label }}</span>
-              </div>
-
-              @let statusInfo = getStatusBadgeInfo(user.status);
-              <div [class]="statusInfo.class">
-                <span class="status-dot"></span>
-                <span>{{ statusInfo.label }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Info Details List -->
-          <div class="drawer-section">
-            <h4 class="section-title">Thông tin tài khoản</h4>
-
-            <div class="info-item">
-              <span class="info-label"> <span nz-icon nzType="idcard"></span> Mã người dùng: </span>
-              <span class="info-value font-mono">{{ user.id }}</span>
-            </div>
-
-            <div class="info-item">
-              <span class="info-label"> <span nz-icon nzType="user"></span> Tên đăng nhập: </span>
-              <span class="info-value font-mono">&#64;{{ user.username }}</span>
-            </div>
-
-            <div class="info-item">
-              <span class="info-label"> <span nz-icon nzType="mail"></span> Email: </span>
-              <span class="info-value">{{ user.email }}</span>
-            </div>
-
-            <div class="info-item">
-              <span class="info-label"> <span nz-icon nzType="safety"></span> Vai trò: </span>
-              <span class="info-value">{{ roleInfo.label }}</span>
-            </div>
-
-            <div class="info-item">
-              <span class="info-label">
-                <span nz-icon nzType="check-circle"></span> Trạng thái:
-              </span>
-              <span class="info-value">{{ statusInfo.label }}</span>
-            </div>
-          </div>
-
-          <!-- System Details -->
-          <div class="drawer-section">
-            <h4 class="section-title">Nhật ký & Thời gian</h4>
-
-            <div class="info-item">
-              <span class="info-label">
-                <span nz-icon nzType="calendar"></span> Ngày tạo tài khoản:
-              </span>
-              <span class="info-value font-mono">{{ user.createdAt | formatDate }}</span>
-            </div>
-
-            <div class="info-item">
-              <span class="info-label">
-                <span nz-icon nzType="sync"></span> Cập nhật lần cuối:
-              </span>
-              <span class="info-value font-mono">{{ user.updatedAt | formatDate }}</span>
-            </div>
-          </div>
-
-          <!-- Drawer Actions -->
-          <div class="drawer-footer-actions">
-            <button
-              class="btn btn-outline full-width"
-              [disabled]="!canEditUser(user)"
-              (click)="openEditModal(user)"
-            >
-              <span nz-icon nzType="edit"></span>
-              <span>Chỉnh sửa thông tin</span>
-            </button>
-
-            @if (canDeleteUser(user)) {
-              <button
-                class="btn btn-danger-outline full-width"
-                nz-popconfirm
-                nzPopconfirmTitle="Bạn có chắc chắn muốn xóa tài khoản này không?"
-                nzOkText="Xóa tài khoản"
-                nzOkDanger
-                nzCancelText="Hủy"
-                nzPopconfirmPlacement="top"
-                (nzOnConfirm)="deleteUser(user)"
-              >
-                <span nz-icon nzType="delete"></span>
-                <span>Xóa tài khoản</span>
-              </button>
-            } @else {
-              <button class="btn btn-danger-outline full-width" disabled>
-                <span nz-icon nzType="delete"></span>
-                <span>Xóa tài khoản</span>
-              </button>
-            }
-          </div>
-        </div>
-      }
-    </ng-container>
-  </nz-drawer>
+  <app-user-form-modal #userFormModal />
+  <app-user-detail-drawer
+    #detailDrawer
+    (editRequested)="userFormModal.openEdit($event)"
+    (deleteRequested)="deleteUser($event)"
+  />
 </div>

@@ -5,21 +5,20 @@ import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzTagModule } from 'ng-zorro-antd/tag';
-import { NzDrawerModule } from 'ng-zorro-antd/drawer';
-import { NzModalModule } from 'ng-zorro-antd/modal';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { NzMessageService } from 'ng-zorro-antd/message';
 
-import { TaskService, FormSchemaService } from '@core/services';
-import { TaskResponse, getTaskStatusMeta, FormDefinition } from '@core/models';
+import { TaskService } from '@core/services';
+import { TaskResponse, canClaimTask, getTaskStatusMeta } from '@core/models';
 import { TableAutoHeightDirective } from '@shared/directives';
-import { DynamicFormRendererComponent } from '@shared/components/dynamic-form-renderer/dynamic-form-renderer.component';
 import { copyToClipboard, sortByString, sortByDate, createListFilter } from '@shared/utils';
 import {
   PageHeaderComponent,
   StatCardComponent,
   FilterToolbarComponent,
 } from '@shared/components/list-page';
+import { TaskDetailDrawerComponent } from './components/task-detail-drawer/task-detail-drawer.component';
+import { TaskCompleteModalComponent } from './components/task-complete-modal/task-complete-modal.component';
 import { AvatarColorPipe, UserInitialsPipe, FormatDatePipe } from '@shared/pipes';
 
 @Component({
@@ -32,37 +31,26 @@ import { AvatarColorPipe, UserInitialsPipe, FormatDatePipe } from '@shared/pipes
     NzIconModule,
     NzSelectModule,
     NzTagModule,
-    NzDrawerModule,
-    NzModalModule,
     NzTooltipModule,
     TableAutoHeightDirective,
     AvatarColorPipe,
     UserInitialsPipe,
     FormatDatePipe,
-    DynamicFormRendererComponent,
     PageHeaderComponent,
     StatCardComponent,
     FilterToolbarComponent,
+    TaskDetailDrawerComponent,
+    TaskCompleteModalComponent,
   ],
   templateUrl: './task-list.component.html',
   styleUrl: './task-list.component.scss',
 })
 export class TaskListComponent implements OnInit {
   protected readonly taskService = inject(TaskService);
-  protected readonly formSchemaService = inject(FormSchemaService);
   private readonly message = inject(NzMessageService);
 
   // Trạng thái UI
   readonly isStatsOpen = signal<boolean>(true);
-  readonly isDrawerOpen = signal<boolean>(false);
-  readonly isCompleteModalVisible = signal<boolean>(false);
-  readonly isSubmitting = signal<boolean>(false);
-
-  // Dữ liệu chọn & Biểu mẫu động
-  readonly selectedTask = signal<TaskResponse | null>(null);
-  readonly selectedTaskFormSchema = signal<FormDefinition | null>(null);
-  readonly taskFormVariables = signal<Record<string, unknown>>({});
-  readonly isFormValid = signal<boolean>(true);
 
   // Bộ lọc
   readonly filter = createListFilter({ search: '', status: 'ALL', mine: false });
@@ -85,6 +73,7 @@ export class TaskListComponent implements OnInit {
 
   // Helpers
   readonly getTaskStatusMeta = getTaskStatusMeta;
+  readonly canClaim = canClaimTask;
 
   ngOnInit(): void {
     this.loadTasks();
@@ -135,78 +124,11 @@ export class TaskListComponent implements OnInit {
     this.search();
   }
 
-  // Drawer chi tiết
-  openDetailDrawer(task: TaskResponse): void {
-    this.selectedTask.set(task);
-    this.isDrawerOpen.set(true);
-  }
-
-  closeDetailDrawer(): void {
-    this.isDrawerOpen.set(false);
-  }
-
   // Claim Task
   claimTask(task: TaskResponse, event?: Event): void {
     if (event) event.stopPropagation();
     // Lỗi đã được TaskService hiển thị - chỉ cần nuốt để không thành unhandled error
     this.taskService.claimTask(task.id).subscribe({ error: () => undefined });
-  }
-
-  // Complete Task Modal
-  openCompleteModal(task: TaskResponse, event?: Event): void {
-    if (event) event.stopPropagation();
-    this.selectedTask.set(task);
-
-    // Xác định Form thích hợp cho task
-    const schema = this.formSchemaService.getFormForTask(
-      task.nodeId,
-      undefined,
-      task.processInstanceId
-    );
-    this.selectedTaskFormSchema.set(schema);
-
-    const initVals = this.formSchemaService.extractFormValues(schema, {
-      comment: `Hoàn thành tác vụ ${task.name}`,
-      approved: true,
-    });
-    this.taskFormVariables.set(initVals);
-    this.isFormValid.set(true);
-    this.isCompleteModalVisible.set(true);
-  }
-
-  onFormValuesChange(vals: Record<string, unknown>): void {
-    this.taskFormVariables.set(vals);
-  }
-
-  closeCompleteModal(): void {
-    this.isCompleteModalVisible.set(false);
-  }
-
-  submitCompleteTask(): void {
-    const task = this.selectedTask();
-    if (!task) return;
-
-    if (!this.isFormValid()) {
-      this.message.warning('Dữ liệu biểu mẫu chưa hợp lệ, vui lòng kiểm tra lại trước khi hoàn tất.');
-      return;
-    }
-
-    const variables = this.taskFormVariables();
-
-    this.isSubmitting.set(true);
-    this.taskService.completeTask(task.id, variables).subscribe({
-      next: (completed) => {
-        this.isSubmitting.set(false);
-        this.closeCompleteModal();
-        if (this.isDrawerOpen()) {
-          // Cập nhật lại task đang xem trong drawer bằng dữ liệu backend trả về
-          this.selectedTask.set(completed);
-        }
-      },
-      error: () => {
-        this.isSubmitting.set(false);
-      },
-    });
   }
 
   copyToClipboard(text: string, event?: Event): void {

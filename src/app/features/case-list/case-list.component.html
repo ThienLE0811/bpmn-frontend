@@ -20,7 +20,7 @@
       <span>Làm mới</span>
     </button>
 
-    <button class="btn btn-primary-start" (click)="openStartModal()" title="Khởi động Case mới">
+    <button class="btn btn-primary-start" (click)="startModal.open()" title="Khởi động Case mới">
       <span nz-icon nzType="play-circle" nzTheme="fill"></span>
       <span>Khởi động Case mới</span>
     </button>
@@ -142,7 +142,7 @@
             </thead>
             <tbody>
               @for (item of casesTable.data; track item.id) {
-                <tr class="table-row" (click)="openDetailDrawer(item)">
+                <tr class="table-row" (click)="detailDrawer.open(item)">
                   <!-- Mã Case -->
                   <td>
                     <div class="code-badge-wrapper">
@@ -261,7 +261,7 @@
                     <div class="action-btns">
                       <button
                         class="btn-action view"
-                        (click)="openDetailDrawer(item)"
+                        (click)="detailDrawer.open(item)"
                         nz-tooltip
                         nzTooltipTitle="Xem chi tiết Case"
                       >
@@ -295,7 +295,7 @@
                     <span>Đặt lại bộ lọc</span>
                   </button>
                 } @else {
-                  <button class="btn-empty-start" (click)="openStartModal()">
+                  <button class="btn-empty-start" (click)="startModal.open()">
                     <span nz-icon nzType="play-circle" nzTheme="fill"></span>
                     <span>Khởi động Case ngay</span>
                   </button>
@@ -313,335 +313,6 @@
     <span class="table-total-text">Tổng cộng <strong>{{ total }}</strong> hồ sơ</span>
   </ng-template>
 
-  <!-- Modal Khởi động Case Mới -->
-  <nz-modal
-    [nzVisible]="isStartModalVisible()"
-    nzTitle="Khởi động Hồ sơ Vụ việc (Start Process Instance)"
-    (nzOnCancel)="closeStartModal()"
-    (nzOnOk)="submitStartCase()"
-    [nzOkLoading]="isStarting()"
-    nzOkText="Khởi động ngay"
-    nzCancelText="Hủy bỏ"
-    [nzWidth]="740"
-  >
-    <ng-container *nzModalContent>
-      <div class="start-modal-form">
-        <!-- Process Selector -->
-        <div class="form-group">
-          <label class="form-label required">
-            <span nz-icon nzType="deployment-unit"></span>
-            <span>Chọn Quy trình BPMN</span>
-          </label>
-          <nz-select
-            [ngModel]="startProcessId()"
-            (ngModelChange)="onStartProcessChange($event)"
-            nzPlaceHolder="-- Chọn quy trình cần kích hoạt --"
-            [nzShowSearch]="true"
-            style="width: 100%"
-          >
-            @for (proc of processes(); track proc.id) {
-              <nz-option
-                [nzValue]="proc.id"
-                [nzLabel]="proc.name + ' (' + proc.processKey + ' - v' + proc.version + ')'"
-              ></nz-option>
-            }
-          </nz-select>
-          <p class="form-hint">
-            Hệ thống sẽ nạp sơ đồ BPMN tương ứng và tự động cấu hình Biểu mẫu khởi chạy bên dưới.
-          </p>
-        </div>
-
-        <!-- Initial Variables Dynamic Form & Sample Pills -->
-        <div class="form-group">
-          <div class="label-with-actions">
-            <label class="form-label">
-              <span nz-icon nzType="form"></span>
-              <span>Biểu mẫu Khởi chạy & Biến đầu vào</span>
-            </label>
-            <div class="sample-pills">
-              <span class="sample-intro">Mẫu quy trình nhanh:</span>
-              <button
-                type="button"
-                class="pill-btn"
-                (click)="applySampleVariables('order')"
-              >
-                Đơn hàng
-              </button>
-              <button
-                type="button"
-                class="pill-btn"
-                (click)="applySampleVariables('loan')"
-              >
-                Vay vốn
-              </button>
-              <button
-                type="button"
-                class="pill-btn"
-                (click)="applySampleVariables('leave')"
-              >
-                Nghỉ phép
-              </button>
-            </div>
-          </div>
-
-          <app-dynamic-form-renderer
-            [schema]="startFormSchema()"
-            [initialValues]="startFormVariables()"
-            (valuesChange)="onStartFormValuesChange($event)"
-            (validityChange)="isStartFormValid.set($event)"
-          ></app-dynamic-form-renderer>
-
-          <p class="form-hint">
-            Dữ liệu này sẽ được truyền vào context của quy trình và có thể truy xuất bởi các Task / Gateway tiếp theo.
-          </p>
-        </div>
-      </div>
-    </ng-container>
-  </nz-modal>
-
-  <!-- Drawer Chi Tiết Case -->
-  <nz-drawer
-    [nzVisible]="isDrawerOpen()"
-    [nzWidth]="760"
-    [nzClosable]="true"
-    (nzOnClose)="closeDetailDrawer()"
-    [nzTitle]="drawerTitleTpl"
-  >
-    <ng-template #drawerTitleTpl>
-      @if (selectedCase(); as inst) {
-        <div class="drawer-header-custom">
-          <div class="drawer-header-left">
-            <div class="drawer-title-row">
-              <span nz-icon nzType="folder-open" class="header-icon"></span>
-              <span class="header-title">Chi tiết Hồ sơ Vụ việc</span>
-            </div>
-            <div class="drawer-sub-row">
-              <span class="sub-case-id">{{ inst.id }}</span>
-              <button class="btn-copy-small" (click)="copyToClipboard(inst.id)">
-                <span nz-icon nzType="copy"></span>
-              </button>
-              @let meta = getCaseStatusMeta(inst.status);
-              <nz-tag [nzColor]="meta.tagColor" class="drawer-status-tag">
-                <span nz-icon [nzType]="meta.icon"></span>
-                <span>{{ meta.label }}</span>
-              </nz-tag>
-            </div>
-          </div>
-        </div>
-      }
-    </ng-template>
-
-    <ng-container *nzDrawerContent>
-      @if (isDetailLoading()) {
-        <div class="drawer-loading">
-          <nz-spin nzSimple nzTip="Đang tải thông tin vụ việc..."></nz-spin>
-        </div>
-      } @else if (selectedCase(); as inst) {
-        <div class="drawer-body-tabs">
-          <nz-tabs
-            [nzSelectedIndex]="selectedDrawerTab()"
-            (nzSelectedIndexChange)="selectedDrawerTab.set($event)"
-            nzType="line"
-            class="custom-tabs"
-          >
-            <!-- Tab 1: Tổng quan & Tiến trình -->
-            <nz-tab nzTitle="Tổng quan & Tiến trình">
-              <div class="tab-content overview-tab">
-                <!-- Descriptions -->
-                <div class="section-block">
-                  <h4 class="section-title">
-                    <span nz-icon nzType="info-circle"></span>
-                    <span>Thông tin cơ bản</span>
-                  </h4>
-
-                  <nz-descriptions [nzColumn]="2" nzBordered nzSize="small">
-                    <nz-descriptions-item nzTitle="Mã Case">
-                      <code>{{ inst.id }}</code>
-                    </nz-descriptions-item>
-                    <nz-descriptions-item nzTitle="Trạng thái">
-                      @let meta = getCaseStatusMeta(inst.status);
-                      <nz-tag [nzColor]="meta.tagColor">{{ meta.label }}</nz-tag>
-                    </nz-descriptions-item>
-                    <nz-descriptions-item nzTitle="Quy trình BPMN">
-                      <strong>{{ getProcessDisplayName(inst.processId) }}</strong>
-                    </nz-descriptions-item>
-                    <nz-descriptions-item nzTitle="Phiên bản">
-                      <nz-tag nzColor="geekblue">Phiên bản {{ inst.processVersion }}</nz-tag>
-                    </nz-descriptions-item>
-                    <nz-descriptions-item nzTitle="Người khởi tạo">
-                      <div class="user-cell">
-                        <div
-                          class="avatar-circle"
-                          [style.background-color]="inst.startedBy | avatarColor"
-                        >
-                          {{ inst.startedBy | userInitials }}
-                        </div>
-                        <span>{{ inst.startedBy }}</span>
-                      </div>
-                    </nz-descriptions-item>
-                    <nz-descriptions-item nzTitle="Bước hiện tại">
-                      @if (inst.currentNodeId) {
-                        <div class="node-chip active-node">
-                          <span nz-icon nzType="clock-circle"></span>
-                          <span>{{ inst.currentNodeId }}</span>
-                        </div>
-                      } @else {
-                        <span class="text-success">Đã hoàn thành (End Event)</span>
-                      }
-                    </nz-descriptions-item>
-                    <nz-descriptions-item nzTitle="Bắt đầu lúc">
-                      {{ inst.startedAt | formatDate }}
-                    </nz-descriptions-item>
-                    <nz-descriptions-item nzTitle="Hoàn tất lúc">
-                      {{ inst.completedAt | formatDate }}
-                    </nz-descriptions-item>
-                  </nz-descriptions>
-                </div>
-
-                <!-- Step / Node Action Banner -->
-                @if (inst.currentNodeId && inst.status === 'RUNNING') {
-                  <div class="current-task-banner">
-                    <div class="banner-icon">
-                      <span nz-icon nzType="hourglass" [nzSpin]="true"></span>
-                    </div>
-                    <div class="banner-info">
-                      <h5>Đang chờ thực hiện tại: <code>{{ inst.currentNodeId }}</code></h5>
-                      <p>Tiến trình đang dừng tại User Task này để chờ người dùng tiếp nhận và hoàn tất.</p>
-                    </div>
-                    <button
-                      class="btn btn-jump-task"
-                      (click)="navigateToTask(inst.id)"
-                    >
-                      <span nz-icon nzType="arrow-right"></span>
-                      <span>Xử lý Task này</span>
-                    </button>
-                  </div>
-                }
-
-                <!-- Timeline -->
-                <div class="section-block">
-                  <h4 class="section-title">
-                    <span nz-icon nzType="history"></span>
-                    <span>Lịch sử diễn tiến</span>
-                  </h4>
-
-                  <nz-timeline class="case-timeline">
-                    <nz-timeline-item nzColor="green">
-                      <div class="timeline-step">
-                        <span class="step-time">{{ formatDisplayTime(inst.startedAt) }}</span>
-                        <p class="step-title">Khởi động quy trình (Start Event)</p>
-                        <p class="step-desc">Khởi tạo bởi <strong>{{ inst.startedBy }}</strong></p>
-                      </div>
-                    </nz-timeline-item>
-
-                    @if (inst.currentNodeId && inst.status === 'RUNNING') {
-                      <nz-timeline-item nzColor="blue">
-                        <div class="timeline-step">
-                          <span class="step-time">Hiện tại</span>
-                          <p class="step-title">Dừng tại User Task: <code>{{ inst.currentNodeId }}</code></p>
-                          <p class="step-desc">Đang chờ xử lý trong danh sách công việc</p>
-                        </div>
-                      </nz-timeline-item>
-                    }
-
-                    @if (inst.status === 'COMPLETED') {
-                      <nz-timeline-item nzColor="green">
-                        <div class="timeline-step">
-                          <span class="step-time">{{ formatDisplayTime(inst.completedAt) }}</span>
-                          <p class="step-title">Quy trình kết thúc (End Event)</p>
-                          <p class="step-desc">Tất cả các luồng hoạt động đã hoàn tất thành công</p>
-                        </div>
-                      </nz-timeline-item>
-                    }
-                  </nz-timeline>
-                </div>
-              </div>
-            </nz-tab>
-
-            <!-- Tab 2: Biến dữ liệu (Variables) -->
-            <nz-tab [nzTitle]="'Biến dữ liệu (' + selectedCaseVariables().length + ')'">
-              <div class="tab-content variables-tab">
-                <div class="variables-header-actions">
-                  <span class="vars-count-label">
-                    Tổng số biến: <strong>{{ selectedCaseVariables().length }}</strong>
-                  </span>
-                  <button
-                    class="btn-copy-json"
-                    (click)="copyToClipboard(selectedCaseVariablesJson())"
-                  >
-                    <span nz-icon nzType="copy"></span>
-                    <span>Sao chép JSON</span>
-                  </button>
-                </div>
-
-                <!-- Structured Table -->
-                <nz-table
-                  #varsTable
-                  [nzData]="selectedCaseVariables()"
-                  [nzShowPagination]="false"
-                  nzSize="small"
-                  class="vars-data-table"
-                >
-                  <thead>
-                    <tr>
-                      <th nzWidth="30%">Tên biến (Key)</th>
-                      <th nzWidth="20%">Kiểu dữ liệu</th>
-                      <th nzWidth="50%">Giá trị</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (v of varsTable.data; track v.key) {
-                      <tr>
-                        <td>
-                          <code class="var-key-code">{{ v.key }}</code>
-                        </td>
-                        <td>
-                          <nz-tag nzColor="blue">{{ v.type }}</nz-tag>
-                        </td>
-                        <td>
-                          <span class="var-value-text">{{ v.value }}</span>
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </nz-table>
-
-                <!-- Raw JSON Accordion -->
-                <div class="json-code-card">
-                  <div class="json-code-header">
-                    <span>Định dạng JSON thô</span>
-                  </div>
-                  <pre class="json-preview-box"><code>{{ selectedCaseVariablesJson() }}</code></pre>
-                </div>
-              </div>
-            </nz-tab>
-
-            <!-- Tab 3: Sơ đồ BPMN trực quan -->
-            <nz-tab nzTitle="Sơ đồ BPMN trực quan">
-              <div class="tab-content diagram-tab">
-                <div class="diagram-note">
-                  <span nz-icon nzType="eye" class="note-icon"></span>
-                  <span>
-                    Vị trí token hiện tại:
-                    @if (inst.currentNodeId) {
-                      <strong>{{ inst.currentNodeId }}</strong>
-                    } @else {
-                      <strong>Hoàn tất</strong>
-                    }
-                  </span>
-                </div>
-
-                <div class="viewer-wrapper">
-                  <app-operate-viewer
-                    [xml]="currentCaseBpmnXml()"
-                    [activeActivities]="activeActivityIds()"
-                  ></app-operate-viewer>
-                </div>
-              </div>
-            </nz-tab>
-          </nz-tabs>
-        </div>
-      }
-    </ng-container>
-  </nz-drawer>
+  <app-case-start-modal #startModal [processes]="processes()" (started)="detailDrawer.open($event)" />
+  <app-case-detail-drawer #detailDrawer (taskRequested)="navigateToTask($event)" />
 </div>

@@ -98,3 +98,12 @@ export function getTaskStatusMeta(status: string | null | undefined): TaskStatus
       };
   }
 }
+
+/** Nhận việc được khi task chưa hoàn tất và chưa có người nhận (hoặc vẫn ở trạng thái CREATED). */
+export function canClaimTask(task: Pick<TaskResponse, 'status' | 'claimedBy'>): boolean {
+  return task.status !== 'COMPLETED' && (!task.claimedBy || task.status === 'CREATED');
+}
+
+export function canCompleteTask(task: Pick<TaskResponse, 'status'>): boolean {
+  return task.status !== 'COMPLETED';
+}

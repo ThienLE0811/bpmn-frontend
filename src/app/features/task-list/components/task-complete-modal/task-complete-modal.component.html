@@ -1,0 +1,54 @@
+<nz-modal
+  [nzVisible]="isVisible()"
+  [nzTitle]="modalTitleTpl"
+  [nzFooter]="modalFooterTpl"
+  (nzOnCancel)="close()"
+  [nzWidth]="700"
+>
+  <ng-container *nzModalContent>
+    @if (task(); as task) {
+      <div class="complete-modal-body">
+        <div class="advance-engine-alert">
+          <div class="alert-icon">
+            <span nz-icon nzType="rocket" nzTheme="outline"></span>
+          </div>
+          <div class="alert-text">
+            <strong>Kích hoạt chuyển tiếp quy trình BPMN</strong>
+            <p>
+              Khi hoàn tất tác vụ <strong>{{ task.name }}</strong> (Node:
+              <code>{{ task.nodeId }}</code
+              >), các biến dữ liệu dưới đây sẽ được lưu vào phiên thực thi và engine tự động điều
+              phối sang bước kế tiếp.
+            </p>
+          </div>
+        </div>
+
+        <app-dynamic-form-renderer
+          [schema]="formSchema()"
+          [initialValues]="formValues()"
+          (valuesChange)="formValues.set($event)"
+          (validityChange)="isFormValid.set($event)"
+        ></app-dynamic-form-renderer>
+      </div>
+    }
+  </ng-container>
+</nz-modal>
+
+<!-- Modal Title Template -->
+<ng-template #modalTitleTpl>
+  <div class="modal-header-title">
+    <span nz-icon nzType="check-circle" class="title-icon"></span>
+    <span>Xác nhận Hoàn thành Công việc</span>
+  </div>
+</ng-template>
+
+<!-- Modal Footer Template -->
+<ng-template #modalFooterTpl>
+  <div class="modal-footer-actions">
+    <button class="btn btn-cancel" (click)="close()" [disabled]="isSubmitting()">Hủy bỏ</button>
+    <button class="btn btn-confirm-complete" (click)="submit()" [disabled]="isSubmitting()">
+      <span nz-icon [nzType]="isSubmitting() ? 'loading' : 'check'"></span>
+      <span>Xác nhận & Chuyển tiếp Engine</span>
+    </button>
+  </div>
+</ng-template>

@@ -7,3 +7,4 @@ export * from './clipboard.util';
 export * from './sort.util';
 export * from './json.util';
 export * from './list-filter.util';
+export * from './user-permission.util';

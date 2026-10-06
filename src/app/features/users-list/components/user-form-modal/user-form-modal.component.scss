@@ -1,0 +1,219 @@
+/* Modal Form Styles */
+.modal-header-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.user-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 12px;
+
+  .form-row.two-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+
+      &.required::after {
+        content: ' *';
+        color: #ef4444;
+      }
+    }
+
+    ::ng-deep .ant-input-affix-wrapper {
+      border-radius: 8px;
+      padding: 6px 12px;
+      border: 1px solid #cbd5e1 !important;
+      background: #ffffff;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      transition: all 0.2s ease;
+
+      input.ant-input {
+        font-size: 13.5px;
+      }
+
+      &:hover {
+        border-color: #94a3b8 !important;
+      }
+
+      &:focus,
+      &.ant-input-affix-wrapper-focused {
+        border-color: #0284c7 !important;
+        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+      }
+
+      .password-toggle-btn {
+        background: transparent;
+        border: none;
+        padding: 0 4px;
+        color: #64748b;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        transition: color 0.15s ease;
+
+        &:hover {
+          color: #0f172a;
+        }
+      }
+    }
+
+    .form-select {
+      width: 100%;
+
+      ::ng-deep .ant-select-selector {
+        border-radius: 8px !important;
+        border: 1px solid #cbd5e1 !important;
+        background: #ffffff !important;
+        height: 38px !important;
+        display: flex;
+        align-items: center;
+        font-size: 13.5px;
+        color: #334155;
+        transition: all 0.2s ease;
+
+        .ant-select-selection-item {
+          line-height: 36px;
+        }
+      }
+
+      &:hover ::ng-deep .ant-select-selector {
+        border-color: #94a3b8 !important;
+      }
+
+      &.ant-select-focused ::ng-deep .ant-select-selector,
+      &.ant-select-open ::ng-deep .ant-select-selector {
+        border-color: #0284c7 !important;
+        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+      }
+    }
+
+    textarea.ant-input {
+      border-radius: 8px;
+      border: 1px solid #cbd5e1 !important;
+      background: #ffffff;
+      padding: 8px 12px;
+      font-size: 13.5px;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: #94a3b8 !important;
+      }
+
+      &:focus {
+        border-color: #0284c7 !important;
+        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+      }
+    }
+
+    .form-error-msg {
+      font-size: 12px;
+      color: #ef4444;
+      margin-top: 2px;
+    }
+  }
+}
+
+.modal-footer-custom {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Global Button Styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+
+  &:disabled,
+  &[disabled] {
+    cursor: not-allowed !important;
+    opacity: 0.45 !important;
+    transform: none !important;
+    box-shadow: none !important;
+    pointer-events: auto !important;
+  }
+
+  &.btn-primary {
+    background: #0284c7;
+    color: #ffffff;
+
+    &:not(:disabled):hover {
+      background: #0369a1;
+    }
+  }
+
+  &.btn-secondary {
+    background: #f1f5f9;
+    color: #334155;
+    border-color: #e2e8f0;
+
+    &:not(:disabled):hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+  }
+
+  &.btn-outline {
+    background: #ffffff;
+    color: #475569;
+    border-color: #cbd5e1;
+
+    &:not(:disabled):hover {
+      background: #f8fafc;
+      color: #0f172a;
+      border-color: #94a3b8;
+    }
+  }
+
+  &.btn-danger-outline {
+    background: #ffffff;
+    color: #dc2626;
+    border-color: #fca5a5;
+
+    &:not(:disabled):hover {
+      background: #fef2f2;
+      color: #b91c1c;
+      border-color: #f87171;
+    }
+  }
+
+  &.full-width {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .user-form-container .form-row.two-cols {
+    grid-template-columns: 1fr;
+  }
+}

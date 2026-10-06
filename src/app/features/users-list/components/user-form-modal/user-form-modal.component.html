@@ -1,0 +1,172 @@
+<nz-modal
+  [nzVisible]="isOpen()"
+  [nzTitle]="modalTitleTemplate"
+  [nzContent]="modalContentTemplate"
+  [nzFooter]="modalFooterTemplate"
+  (nzOnCancel)="requestClose()"
+  [nzMaskClosable]="!isSubmitting()"
+  [nzClosable]="!isSubmitting()"
+  [nzWidth]="560"
+  [nzCentered]="true"
+>
+  <ng-template #modalTitleTemplate>
+    <div class="modal-header-custom">
+      <span nz-icon [nzType]="editingUser() ? 'edit' : 'user-add'" nzTheme="outline"></span>
+      <span>{{ editingUser() ? 'Cập nhật Thông tin Người dùng' : 'Thêm Người dùng Mới' }}</span>
+    </div>
+  </ng-template>
+
+  <ng-template #modalContentTemplate>
+    <div class="user-form-container">
+      <div class="form-row two-cols">
+        <div class="form-group">
+          <label class="form-label required">Tên đăng nhập (Username)</label>
+          <nz-input-wrapper>
+            <span nzInputPrefix><span nz-icon nzType="user"></span></span>
+            <input
+              type="text"
+              nz-input
+              placeholder="vd: thienlv"
+              [readOnly]="!!editingUser() || isSubmitting()"
+              [formField]="userForm.username"
+            />
+          </nz-input-wrapper>
+          @if (userForm.username().touched() && userForm.username().invalid()) {
+            <div class="form-error-msg">
+              @for (err of userForm.username().errors(); track err.message) {
+                <span>{{ err.message }}</span>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="form-group">
+          <label class="form-label required">Họ và tên</label>
+          <nz-input-wrapper>
+            <span nzInputPrefix><span nz-icon nzType="idcard"></span></span>
+            <input
+              type="text"
+              nz-input
+              placeholder="vd: Le Van Thien"
+              [readOnly]="isSubmitting()"
+              [formField]="userForm.fullName"
+            />
+          </nz-input-wrapper>
+          @if (userForm.fullName().touched() && userForm.fullName().invalid()) {
+            <div class="form-error-msg">
+              @for (err of userForm.fullName().errors(); track err.message) {
+                <span>{{ err.message }}</span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label required">Email</label>
+        <nz-input-wrapper>
+          <span nzInputPrefix><span nz-icon nzType="mail"></span></span>
+          <input
+            type="email"
+            nz-input
+            placeholder="vd: thienlv@paraline.io"
+            [readOnly]="isSubmitting()"
+            [formField]="userForm.email"
+          />
+        </nz-input-wrapper>
+        @if (userForm.email().touched() && userForm.email().invalid()) {
+          <div class="form-error-msg">
+            @for (err of userForm.email().errors(); track err.message) {
+              <span>{{ err.message }}</span>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" [class.required]="!editingUser()">
+          {{ editingUser() ? 'Mật khẩu mới (Để trống nếu không đổi)' : 'Mật khẩu' }}
+        </label>
+        <nz-input-wrapper>
+          <span nzInputPrefix><span nz-icon nzType="lock"></span></span>
+          <input
+            [type]="passwordVisible() ? 'text' : 'password'"
+            nz-input
+            [placeholder]="
+              editingUser() ? 'Nhập mật khẩu mới nếu muốn đổi' : 'Nhập mật khẩu (tối thiểu 3 ký tự)'
+            "
+            [readOnly]="isSubmitting()"
+            [formField]="userForm.password"
+          />
+          <span nzInputSuffix>
+            <button
+              type="button"
+              class="password-toggle-btn"
+              (click)="passwordVisible.set(!passwordVisible())"
+              tabindex="-1"
+              [title]="passwordVisible() ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'"
+            >
+              <span
+                nz-icon
+                [nzType]="passwordVisible() ? 'eye-invisible' : 'eye'"
+                nzTheme="outline"
+              ></span>
+            </button>
+          </span>
+        </nz-input-wrapper>
+        @if (passwordError()) {
+          <div class="form-error-msg">
+            <span>{{ passwordError() }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="form-row two-cols">
+        <div class="form-group">
+          <label class="form-label required">Vai trò hệ thống</label>
+          <nz-select
+            [formField]="userForm.role"
+            class="form-select"
+            [nzDisabled]="isSubmitting() || (!isAdmin() && !!editingUser())"
+          >
+            <nz-option nzValue="ADMIN" nzLabel="Quản trị viên (ADMIN)"></nz-option>
+            <nz-option nzValue="DEVELOPER" nzLabel="Lập trình viên (DEVELOPER)"></nz-option>
+            <nz-option nzValue="MANAGER" nzLabel="Quản lý (MANAGER)"></nz-option>
+            <nz-option nzValue="DESIGNER" nzLabel="Thiết kế quy trình (DESIGNER)"></nz-option>
+            <nz-option nzValue="VIEWER" nzLabel="Người xem (VIEWER)"></nz-option>
+          </nz-select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label required">Trạng thái tài khoản</label>
+          <nz-select
+            [formField]="userForm.status"
+            class="form-select"
+            [nzDisabled]="isSubmitting() || (!isAdmin() && !!editingUser())"
+          >
+            <nz-option nzValue="ACTIVE" nzLabel="Đang hoạt động (ACTIVE)"></nz-option>
+            <nz-option nzValue="INACTIVE" nzLabel="Tạm dừng (INACTIVE)"></nz-option>
+            <nz-option nzValue="LOCKED" nzLabel="Đã khóa (LOCKED)"></nz-option>
+          </nz-select>
+        </div>
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-template #modalFooterTemplate>
+    <div class="modal-footer-custom">
+      <button class="btn btn-outline" (click)="requestClose()" [disabled]="isSubmitting()">
+        Hủy bỏ
+      </button>
+      <button class="btn btn-primary" (click)="save()" [disabled]="isSubmitting()">
+        @if (isSubmitting()) {
+          <span nz-icon nzType="loading" nzTheme="outline"></span>
+          <span>Đang xử lý...</span>
+        } @else {
+          <span nz-icon nzType="save" nzTheme="outline"></span>
+          <span>{{ editingUser() ? 'Lưu thay đổi' : 'Tạo người dùng' }}</span>
+        }
+      </button>
+    </div>
+  </ng-template>
+</nz-modal>

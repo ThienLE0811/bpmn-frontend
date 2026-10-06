@@ -1,0 +1,67 @@
+<nz-modal
+  [nzVisible]="isVisible()"
+  nzTitle="Khởi động Hồ sơ Vụ việc (Start Process Instance)"
+  (nzOnCancel)="close()"
+  (nzOnOk)="submit()"
+  [nzOkLoading]="isStarting()"
+  nzOkText="Khởi động ngay"
+  nzCancelText="Hủy bỏ"
+  [nzWidth]="740"
+>
+  <ng-container *nzModalContent>
+    <div class="start-modal-form">
+      <!-- Process Selector -->
+      <div class="form-group">
+        <label class="form-label required">
+          <span nz-icon nzType="deployment-unit"></span>
+          <span>Chọn Quy trình BPMN</span>
+        </label>
+        <nz-select
+          [ngModel]="processId()"
+          (ngModelChange)="selectProcess($event)"
+          nzPlaceHolder="-- Chọn quy trình cần kích hoạt --"
+          [nzShowSearch]="true"
+          style="width: 100%"
+        >
+          @for (proc of processes(); track proc.id) {
+            <nz-option
+              [nzValue]="proc.id"
+              [nzLabel]="proc.name + ' (' + proc.processKey + ' - v' + proc.version + ')'"
+            ></nz-option>
+          }
+        </nz-select>
+        <p class="form-hint">
+          Hệ thống sẽ nạp sơ đồ BPMN tương ứng và tự động cấu hình Biểu mẫu khởi chạy bên dưới.
+        </p>
+      </div>
+
+      <!-- Initial Variables Dynamic Form & Sample Pills -->
+      <div class="form-group">
+        <div class="label-with-actions">
+          <label class="form-label">
+            <span nz-icon nzType="form"></span>
+            <span>Biểu mẫu Khởi chạy & Biến đầu vào</span>
+          </label>
+          <div class="sample-pills">
+            <span class="sample-intro">Mẫu quy trình nhanh:</span>
+            <button type="button" class="pill-btn" (click)="applySample('order')">Đơn hàng</button>
+            <button type="button" class="pill-btn" (click)="applySample('loan')">Vay vốn</button>
+            <button type="button" class="pill-btn" (click)="applySample('leave')">Nghỉ phép</button>
+          </div>
+        </div>
+
+        <app-dynamic-form-renderer
+          [schema]="formSchema()"
+          [initialValues]="formValues()"
+          (valuesChange)="formValues.set($event)"
+          (validityChange)="isFormValid.set($event)"
+        ></app-dynamic-form-renderer>
+
+        <p class="form-hint">
+          Dữ liệu này sẽ được truyền vào context của quy trình và có thể truy xuất bởi các Task /
+          Gateway tiếp theo.
+        </p>
+      </div>
+    </div>
+  </ng-container>
+</nz-modal>
