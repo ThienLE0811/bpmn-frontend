@@ -108,7 +108,12 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['schema'] || changes['initialValues']) {
+    // Parent thường bind ngược valuesChange vào initialValues; bỏ qua giá trị do chính component
+    // vừa phát ra để tránh vòng lặp change detection vô hạn.
+    const valuesChanged =
+      !!changes['initialValues'] &&
+      changes['initialValues'].currentValue !== this.formValues();
+    if (changes['schema'] || valuesChanged) {
       this.initializeFormData();
     }
   }
