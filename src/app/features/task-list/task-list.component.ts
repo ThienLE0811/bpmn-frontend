@@ -14,7 +14,7 @@ import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzMessageService } from 'ng-zorro-antd/message';
 
-import { TaskService, AuthService, FormSchemaService } from '@core/services';
+import { TaskService, FormSchemaService } from '@core/services';
 import { TaskResponse, getTaskStatusMeta, FormDefinition } from '@core/models';
 import { TableAutoHeightDirective } from '@shared/directives';
 import { DynamicFormRendererComponent } from '@shared/components/dynamic-form-renderer/dynamic-form-renderer.component';
@@ -56,7 +56,6 @@ import { AvatarColorPipe, UserInitialsPipe, FormatDatePipe } from '@shared/pipes
 })
 export class TaskListComponent implements OnInit {
   protected readonly taskService = inject(TaskService);
-  protected readonly authService = inject(AuthService);
   protected readonly formSchemaService = inject(FormSchemaService);
   private readonly message = inject(NzMessageService);
 
@@ -86,11 +85,13 @@ export class TaskListComponent implements OnInit {
     mine: false,
   });
 
+  readonly pageIndex = signal<number>(1);
   readonly pageSize = signal<number>(10);
 
   // Dữ liệu từ Service
   readonly tasks = this.taskService.tasks;
   readonly isLoading = this.taskService.isLoading;
+  readonly totalElements = this.taskService.totalElements;
 
   // Thống kê
   readonly totalCount = this.taskService.totalCount;
@@ -113,23 +114,33 @@ export class TaskListComponent implements OnInit {
     this.loadTasks();
   }
 
-  onPageSizeChange(size: number): void {
-    this.pageSize.set(size);
+  onPageIndexChange(page: number): void {
+    // nz-table cũng phát pageIndexChange khi đổi pageSize - tránh gọi API 2 lần
+    if (page === this.pageIndex()) return;
+    this.pageIndex.set(page);
     this.loadTasks();
   }
 
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
+    this.search();
+  }
+
+  /** Tải lại trang hiện tại với bộ lọc hiện tại. */
   loadTasks(): void {
     const { status, mine, search } = this.filterModel();
     this.taskService.loadTasks({
       status: status !== 'ALL' ? status : undefined,
       mine: mine ? true : undefined,
       search: search.trim() || undefined,
-      page: 1,
+      page: this.pageIndex(),
       size: this.pageSize(),
     });
   }
 
+  /** Bộ lọc thay đổi - quay về trang đầu. */
   search(): void {
+    this.pageIndex.set(1);
     this.loadTasks();
   }
 
@@ -139,17 +150,17 @@ export class TaskListComponent implements OnInit {
       status: 'ALL',
       mine: false,
     });
-    this.loadTasks();
+    this.search();
   }
 
   toggleMineOnly(val: boolean): void {
     this.filterModel.update((m) => ({ ...m, mine: val }));
-    this.loadTasks();
+    this.search();
   }
 
   onStatusFilterChange(status: string): void {
     this.filterModel.update((m) => ({ ...m, status }));
-    this.loadTasks();
+    this.search();
   }
 
   toggleStats(): void {
@@ -169,7 +180,8 @@ export class TaskListComponent implements OnInit {
   // Claim Task
   claimTask(task: TaskResponse, event?: Event): void {
     if (event) event.stopPropagation();
-    this.taskService.claimTask(task.id).subscribe();
+    // Lỗi đã được TaskService hiển thị - chỉ cần nuốt để không thành unhandled error
+    this.taskService.claimTask(task.id).subscribe({ error: () => undefined });
   }
 
   // Complete Task Modal
@@ -217,16 +229,12 @@ export class TaskListComponent implements OnInit {
 
     this.isSubmitting.set(true);
     this.taskService.completeTask(task.id, variables).subscribe({
-      next: () => {
+      next: (completed) => {
         this.isSubmitting.set(false);
         this.closeCompleteModal();
         if (this.isDrawerOpen()) {
-          // Cập nhật lại task đang xem trong drawer
-          this.selectedTask.set({
-            ...task,
-            status: 'COMPLETED',
-            completedBy: this.authService.currentUser()?.username || 'admin',
-          });
+          // Cập nhật lại task đang xem trong drawer bằng dữ liệu backend trả về
+          this.selectedTask.set(completed);
         }
       },
       error: () => {

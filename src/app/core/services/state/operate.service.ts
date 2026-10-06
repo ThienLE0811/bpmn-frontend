@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { forkJoin } from 'rxjs';
+import { Observable, catchError, forkJoin, of } from 'rxjs';
 import {
   OperateProcessInstance,
   ProcessIncident,
@@ -103,7 +103,9 @@ export class OperateService {
       error: (err) => {
         console.warn('Lỗi khi tải metrics từ API, tính toán từ instances hiện tại:', err);
         if (this.instancesSignal().length > 0) {
-          this.metricsSignal.set(this.computeMetrics(this.instancesSignal(), this.totalElementsSignal()));
+          this.metricsSignal.set(
+            this.computeMetrics(this.instancesSignal(), this.totalElementsSignal()),
+          );
         }
       },
     });
@@ -135,7 +137,11 @@ export class OperateService {
           list = list.map((item) => {
             const pKey = item.processDefinitionKey || item.processId;
             const p = procs.find((proc) => proc.id === pKey || proc.processKey === pKey);
-            if (p && (!item.processDefinitionName || item.processDefinitionName === item.processDefinitionKey)) {
+            if (
+              p &&
+              (!item.processDefinitionName ||
+                item.processDefinitionName === item.processDefinitionKey)
+            ) {
               return { ...item, processDefinitionName: p.name };
             }
             return item;
@@ -179,7 +185,10 @@ export class OperateService {
     if (!updatedInstance.bpmnXml && proc?.bpmnXml) {
       updatedInstance.bpmnXml = proc.bpmnXml;
     }
-    if (proc && (!updatedInstance.processDefinitionName || updatedInstance.processDefinitionName === pKey)) {
+    if (
+      proc &&
+      (!updatedInstance.processDefinitionName || updatedInstance.processDefinitionName === pKey)
+    ) {
       updatedInstance.processDefinitionName = proc.name;
     }
 
@@ -197,23 +206,32 @@ export class OperateService {
     }
 
     // Tiền nạp variables từ raw instance.variables nếu có
-    if (instance.variables && typeof instance.variables === 'object' && Object.keys(instance.variables).length > 0) {
-      const prefilledVars: ProcessVariable[] = Object.entries(instance.variables).map(([name, value]) => ({
-        name,
-        value,
-        type: Array.isArray(value) ? 'Array' : typeof value,
-        lastUpdated: instance.updatedAt || instance.startedAt || instance.startDate || '',
-      }));
+    if (
+      instance.variables &&
+      typeof instance.variables === 'object' &&
+      Object.keys(instance.variables).length > 0
+    ) {
+      const prefilledVars: ProcessVariable[] = Object.entries(instance.variables).map(
+        ([name, value]) => ({
+          name,
+          value,
+          type: Array.isArray(value) ? 'Array' : typeof value,
+          lastUpdated: instance.updatedAt || instance.startedAt || instance.startDate || '',
+        }),
+      );
       this.variablesSignal.set(prefilledVars);
     } else {
       this.variablesSignal.set([]);
     }
 
+    // Xóa dữ liệu của instance trước để drawer không hiển thị nhầm khi API lỗi
+    this.incidentsSignal.set([]);
+    this.auditTrailSignal.set([]);
     this.detailLoadingSignal.set(true);
     forkJoin({
-      incidents: this.operateApi.getIncidents(instance.id),
-      variables: this.operateApi.getVariables(instance.id),
-      audit: this.operateApi.getAuditTrail(instance.id),
+      incidents: this.emptyOnError(this.operateApi.getIncidents(instance.id), 'incidents'),
+      variables: this.emptyOnError(this.operateApi.getVariables(instance.id), 'variables'),
+      audit: this.emptyOnError(this.operateApi.getAuditTrail(instance.id), 'audit-trail'),
     }).subscribe({
       next: ({ incidents, variables, audit }) => {
         this.incidentsSignal.set(incidents || []);
@@ -229,6 +247,16 @@ export class OperateService {
         this.detailLoadingSignal.set(false);
       },
     });
+  }
+
+  /** Một tab chi tiết lỗi không được làm hỏng các tab còn lại - trả về danh sách rỗng, không dựng dữ liệu giả. */
+  private emptyOnError<T>(source: Observable<T[]>, label: string): Observable<T[]> {
+    return source.pipe(
+      catchError((err) => {
+        console.warn(`Không thể tải ${label} của instance:`, err);
+        return of([]);
+      }),
+    );
   }
 
   private computeMetrics(list: OperateProcessInstance[], total?: number): OperateMetrics {
@@ -248,12 +276,14 @@ export class OperateService {
 
   retryIncident(incidentId: string, instanceId: string): void {
     this.actionLoadingSignal.set(true);
-    this.operateApi.retryIncident(incidentId, instanceId).subscribe({
+    this.operateApi.retryIncident(incidentId).subscribe({
       next: () => {
         this.actionLoadingSignal.set(false);
         // Refresh instance detail & lists
-        this.operateApi.getInstanceDetail(instanceId).subscribe((updated) => {
-          this.selectedInstanceSignal.set(updated);
+        this.operateApi.getInstanceDetail(instanceId).subscribe({
+          next: (updated) => this.selectedInstanceSignal.set(updated),
+          error: (err) =>
+            console.warn(`Không thể tải lại instance ${instanceId} sau khi retry:`, err),
         });
         this.incidentsSignal.update((list) => list.filter((i) => i.id !== incidentId));
         this.loadInstances();

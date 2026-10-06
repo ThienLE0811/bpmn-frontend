@@ -1,5 +1,5 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { Observable, tap, catchError, of } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import {
   ProcessInstance,
@@ -137,7 +137,8 @@ export class CaseService {
   selectCase(instance: ProcessInstance | null): void {
     this.selectedCaseSignal.set(instance);
     if (instance) {
-      this.getCaseById(instance.id).subscribe();
+      // Lỗi đã được getCaseById hiển thị - chỉ cần nuốt để không thành unhandled error
+      this.getCaseById(instance.id).subscribe({ error: () => undefined });
     }
   }
 

@@ -111,6 +111,7 @@ export class UsersListComponent implements OnInit {
   protected isStatsOpen = signal<boolean>(false);
   protected selectedUser = signal<User | null>(null);
   protected detailUser = signal<User | null>(null);
+  protected pageIndex = signal<number>(1);
   protected pageSize = signal<number>(10);
   protected isSubmitting = signal<boolean>(false);
 
@@ -182,20 +183,22 @@ export class UsersListComponent implements OnInit {
     this.isStatsOpen.update((v) => !v);
   }
 
+  onPageIndexChange(page: number): void {
+    // nz-table cũng phát pageIndexChange khi đổi pageSize - tránh gọi API 2 lần
+    if (page === this.pageIndex()) return;
+    this.pageIndex.set(page);
+    this.loadUsers();
+  }
+
   onPageSizeChange(size: number): void {
     this.pageSize.set(size);
     this.search();
   }
 
+  /** Bộ lọc thay đổi - quay về trang đầu. */
   search(): void {
-    const m = this.filterModel();
-    this.userService.loadUsers({
-      search: m.search,
-      role: m.role,
-      status: m.status,
-      page: 1,
-      size: this.pageSize(),
-    });
+    this.pageIndex.set(1);
+    this.loadUsers();
   }
 
   resetFilters(): void {
@@ -217,8 +220,16 @@ export class UsersListComponent implements OnInit {
     this.search();
   }
 
+  /** Tải lại trang hiện tại với bộ lọc hiện tại. */
   loadUsers(): void {
-    this.search();
+    const m = this.filterModel();
+    this.userService.loadUsers({
+      search: m.search,
+      role: m.role,
+      status: m.status,
+      page: this.pageIndex(),
+      size: this.pageSize(),
+    });
   }
 
   // Sorting comparators
@@ -405,7 +416,7 @@ export class UsersListComponent implements OnInit {
           .subscribe({
             next: (savedUser) => {
               this.isSubmitting.set(false);
-              if (this.detailUser()?.id === current.id) {
+              if (savedUser?.id && this.detailUser()?.id === current.id) {
                 this.detailUser.set(savedUser);
               }
               this.forceCloseModal();

@@ -179,6 +179,10 @@
             appTableAutoHeight
             [nzData]="users()"
             [nzLoading]="isLoading()"
+            [nzFrontPagination]="false"
+            [nzTotal]="totalCount()"
+            [nzPageIndex]="pageIndex()"
+            (nzPageIndexChange)="onPageIndexChange($event)"
             [nzPageSize]="pageSize()"
             (nzPageSizeChange)="onPageSizeChange($event)"
             [nzShowSizeChanger]="true"

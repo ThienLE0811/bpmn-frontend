@@ -356,6 +356,8 @@
               [nzData]="processes()"
               [nzLoading]="isLoading()"
               [nzFrontPagination]="true"
+              [nzPageIndex]="pageIndex()"
+              (nzPageIndexChange)="pageIndex.set($event)"
               [nzPageSize]="pageSize()"
               [nzPageSizeOptions]="[5, 10, 20, 50]"
               [nzShowSizeChanger]="true"
@@ -364,7 +366,7 @@
               [nzNoResult]="emptyTemplate"
               nzSize="middle"
               class="custom-nz-table"
-              (nzPageSizeChange)="pageSize.set($event)"
+              (nzPageSizeChange)="onPageSizeChange($event)"
             >
               <thead>
                 <tr>
@@ -570,14 +572,14 @@
             @if (processes().length > 0) {
               <div class="list-pagination-bar">
                 <nz-pagination
-                  [nzPageIndex]="listPageIndex()"
+                  [nzPageIndex]="pageIndex()"
                   [nzPageSize]="pageSize()"
                   [nzTotal]="processes().length"
                   [nzPageSizeOptions]="[5, 10, 20, 50]"
                   [nzShowSizeChanger]="true"
                   [nzShowTotal]="totalTemplate"
-                  (nzPageIndexChange)="listPageIndex.set($event)"
-                  (nzPageSizeChange)="onListPageSizeChange($event)"
+                  (nzPageIndexChange)="pageIndex.set($event)"
+                  (nzPageSizeChange)="onPageSizeChange($event)"
                 ></nz-pagination>
               </div>
             }

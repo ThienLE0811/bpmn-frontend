@@ -1,8 +1,14 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
-import { User, UserQueryParams, UserRole, UserStatus, extractContent, extractPageMetadata } from '@core/models';
+import {
+  User,
+  UserQueryParams,
+  UserRole,
+  UserStatus,
+  extractContent,
+  extractPageMetadata,
+} from '@core/models';
 import { ApiErrorHandlerService } from '@shared/services';
-import { formatDateTime } from '@shared/utils';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { UserApiService } from '../api/user-api.service';
 
@@ -22,6 +28,8 @@ export class UserService {
   private totalPagesSignal = signal<number>(1);
   private currentPageSignal = signal<number>(1);
   private pageSizeSignal = signal<number>(20);
+  /** Tham số của lần tải gần nhất - dùng để tải lại khi API ghi trả về body rỗng. */
+  private lastQuery?: UserQueryParams;
 
   get users() {
     return this.usersSignal.asReadonly();
@@ -52,6 +60,7 @@ export class UserService {
   }
 
   loadUsers(params?: UserQueryParams): void {
+    this.lastQuery = params;
     this.loadingSignal.set(true);
     this.errorSignal.set(null);
 
@@ -69,7 +78,8 @@ export class UserService {
       },
       error: (err) => {
         console.warn('Không thể kết nối API (/users):', err);
-        const errorMsg = this.errorHandler.getErrorMessage(err) || 'Không thể tải danh sách người dùng.';
+        const errorMsg =
+          this.errorHandler.getErrorMessage(err) || 'Không thể tải danh sách người dùng.';
         this.errorSignal.set(errorMsg);
         this.allUsers = [];
         this.usersSignal.set([]);
@@ -109,27 +119,24 @@ export class UserService {
       email: userData.email.trim(),
       role: userData.role || 'DEVELOPER',
       status: userData.status || 'ACTIVE',
-      ...(userData.password && userData.password.trim() ? { password: userData.password.trim() } : {}),
+      ...(userData.password && userData.password.trim()
+        ? { password: userData.password.trim() }
+        : {}),
     };
 
     return this.userApi.create(cleanPayload).pipe(
       tap({
         next: (created) => {
-          const fallbackUser: User = {
-            id: created?.id || 'u-' + Date.now(),
-            username: created?.username || cleanPayload.username!,
-            fullName: created?.fullName || cleanPayload.fullName!,
-            email: created?.email || cleanPayload.email!,
-            role: created?.role || cleanPayload.role || 'DEVELOPER',
-            status: created?.status || cleanPayload.status || 'ACTIVE',
-            createdAt: created?.createdAt || formatDateTime(),
-            updatedAt: created?.updatedAt || formatDateTime(),
-          };
-          const finalUser = created?.id ? created : fallbackUser;
-
-          this.allUsers = [finalUser, ...this.allUsers.filter((u) => u.id !== finalUser.id)];
-          this.usersSignal.set(this.allUsers);
-          this.message.success(`Đã tạo tài khoản người dùng "${finalUser.fullName}" thành công.`);
+          if (created?.id) {
+            this.allUsers = [created, ...this.allUsers.filter((u) => u.id !== created.id)];
+            this.usersSignal.set(this.allUsers);
+          } else {
+            // Backend không trả về bản ghi - tải lại thay vì tự dựng user với id giả
+            this.loadUsers(this.lastQuery);
+          }
+          this.message.success(
+            `Đã tạo tài khoản người dùng "${created?.fullName || cleanPayload.fullName}" thành công.`,
+          );
         },
         error: (err) => {
           console.error('Lỗi khi tạo mới người dùng qua API (POST /api/users):', err);
@@ -157,54 +164,35 @@ export class UserService {
       email: userData.email.trim(),
       role: userData.role,
       status: userData.status,
-      ...(userData.password && userData.password.trim() ? { password: userData.password.trim() } : {}),
+      ...(userData.password && userData.password.trim()
+        ? { password: userData.password.trim() }
+        : {}),
     };
 
     return this.userApi.update(id, cleanPayload).pipe(
-
       tap({
         next: (updated) => {
-          const nowStr = formatDateTime();
-          const target = this.allUsers.find((u) => u.id === id);
-          const finalUser: User = {
-            ...(target || {}),
-            ...(updated || {}),
-            id,
-            username: updated?.username || target?.username || userData.username || '',
-            fullName: updated?.fullName || cleanPayload.fullName || target?.fullName || '',
-            email: updated?.email || cleanPayload.email || target?.email || '',
-            role: updated?.role || cleanPayload.role || target?.role || 'DEVELOPER',
-            status: updated?.status || cleanPayload.status || target?.status || 'ACTIVE',
-            createdAt: updated?.createdAt || target?.createdAt || nowStr,
-            updatedAt: updated?.updatedAt || nowStr,
-          };
-
-          this.allUsers = this.allUsers.map((u) => (u.id === id ? finalUser : u));
-          this.usersSignal.set(this.allUsers);
-          this.message.success(`Đã cập nhật thông tin người dùng "${finalUser.fullName}" thành công.`);
+          if (updated?.id) {
+            this.allUsers = this.allUsers.map((u) => (u.id === id ? updated : u));
+            this.usersSignal.set(this.allUsers);
+          } else {
+            // Backend không trả về bản ghi - tải lại thay vì tự ghép dữ liệu phía client
+            this.loadUsers(this.lastQuery);
+          }
+          this.message.success(
+            `Đã cập nhật thông tin người dùng "${updated?.fullName || cleanPayload.fullName}" thành công.`,
+          );
         },
         error: (err) => {
           console.error(`Lỗi khi cập nhật người dùng qua API (PUT /api/users/${id}):`, err);
-          const errorMsg = this.errorHandler.handleError(err, 'Lỗi khi cập nhật thông tin người dùng.');
+          const errorMsg = this.errorHandler.handleError(
+            err,
+            'Lỗi khi cập nhật thông tin người dùng.',
+          );
           this.errorSignal.set(errorMsg);
         },
       }),
     );
-  }
-
-  saveUser(userData: {
-    id?: string;
-    username: string;
-    fullName: string;
-    email: string;
-    role: UserRole;
-    status: UserStatus;
-  }): Observable<User> {
-    if (userData.id) {
-      return this.updateUser(userData.id, userData);
-    } else {
-      return this.createUser(userData);
-    }
   }
 
   deleteUser(id: string): Observable<void> {
@@ -239,17 +227,16 @@ export class UserService {
     return this.userApi.toggleStatus(id, newStatus).pipe(
       tap({
         next: (res) => {
-          const updated: User = {
-            ...(target || {}),
-            ...(res || {}),
-            id,
-            status: newStatus,
-            updatedAt: res?.updatedAt || formatDateTime(),
-          } as User;
-
-          this.allUsers = this.allUsers.map((u) => (u.id === id ? updated : u));
-          this.usersSignal.set(this.allUsers);
-          this.message.info(`Đã chuyển trạng thái tài khoản "${target?.fullName || 'Người dùng'}" sang: ${statusLabel}.`);
+          if (res?.id) {
+            this.allUsers = this.allUsers.map((u) => (u.id === id ? res : u));
+            this.usersSignal.set(this.allUsers);
+          } else {
+            // Backend không trả về bản ghi - tải lại thay vì tự gán trạng thái phía client
+            this.loadUsers(this.lastQuery);
+          }
+          this.message.info(
+            `Đã chuyển trạng thái tài khoản "${target?.fullName || 'Người dùng'}" sang: ${statusLabel}.`,
+          );
         },
         error: (err) => {
           console.warn('API toggle status failed:', err);
@@ -259,6 +246,3 @@ export class UserService {
     );
   }
 }
-
-
-

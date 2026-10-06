@@ -62,19 +62,19 @@ export class BpmnListComponent implements OnInit {
   protected selectedProcess = signal<BpmnProcess | null>(null);
   protected viewDisplayMode = signal<'table' | 'list'>('table');
   protected pageSize = signal<number>(10);
-  protected listPageIndex = signal<number>(1);
+  protected pageIndex = signal<number>(1);
   protected designerWidth = signal<number | null>(null);
 
   protected paginatedProcesses = computed(() => {
     const list = this.processes();
-    const page = this.listPageIndex();
+    const page = this.pageIndex();
     const size = this.pageSize();
     return list.slice((page - 1) * size, page * size);
   });
 
-  onListPageSizeChange(size: number): void {
+  onPageSizeChange(size: number): void {
     this.pageSize.set(size);
-    this.listPageIndex.set(1);
+    this.pageIndex.set(1);
   }
   private resizeId = -1;
   private initialFormModel: {
@@ -157,7 +157,7 @@ export class BpmnListComponent implements OnInit {
   protected sortUpdatedAt = sortByString<BpmnProcess>('updatedAt');
 
   search(): void {
-    this.listPageIndex.set(1);
+    this.pageIndex.set(1);
     const m = this.filterModel();
     this.bpmnService.loadProcesses({
       processKey: m.processKey,
@@ -170,7 +170,7 @@ export class BpmnListComponent implements OnInit {
   }
 
   resetFilters(): void {
-    this.listPageIndex.set(1);
+    this.pageIndex.set(1);
     this.filterModel.set({
       processKey: '',
       name: '',

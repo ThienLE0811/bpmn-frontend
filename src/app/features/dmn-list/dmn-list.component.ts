@@ -53,6 +53,7 @@ export class DmnListComponent implements OnInit {
   protected isSubmitting = signal<boolean>(false);
   protected isStatsOpen = signal<boolean>(false);
   protected selectedDecision = signal<DmnDecision | null>(null);
+  protected pageIndex = signal<number>(1);
   protected pageSize = signal<number>(10);
   protected designerWidth = signal<number | null>(null);
   private resizeId = -1;
@@ -130,7 +131,13 @@ export class DmnListComponent implements OnInit {
     () => this.decisions().filter((d) => d.status === 'DRAFT').length,
   );
 
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
+    this.pageIndex.set(1);
+  }
+
   search(): void {
+    this.pageIndex.set(1);
     const m = this.filterModel();
     this.dmnService.loadDecisions({
       decisionKey: m.decisionKey,

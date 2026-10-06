@@ -4,7 +4,6 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 import { BpmnProcess } from '@core/models/bpmn-process.model';
 import { extractContent, extractPageMetadata } from '@core/models';
 import { ApiErrorHandlerService } from '@shared/services';
-import { formatIsoDateTime } from '@shared/utils';
 import { BpmnApiService, BpmnQueryParams } from '../api/bpmn-api.service';
 
 @Injectable({
@@ -80,7 +79,7 @@ export class BpmnProcessService {
         this.loadingSignal.set(false);
       },
       error: (err) => {
-        console.warn('Không thể kết nối API (/bpmn-processes), fallback về dữ liệu mẫu:', err);
+        console.warn('Không thể tải danh sách quy trình BPMN (/bpmn-processes):', err);
         const errorText = this.errorHandler.handleError(
           err,
           'Lỗi khi tải danh sách quy trình BPMN từ máy chủ.',
@@ -89,141 +88,6 @@ export class BpmnProcessService {
         this.loadingSignal.set(false);
       },
     });
-  }
-
-  saveProcess(
-    processData: Partial<BpmnProcess> & {
-      name: string;
-      bpmnXml?: string | null;
-      xml?: string | null;
-    },
-  ): BpmnProcess {
-    const list = this.processesSignal();
-    const nowStr = formatIsoDateTime();
-
-    const xmlContent =
-      processData.bpmnXml !== undefined
-        ? processData.bpmnXml
-        : processData.xml !== undefined
-          ? processData.xml
-          : null;
-
-    if (processData.id) {
-      // Update existing
-      const existing = list.find((i) => i.id === processData.id);
-      const updatedItem: BpmnProcess = {
-        id: processData.id,
-        processKey: processData.processKey || existing?.processKey || '',
-        name: processData.name || existing?.name || '',
-        description:
-          processData.description !== undefined
-            ? processData.description
-            : existing?.description || '',
-        category: processData.category || existing?.category || 'GENERAL',
-        version:
-          processData.version !== undefined ? Number(processData.version) : existing?.version || 1,
-        status: processData.status || existing?.status || 'DRAFT',
-        bpmnXml: xmlContent !== null ? xmlContent : existing?.bpmnXml || null,
-        createdBy: existing?.createdBy || 'Admin',
-        updatedBy: 'Admin',
-        createdAt: existing?.createdAt || nowStr,
-        updatedAt: nowStr,
-      };
-
-      // Clean payload chỉ gửi các trường Update DTO hợp lệ để tránh lỗi 400 backend
-      const cleanUpdatePayload: Partial<BpmnProcess> = {
-        name: updatedItem.name,
-        description: updatedItem.description,
-        category: updatedItem.category,
-        status: updatedItem.status,
-        bpmnXml: updatedItem.bpmnXml,
-      };
-
-      // Gọi API cập nhật: PUT /api/bpmn-processes/:id
-      this.bpmnApi.update(processData.id, cleanUpdatePayload).subscribe({
-        next: (res) => {
-          if (res) {
-            this.processesSignal.update((items) =>
-              items.map((i) =>
-                i.id === res.id ? { ...i, ...res, createdBy: i.createdBy || res.createdBy } : i,
-              ),
-            );
-            this.message.success(`Đã cập nhật quy trình "${res.name}" thành công.`);
-          }
-        },
-        error: (err) => {
-          console.error('Lỗi khi cập nhật BPMN qua API:', err);
-          const errorText = this.errorHandler.handleError(
-            err,
-            'Lỗi khi cập nhật quy trình BPMN qua API.',
-          );
-          this.errorSignal.set(errorText);
-        },
-      });
-
-      const updated = list.map((item) => {
-        if (item.id === processData.id) {
-          return {
-            ...item,
-            ...updatedItem,
-          };
-        }
-        return item;
-      });
-      this.processesSignal.set(updated);
-      return updated.find((i) => i.id === processData.id)!;
-    } else {
-      // Create new
-      const newId = 'proc_' + Date.now();
-      const newKey =
-        processData.processKey || 'BPMN-PROC-' + (list.length + 1).toString().padStart(2, '0');
-      const cleanPayload: Partial<BpmnProcess> = {
-        processKey: newKey,
-        name: processData.name || 'Quy trình mới',
-        description: processData.description || '',
-        category: processData.category || 'GENERAL',
-        bpmnXml: xmlContent,
-      };
-
-      const newProc: BpmnProcess = {
-        id: newId,
-        processKey: newKey,
-        name: cleanPayload.name || 'Quy trình mới',
-        description: cleanPayload.description || '',
-        category: cleanPayload.category || 'GENERAL',
-        version: 1,
-        status: 'DRAFT',
-        bpmnXml: xmlContent,
-        createdBy: 'Admin',
-        updatedBy: null,
-        createdAt: nowStr,
-        updatedAt: nowStr,
-      };
-
-      // Gọi API tạo mới /api/bpmn-processes
-      this.bpmnApi.create(cleanPayload).subscribe({
-        next: (res) => {
-          if (res) {
-            this.processesSignal.update((items) => [
-              res,
-              ...items.filter((i) => i.id !== newId && i.id !== res.id),
-            ]);
-            this.message.success(`Đã tạo quy trình "${res.name}" thành công.`);
-          }
-        },
-        error: (err) => {
-          console.error('Lỗi khi tạo mới BPMN qua API:', err);
-          const errorText = this.errorHandler.handleError(
-            err,
-            'Lỗi khi tạo mới quy trình BPMN qua API.',
-          );
-          this.errorSignal.set(errorText);
-        },
-      });
-
-      this.processesSignal.update((items) => [newProc, ...items]);
-      return newProc;
-    }
   }
 
   createProcess(payload: {
@@ -293,7 +157,9 @@ export class BpmnProcessService {
                   : item,
               ),
             );
-            this.message.success(`Đã cập nhật quy trình "${updated.name || cleanPayload.name}" thành công.`);
+            this.message.success(
+              `Đã cập nhật quy trình "${updated.name || cleanPayload.name}" thành công.`,
+            );
           }
         },
         error: (err) => {

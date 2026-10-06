@@ -172,33 +172,24 @@ export class CaseListComponent implements OnInit {
     this.loadCases();
   }
 
+  /** Tải lại trang hiện tại với bộ lọc hiện tại. */
   loadCases(): void {
-    const { status, processId, search } = this.filterModel();
-    this.caseService.loadCases({
-      status: status !== 'ALL' ? status : undefined,
-      processId: processId !== 'ALL' ? processId : undefined,
-      search: search.trim() || undefined,
-      page: 1,
-      size: this.caseService.pageSize(),
-    });
+    this.queryCases(this.caseService.currentPage(), this.caseService.pageSize());
   }
 
   onPageSizeChange(size: number): void {
-    this.caseService.loadCases({
-      page: 1,
-      size,
-    });
+    this.queryCases(1, size);
   }
 
   onPageIndexChange(page: number): void {
-    this.caseService.loadCases({
-      page,
-      size: this.caseService.pageSize(),
-    });
+    // nz-table cũng phát pageIndexChange khi đổi pageSize - tránh gọi API 2 lần
+    if (page === this.caseService.currentPage()) return;
+    this.queryCases(page, this.caseService.pageSize());
   }
 
+  /** Bộ lọc thay đổi - quay về trang đầu. */
   search(): void {
-    this.loadCases();
+    this.queryCases(1, this.caseService.pageSize());
   }
 
   resetFilters(): void {
@@ -207,17 +198,29 @@ export class CaseListComponent implements OnInit {
       status: 'ALL',
       processId: 'ALL',
     });
-    this.loadCases();
+    this.search();
   }
 
   onStatusFilterChange(status: string): void {
     this.filterModel.update((m) => ({ ...m, status }));
-    this.loadCases();
+    this.search();
   }
 
   onProcessFilterChange(processId: string): void {
     this.filterModel.update((m) => ({ ...m, processId }));
-    this.loadCases();
+    this.search();
+  }
+
+  /** Mọi lần gọi API đều phải kèm bộ lọc đang áp dụng, kể cả khi chuyển trang. */
+  private queryCases(page: number, size: number): void {
+    const { status, processId, search } = this.filterModel();
+    this.caseService.loadCases({
+      status: status !== 'ALL' ? status : undefined,
+      processId: processId !== 'ALL' ? processId : undefined,
+      search: search.trim() || undefined,
+      page,
+      size,
+    });
   }
 
   toggleStats(): void {
