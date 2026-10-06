@@ -1,100 +1,170 @@
 <div class="dmn-list-layout">
-  <!-- Page Header Title Area -->
-  <div class="page-title-bar">
-    <div class="title-info">
-      <h2>Danh sách Bảng Quyết định DMN</h2>
-      <p>Quản lý, xây dựng bảng quyết định và sơ đồ yêu cầu quyết định (DMN 1.3).</p>
-    </div>
+  <app-page-header
+    variant="plain"
+    title="Danh sách Bảng Quyết định DMN"
+    description="Quản lý, xây dựng bảng quyết định và sơ đồ yêu cầu quyết định (DMN 1.3)."
+    [(statsOpen)]="isStatsOpen"
+  >
+    <button class="btn-primary-glow" (click)="editor.openCreate()">
+      <span nz-icon nzType="plus" nzTheme="outline"></span>
+      <span>Tạo DMN mới</span>
+    </button>
+  </app-page-header>
 
-    <div class="title-actions">
-      <button
-        class="btn btn-outline-stats"
-        [class.active]="isStatsOpen()"
-        (click)="toggleStats()"
-        title="Xem thống kê tổng quan"
-      >
-        <span
-          nz-icon
-          [nzType]="isStatsOpen() ? 'eye-invisible' : 'dashboard'"
-          nzTheme="outline"
-        ></span>
-        <span>{{ isStatsOpen() ? 'Ẩn thống kê' : 'Xem thống kê' }}</span>
-      </button>
-
-      <button class="btn btn-dmn-glow" (click)="openCreateModal()">
-        <span nz-icon nzType="plus" nzTheme="outline"></span>
-        <span>Tạo DMN mới</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Main Dashboard View -->
   <main class="main-content">
     <div class="content-container">
-      <!-- Overview Stat Cards (Collapsible) -->
       @if (isStatsOpen()) {
         <section class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon total">
-              <span nz-icon nzType="table" nzTheme="outline"></span>
-            </div>
-            <div class="stat-info">
-              <span class="stat-label">Tổng số Bảng Quyết định</span>
-              <span class="stat-value">{{ decisions().length }}</span>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon published">
-              <span nz-icon nzType="check-circle" nzTheme="outline"></span>
-            </div>
-            <div class="stat-info">
-              <span class="stat-label">Đã phát hành</span>
-              <span class="stat-value">{{ publishedCount() }}</span>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon draft">
-              <span nz-icon nzType="edit" nzTheme="outline"></span>
-            </div>
-            <div class="stat-info">
-              <span class="stat-label">Bản nháp</span>
-              <span class="stat-value">{{ draftCount() }}</span>
-            </div>
-          </div>
+          <app-stat-card
+            icon="table"
+            label="Tổng số Bảng Quyết định"
+            [value]="decisions().length"
+          />
+          <app-stat-card
+            icon="check-circle"
+            label="Đã phát hành"
+            [value]="publishedCount()"
+            tone="success"
+          />
+          <app-stat-card icon="edit" label="Bản nháp" [value]="draftCount()" tone="warning" />
         </section>
       }
 
-      <!-- Table Section -->
       <section class="table-card">
-        <!-- Main Quick Toolbar -->
-        <div class="table-toolbar">
-          <div class="toolbar-left">
-            <!-- Quick Search by Tên quyết định -->
-            <div class="filter-field quick-search">
+        <app-filter-toolbar
+          placeholder="Tìm theo tên bảng quyết định..."
+          [searchText]="filterModel().name"
+          (searchTextChange)="filter.patch({ name: $event })"
+          [filtered]="isFiltered()"
+          [loading]="isLoading()"
+          (searchSubmit)="search()"
+          (filtersReset)="resetFilters()"
+          (reload)="search()"
+        >
+          <div class="filter-field">
+            <nz-select
+              [ngModel]="filterModel().status"
+              (ngModelChange)="onStatusChange($event)"
+              class="filter-select"
+              nzPlaceHolder="Trạng thái"
+            >
+              <nz-option nzValue="ALL" nzLabel="Tất cả trạng thái"></nz-option>
+              <nz-option nzValue="PUBLISHED" nzLabel="Đã phát hành"></nz-option>
+              <nz-option nzValue="DRAFT" nzLabel="Bản nháp"></nz-option>
+              <nz-option nzValue="ARCHIVED" nzLabel="Lưu trữ"></nz-option>
+            </nz-select>
+          </div>
+
+          <button
+            type="button"
+            class="btn-toggle-advanced"
+            [class.active]="isAdvancedFilterOpen() || isFiltered()"
+            (click)="isAdvancedFilterOpen.set(!isAdvancedFilterOpen())"
+            title="Mở/đóng bộ lọc nâng cao"
+          >
+            <span nz-icon nzType="filter" nzTheme="outline"></span>
+            <span>Bộ lọc nâng cao</span>
+            @if (activeFilterCount() > 0) {
+              <span class="filter-badge">{{ activeFilterCount() }}</span>
+            }
+            <span
+              nz-icon
+              [nzType]="isAdvancedFilterOpen() ? 'up' : 'down'"
+              class="toggle-arrow"
+            ></span>
+          </button>
+        </app-filter-toolbar>
+
+        @if (isAdvancedFilterOpen()) {
+          <app-advanced-filter-panel
+            title="Bộ lọc chi tiết DMN"
+            [filtered]="isFiltered()"
+            [loading]="isLoading()"
+            (applyFilters)="search()"
+            (filtersReset)="resetFilters()"
+            (collapse)="isAdvancedFilterOpen.set(false)"
+          >
+            <div class="grid-form-item">
+              <label class="form-label" for="dmnFilterKey">Mã quyết định</label>
               <nz-input-wrapper [nzAllowClear]="true">
                 <span nzInputPrefix>
-                  <span nz-icon nzType="search" class="filter-icon"></span>
+                  <span nz-icon nzType="barcode" class="filter-icon"></span>
                 </span>
                 <input
+                  id="dmnFilterKey"
                   type="text"
                   nz-input
-                  placeholder="Tìm theo tên bảng quyết định..."
-                  [ngModel]="filterModel().name"
-                  (ngModelChange)="filterModel.update((m) => ({ ...m, name: $event }))"
+                  placeholder="VD: DMN-DEC-01..."
+                  [ngModel]="filterModel().decisionKey"
+                  (ngModelChange)="filter.patch({ decisionKey: $event })"
                   (keyup.enter)="search()"
                 />
               </nz-input-wrapper>
             </div>
 
-            <!-- Quick Filter by Trạng thái -->
-            <div class="filter-field quick-status">
+            <div class="grid-form-item">
+              <label class="form-label" for="dmnFilterName">Tên bảng quyết định</label>
+              <nz-input-wrapper [nzAllowClear]="true">
+                <span nzInputPrefix>
+                  <span nz-icon nzType="table" class="filter-icon"></span>
+                </span>
+                <input
+                  id="dmnFilterName"
+                  type="text"
+                  nz-input
+                  placeholder="Nhập tên quyết định..."
+                  [ngModel]="filterModel().name"
+                  (ngModelChange)="filter.patch({ name: $event })"
+                  (keyup.enter)="search()"
+                />
+              </nz-input-wrapper>
+            </div>
+
+            <div class="grid-form-item">
+              <span class="form-label">Danh mục</span>
+              <nz-select
+                [ngModel]="filterModel().category"
+                (ngModelChange)="filter.patch({ category: $event })"
+                class="filter-select"
+                nzPlaceHolder="Chọn danh mục"
+              >
+                <nz-option nzValue="ALL" nzLabel="Tất cả danh mục"></nz-option>
+                <nz-option nzValue="GENERAL" nzLabel="GENERAL - Chung"></nz-option>
+                <nz-option nzValue="HR" nzLabel="HR - Nhân sự"></nz-option>
+                <nz-option nzValue="FINANCE" nzLabel="FINANCE - Tài chính"></nz-option>
+                <nz-option nzValue="SALES" nzLabel="SALES - Bán hàng"></nz-option>
+                <nz-option nzValue="IT" nzLabel="IT - Công nghệ thông tin"></nz-option>
+                <nz-option nzValue="LEGAL" nzLabel="LEGAL - Pháp lý"></nz-option>
+                <nz-option nzValue="RISK" nzLabel="RISK - Rủi ro & Tín dụng"></nz-option>
+              </nz-select>
+            </div>
+
+            <div class="grid-form-item">
+              <span class="form-label">Quy tắc kết quả (Hit Policy)</span>
+              <nz-select
+                [ngModel]="filterModel().hitPolicy"
+                (ngModelChange)="filter.patch({ hitPolicy: $event })"
+                class="filter-select"
+                nzPlaceHolder="Chọn Hit Policy"
+              >
+                <nz-option nzValue="ALL" nzLabel="Tất cả Hit Policy"></nz-option>
+                <nz-option nzValue="UNIQUE" nzLabel="UNIQUE (U) - Duy nhất"></nz-option>
+                <nz-option nzValue="FIRST" nzLabel="FIRST (F) - Khớp đầu tiên"></nz-option>
+                <nz-option nzValue="PRIORITY" nzLabel="PRIORITY (P) - Ưu tiên"></nz-option>
+                <nz-option nzValue="ANY" nzLabel="ANY (A) - Bất kỳ"></nz-option>
+                <nz-option nzValue="COLLECT" nzLabel="COLLECT (C) - Tập hợp"></nz-option>
+                <nz-option nzValue="RULE ORDER" nzLabel="RULE ORDER (R) - Theo thứ tự"></nz-option>
+                <nz-option nzValue="OUTPUT ORDER" nzLabel="OUTPUT ORDER (O) - Đầu ra"></nz-option>
+              </nz-select>
+            </div>
+
+            <div class="grid-form-item">
+              <span class="form-label">Trạng thái phát hành</span>
               <nz-select
                 [ngModel]="filterModel().status"
-                (ngModelChange)="onStatusChange($event)"
-                class="filter-select status-select"
-                nzPlaceHolder="Trạng thái"
+                (ngModelChange)="filter.patch({ status: $event })"
+                class="filter-select"
+                nzPlaceHolder="Chọn trạng thái"
               >
                 <nz-option nzValue="ALL" nzLabel="Tất cả trạng thái"></nz-option>
                 <nz-option nzValue="PUBLISHED" nzLabel="Đã phát hành"></nz-option>
@@ -103,250 +173,44 @@
               </nz-select>
             </div>
 
-            <!-- Nút Toggle Bộ lọc nâng cao -->
-            <button
-              class="btn-toggle-advanced"
-              [class.active]="isAdvancedFilterOpen() || isFiltered()"
-              (click)="toggleAdvancedFilter()"
-              title="Mở/đóng bộ lọc nâng cao"
-            >
-              <span nz-icon nzType="filter" nzTheme="outline"></span>
-              <span>Bộ lọc nâng cao</span>
-              @if (activeFilterCount() > 0) {
-                <span class="filter-badge">{{ activeFilterCount() }}</span>
-              }
-              <span
-                nz-icon
-                [nzType]="isAdvancedFilterOpen() ? 'up' : 'down'"
-                class="toggle-arrow"
-              ></span>
-            </button>
-
-            <!-- Nút Tìm kiếm nhanh -->
-            <button
-              class="btn-search-trigger"
-              (click)="search()"
-              [disabled]="isLoading()"
-              title="Tìm kiếm"
-            >
-              <span nz-icon nzType="search" nzTheme="outline"></span>
-              <span>Tìm kiếm</span>
-            </button>
-
-            <!-- Nút Đặt lại nhanh -->
-            @if (isFiltered()) {
-              <button
-                class="btn-reset-filter"
-                (click)="resetFilters()"
-                [disabled]="isLoading()"
-                title="Xóa tất cả bộ lọc"
-              >
-                <span nz-icon nzType="clear" nzTheme="outline"></span>
-                <span>Đặt lại</span>
-              </button>
-            }
-          </div>
-
-          <div class="toolbar-right">
-            <button
-              class="btn-refresh"
-              (click)="loadDecisions()"
-              [disabled]="isLoading()"
-              title="Tải lại danh sách"
-            >
-              <span nz-icon nzType="redo" nzTheme="outline" [nzSpin]="isLoading()"></span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Collapsible Advanced Filter Panel -->
-        @if (isAdvancedFilterOpen()) {
-          <div class="advanced-filter-panel">
-            <div class="panel-header">
-              <div class="panel-title">
-                <span nz-icon nzType="control" nzTheme="outline"></span>
-                <span>Bộ lọc chi tiết DMN</span>
-              </div>
-              <button
-                class="btn-close-panel"
-                (click)="toggleAdvancedFilter()"
-                title="Thu gọn bộ lọc"
-              >
-                <span nz-icon nzType="close" nzTheme="outline"></span>
-              </button>
+            <div class="grid-form-item">
+              <label class="form-label" for="dmnFilterVersion">Phiên bản</label>
+              <nz-input-wrapper [nzAllowClear]="true">
+                <span nzInputPrefix>
+                  <span nz-icon nzType="number" class="filter-icon"></span>
+                </span>
+                <input
+                  id="dmnFilterVersion"
+                  type="number"
+                  nz-input
+                  placeholder="VD: 1, 2..."
+                  [ngModel]="filterModel().version"
+                  (ngModelChange)="filter.patch({ version: $event })"
+                  (keyup.enter)="search()"
+                />
+              </nz-input-wrapper>
             </div>
 
-            <!-- Form Grid 3-4 Cột -->
-            <div class="advanced-filter-grid">
-              <!-- Field 1: Mã quyết định -->
-              <div class="grid-form-item">
-                <label class="form-label">Mã quyết định</label>
-                <nz-input-wrapper [nzAllowClear]="true">
-                  <span nzInputPrefix>
-                    <span nz-icon nzType="barcode" class="filter-icon"></span>
-                  </span>
-                  <input
-                    type="text"
-                    nz-input
-                    placeholder="VD: DMN-DEC-01..."
-                    [ngModel]="filterModel().decisionKey"
-                    (ngModelChange)="filterModel.update((m) => ({ ...m, decisionKey: $event }))"
-                    (keyup.enter)="search()"
-                  />
-                </nz-input-wrapper>
-              </div>
-
-              <!-- Field 2: Tên quyết định -->
-              <div class="grid-form-item">
-                <label class="form-label">Tên bảng quyết định</label>
-                <nz-input-wrapper [nzAllowClear]="true">
-                  <span nzInputPrefix>
-                    <span nz-icon nzType="table" class="filter-icon"></span>
-                  </span>
-                  <input
-                    type="text"
-                    nz-input
-                    placeholder="Nhập tên quyết định..."
-                    [ngModel]="filterModel().name"
-                    (ngModelChange)="filterModel.update((m) => ({ ...m, name: $event }))"
-                    (keyup.enter)="search()"
-                  />
-                </nz-input-wrapper>
-              </div>
-
-              <!-- Field 3: Danh mục -->
-              <div class="grid-form-item">
-                <label class="form-label">Danh mục</label>
-                <nz-select
-                  [ngModel]="filterModel().category"
-                  (ngModelChange)="filterModel.update((m) => ({ ...m, category: $event }))"
-                  class="filter-select"
-                  nzPlaceHolder="Chọn danh mục"
-                >
-                  <nz-option nzValue="ALL" nzLabel="Tất cả danh mục"></nz-option>
-                  <nz-option nzValue="GENERAL" nzLabel="GENERAL - Chung"></nz-option>
-                  <nz-option nzValue="HR" nzLabel="HR - Nhân sự"></nz-option>
-                  <nz-option nzValue="FINANCE" nzLabel="FINANCE - Tài chính"></nz-option>
-                  <nz-option nzValue="SALES" nzLabel="SALES - Bán hàng"></nz-option>
-                  <nz-option nzValue="IT" nzLabel="IT - Công nghệ thông tin"></nz-option>
-                  <nz-option nzValue="LEGAL" nzLabel="LEGAL - Pháp lý"></nz-option>
-                  <nz-option nzValue="RISK" nzLabel="RISK - Rủi ro & Tín dụng"></nz-option>
-                </nz-select>
-              </div>
-
-              <!-- Field 4: Hit Policy -->
-              <div class="grid-form-item">
-                <label class="form-label">Quy tắc kết quả (Hit Policy)</label>
-                <nz-select
-                  [ngModel]="filterModel().hitPolicy"
-                  (ngModelChange)="filterModel.update((m) => ({ ...m, hitPolicy: $event }))"
-                  class="filter-select"
-                  nzPlaceHolder="Chọn Hit Policy"
-                >
-                  <nz-option nzValue="ALL" nzLabel="Tất cả Hit Policy"></nz-option>
-                  <nz-option nzValue="UNIQUE" nzLabel="UNIQUE (U) - Duy nhất"></nz-option>
-                  <nz-option nzValue="FIRST" nzLabel="FIRST (F) - Khớp đầu tiên"></nz-option>
-                  <nz-option nzValue="PRIORITY" nzLabel="PRIORITY (P) - Ưu tiên"></nz-option>
-                  <nz-option nzValue="ANY" nzLabel="ANY (A) - Bất kỳ"></nz-option>
-                  <nz-option nzValue="COLLECT" nzLabel="COLLECT (C) - Tập hợp"></nz-option>
-                  <nz-option
-                    nzValue="RULE ORDER"
-                    nzLabel="RULE ORDER (R) - Theo thứ tự"
-                  ></nz-option>
-                  <nz-option nzValue="OUTPUT ORDER" nzLabel="OUTPUT ORDER (O) - Đầu ra"></nz-option>
-                </nz-select>
-              </div>
-
-              <!-- Field 5: Trạng thái -->
-              <div class="grid-form-item">
-                <label class="form-label">Trạng thái phát hành</label>
-                <nz-select
-                  [ngModel]="filterModel().status"
-                  (ngModelChange)="filterModel.update((m) => ({ ...m, status: $event }))"
-                  class="filter-select"
-                  nzPlaceHolder="Chọn trạng thái"
-                >
-                  <nz-option nzValue="ALL" nzLabel="Tất cả trạng thái"></nz-option>
-                  <nz-option nzValue="PUBLISHED" nzLabel="Đã phát hành"></nz-option>
-                  <nz-option nzValue="DRAFT" nzLabel="Bản nháp"></nz-option>
-                  <nz-option nzValue="ARCHIVED" nzLabel="Lưu trữ"></nz-option>
-                </nz-select>
-              </div>
-
-              <!-- Field 6: Phiên bản -->
-              <div class="grid-form-item">
-                <label class="form-label">Phiên bản</label>
-                <nz-input-wrapper [nzAllowClear]="true">
-                  <span nzInputPrefix>
-                    <span nz-icon nzType="number" class="filter-icon"></span>
-                  </span>
-                  <input
-                    type="number"
-                    nz-input
-                    placeholder="VD: 1, 2..."
-                    [ngModel]="filterModel().version"
-                    (ngModelChange)="filterModel.update((m) => ({ ...m, version: $event }))"
-                    (keyup.enter)="search()"
-                  />
-                </nz-input-wrapper>
-              </div>
-
-              <!-- Field 7: Người tạo -->
-              <div class="grid-form-item">
-                <label class="form-label">Người tạo</label>
-                <nz-input-wrapper [nzAllowClear]="true">
-                  <span nzInputPrefix>
-                    <span nz-icon nzType="user" class="filter-icon"></span>
-                  </span>
-                  <input
-                    type="text"
-                    nz-input
-                    placeholder="Nhập tên người tạo..."
-                    [ngModel]="filterModel().createdBy"
-                    (ngModelChange)="filterModel.update((m) => ({ ...m, createdBy: $event }))"
-                    (keyup.enter)="search()"
-                  />
-                </nz-input-wrapper>
-              </div>
+            <div class="grid-form-item">
+              <label class="form-label" for="dmnFilterCreatedBy">Người tạo</label>
+              <nz-input-wrapper [nzAllowClear]="true">
+                <span nzInputPrefix>
+                  <span nz-icon nzType="user" class="filter-icon"></span>
+                </span>
+                <input
+                  id="dmnFilterCreatedBy"
+                  type="text"
+                  nz-input
+                  placeholder="Nhập tên người tạo..."
+                  [ngModel]="filterModel().createdBy"
+                  (ngModelChange)="filter.patch({ createdBy: $event })"
+                  (keyup.enter)="search()"
+                />
+              </nz-input-wrapper>
             </div>
-
-            <!-- Action Buttons Footer inside Panel -->
-            <div class="panel-actions">
-              <button
-                class="btn-panel-search"
-                (click)="search()"
-                [disabled]="isLoading()"
-                title="Áp dụng bộ lọc"
-              >
-                <span nz-icon nzType="search" nzTheme="outline"></span>
-                <span>Áp dụng bộ lọc</span>
-              </button>
-
-              @if (isFiltered()) {
-                <button
-                  class="btn-panel-reset"
-                  (click)="resetFilters()"
-                  [disabled]="isLoading()"
-                  title="Xóa tất cả bộ lọc"
-                >
-                  <span nz-icon nzType="clear" nzTheme="outline"></span>
-                  <span>Đặt lại mặc định</span>
-                </button>
-              }
-
-              <button
-                class="btn-panel-collapse"
-                (click)="toggleAdvancedFilter()"
-                title="Thu gọn panel"
-              >
-                <span nz-icon nzType="up" nzTheme="outline"></span>
-                <span>Thu gọn</span>
-              </button>
-            </div>
-          </div>
+          </app-advanced-filter-panel>
         }
 
-        <!-- Table View with nz-table -->
         <div class="table-responsive">
           <nz-table
             #decisionTable
@@ -380,48 +244,28 @@
             </thead>
             <tbody>
               @for (decision of decisionTable.data; track decision.id) {
-                <tr class="table-row" (click)="openDetailModal(decision)">
+                <tr class="table-row" (click)="editor.openView(decision)">
                   <td>
                     <span class="code-badge">{{ decision.decisionKey }}</span>
                   </td>
                   <td>
-                    <div class="decision-name-cell">
+                    <div class="definition-name-cell">
                       <span class="name">{{ decision.name }}</span>
                       <span class="desc">{{ decision.description }}</span>
                     </div>
                   </td>
                   <td>
-                    <span
-                      class="code-badge"
-                      style="background: #f1f5f9; color: #475569; border-color: #e2e8f0"
-                      >{{ decision.category }}</span
-                    >
+                    <span class="code-badge category">{{ decision.category }}</span>
                   </td>
                   <td>
-                    <span
-                      class="code-badge"
-                      style="background: #eff6ff; color: #2563eb; border-color: #dbeafe"
-                      >{{ decision.hitPolicy }}</span
-                    >
+                    <span class="code-badge hit-policy">{{ decision.hitPolicy }}</span>
                   </td>
                   <td>
                     <span class="version-tag">v{{ decision.version }}</span>
                   </td>
                   <td>
-                    <span class="status-pill" [class]="decision.status.toLowerCase()">
-                      <span class="dot"></span>
-                      @switch (decision.status) {
-                        @case ('PUBLISHED') {
-                          Đã phát hành
-                        }
-                        @case ('ARCHIVED') {
-                          Lưu trữ
-                        }
-                        @default {
-                          Bản nháp
-                        }
-                      }
-                    </span>
+                    @let status = getDefinitionStatusMeta(decision.status);
+                    <app-status-pill [label]="status.label" [tone]="status.tone" />
                   </td>
                   <td>
                     <span class="date-text">{{ decision.updatedAt }}</span>
@@ -430,14 +274,14 @@
                     <div class="action-btns">
                       <button
                         class="btn-action view"
-                        (click)="openDetailModal(decision, $event)"
+                        (click)="editor.openView(decision, $event)"
                         title="Xem chi tiết bảng quyết định"
                       >
                         <span nz-icon nzType="eye" nzTheme="outline"></span>
                       </button>
                       <button
                         class="btn-action edit"
-                        (click)="openEditModal(decision, $event)"
+                        (click)="editor.openEdit(decision, $event)"
                         title="Cập nhật bảng quyết định"
                       >
                         <span nz-icon nzType="edit" nzTheme="outline"></span>
@@ -449,7 +293,7 @@
                         nzOkText="Xóa"
                         nzCancelText="Hủy"
                         nzOkDanger
-                        (nzOnConfirm)="deleteDecision(decision)"
+                        (nzOnConfirm)="editor.remove(decision)"
                         (click)="$event.stopPropagation()"
                         title="Xóa quyết định"
                       >
@@ -478,405 +322,197 @@
   </main>
 </div>
 
-<!-- Modal Container chứa DMN Designer (2/3) và Signal Form Thông tin bảng quyết định (1/3) -->
-@if (isModalOpen()) {
-  <div class="modal-backdrop">
-    <div class="modal-wrapper" (click)="$event.stopPropagation()">
-      @if (isDetailLoading()) {
-        <div class="modal-loading-box">
-          <nz-spin nzSimple nzSize="large"></nz-spin>
-          <p class="loading-label">Đang tải dữ liệu chi tiết bảng quyết định từ máy chủ...</p>
-        </div>
-      } @else {
-        <div class="modal-split-container">
-          <!-- 2/3 Độ rộng (có thể tùy chỉnh kéo giãn bằng NzResizable): DMN Designer -->
-          <div
-            class="designer-column"
-            nz-resizable
-            [nzMinWidth]="360"
-            [nzMaxWidth]="1450"
-            (nzResize)="onSideResize($event)"
-            [style.width.px]="designerWidth()"
-            [style.flex]="designerWidth() ? '0 0 ' + designerWidth() + 'px' : '2'"
-          >
-            <nz-resize-handle nzDirection="right" nzCursorType="grid">
-              <div class="resize-handle-wrapper">
-                <div class="resize-handle-rail"></div>
-                <div class="resize-handle-knob" title="Kéo để điều chỉnh độ rộng khung">
-                  <span class="grip-line"></span>
-                  <span class="grip-line"></span>
-                </div>
-              </div>
-            </nz-resize-handle>
+<!-- Modal: DMN Designer (trái) + form thông tin bảng quyết định (phải) -->
+<app-designer-modal
+  [editor]="editor"
+  [labels]="modalLabels"
+  [status]="decisionForm.status().value()"
+>
+  @if (editor.isOpen() && !editor.isLoading()) {
+    <app-dmn-designer
+      designer
+      [decisionData]="editor.selected()"
+      [readOnly]="editor.mode() === 'view'"
+      [saveLabel]="editor.mode() === 'create' ? 'Tạo DMN' : 'Lưu DMN'"
+      (save)="editor.save($event)"
+      (closed)="editor.requestClose()"
+    />
+  }
 
-            <app-dmn-designer
-              [decisionData]="selectedDecision()"
-              [readOnly]="modalMode() === 'view'"
-              [saveLabel]="modalMode() === 'create' ? 'Tạo DMN' : 'Lưu DMN'"
-              (save)="onSaveFromModal($event)"
-              (closed)="closeModal()"
-            ></app-dmn-designer>
+  <div class="signal-form" [class.view-mode]="editor.mode() === 'view'">
+    <div
+      class="form-group"
+      [class.has-error]="
+        decisionForm.decisionKey().invalid() && decisionForm.decisionKey().touched()
+      "
+    >
+      <label class="form-label" for="dmnFormKey">
+        <span>Mã quyết định (Key)</span>
+        <span class="required-star">*</span>
+        @if (editor.mode() !== 'create') {
+          <span class="auto-hint">(Cố định)</span>
+        }
+      </label>
+      <div class="input-with-icon">
+        <span nz-icon nzType="code" nzTheme="outline" class="input-icon"></span>
+        @if (editor.mode() === 'create') {
+          <input
+            id="dmnFormKey"
+            type="text"
+            class="form-control"
+            [formField]="decisionForm.decisionKey"
+            placeholder="VD: DMN-DEC-01"
+          />
+        } @else {
+          <input
+            id="dmnFormKey"
+            type="text"
+            class="form-control readonly-input"
+            [value]="decisionFormModel().decisionKey"
+            readonly
+            disabled
+            title="Mã quyết định là định danh cố định, không thể thay đổi sau khi tạo"
+          />
+        }
+      </div>
+      @if (decisionForm.decisionKey().invalid() && decisionForm.decisionKey().touched()) {
+        @for (error of decisionForm.decisionKey().errors(); track error.kind) {
+          <div class="form-error-msg">
+            <span nz-icon nzType="info-circle" nzTheme="outline"></span>
+            <span>{{ error.message }}</span>
           </div>
-
-          <!-- 1/3 Độ rộng: Signal Form Thông tin bảng quyết định -->
-          <aside class="process-info-sidebar">
-            <!-- Header -->
-            <div class="info-sidebar-header">
-              <div class="header-main">
-                <div class="icon-wrap">
-                  <span nz-icon nzType="table" nzTheme="outline"></span>
-                </div>
-                <div class="header-titles">
-                  <div class="header-top-row">
-                    <h3>
-                      @switch (modalMode()) {
-                        @case ('view') {
-                          Chi tiết Bảng Quyết định
-                        }
-                        @case ('create') {
-                          Tạo Bảng Quyết định mới
-                        }
-                        @default {
-                          Cập nhật Bảng Quyết định
-                        }
-                      }
-                    </h3>
-                    <div class="header-badges">
-                      @if (modalMode() === 'view') {
-                        <span class="mode-pill view">
-                          <span nz-icon nzType="eye" nzTheme="outline"></span>
-                          <span>Chỉ xem</span>
-                        </span>
-                      }
-                      <span class="version-pill" title="Phiên bản bảng quyết định"
-                        >v{{
-                          selectedDecision()?.version || decisionFormModel().version || 1
-                        }}</span
-                      >
-                      <span
-                        class="status-badge"
-                        [class]="decisionForm.status().value().toLowerCase()"
-                      >
-                        <span class="status-dot"></span>
-                        @switch (decisionForm.status().value()) {
-                          @case ('PUBLISHED') {
-                            Đã phát hành
-                          }
-                          @case ('ARCHIVED') {
-                            Lưu trữ
-                          }
-                          @default {
-                            Bản nháp
-                          }
-                        }
-                      </span>
-                    </div>
-                  </div>
-                  <p>
-                    @if (modalMode() === 'view') {
-                      Xem thông tin chi tiết và quy tắc quyết định DMN
-                    } @else {
-                      Thiết lập thông số và quy tắc quyết định DMN
-                    }
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Body Form Content -->
-            <div class="info-sidebar-body">
-              <div class="process-signal-form" [class.view-mode]="modalMode() === 'view'">
-                <!-- Mã bảng quyết định -->
-                <div
-                  class="form-group"
-                  [class.has-error]="
-                    decisionForm.decisionKey().invalid() && decisionForm.decisionKey().touched()
-                  "
-                >
-                  <label class="form-label">
-                    <span>Mã quyết định (Key)</span>
-                    <span class="required-star">*</span>
-                    @if (modalMode() !== 'create') {
-                      <span class="auto-hint">(Cố định)</span>
-                    }
-                  </label>
-                  <div class="input-with-icon">
-                    <span nz-icon nzType="code" nzTheme="outline" class="input-icon"></span>
-                    @if (modalMode() === 'create') {
-                      <input
-                        type="text"
-                        class="form-control"
-                        [formField]="decisionForm.decisionKey"
-                        placeholder="VD: DMN-DEC-01"
-                      />
-                    } @else {
-                      <input
-                        type="text"
-                        class="form-control readonly-input"
-                        [value]="decisionFormModel().decisionKey"
-                        readonly
-                        disabled
-                        title="Mã quyết định là định danh cố định, không thể thay đổi sau khi tạo"
-                      />
-                    }
-                  </div>
-                  @if (
-                    decisionForm.decisionKey().invalid() && decisionForm.decisionKey().touched()
-                  ) {
-                    @for (error of decisionForm.decisionKey().errors(); track error.kind) {
-                      <div class="form-error-msg">
-                        <span nz-icon nzType="info-circle" nzTheme="outline"></span>
-                        <span>{{ error.message }}</span>
-                      </div>
-                    }
-                  }
-                </div>
-
-                <!-- Tên bảng quyết định -->
-                <div
-                  class="form-group"
-                  [class.has-error]="decisionForm.name().invalid() && decisionForm.name().touched()"
-                >
-                  <label class="form-label">
-                    <span>Tên bảng quyết định</span>
-                    <span class="required-star">*</span>
-                  </label>
-                  <div class="input-with-icon">
-                    <span nz-icon nzType="edit" nzTheme="outline" class="input-icon"></span>
-                    <input
-                      type="text"
-                      class="form-control"
-                      [formField]="decisionForm.name"
-                      placeholder="Nhập tên bảng quyết định..."
-                    />
-                  </div>
-                  @if (decisionForm.name().invalid() && decisionForm.name().touched()) {
-                    @for (error of decisionForm.name().errors(); track error.kind) {
-                      <div class="form-error-msg">
-                        <span nz-icon nzType="info-circle" nzTheme="outline"></span>
-                        <span>{{ error.message }}</span>
-                      </div>
-                    }
-                  }
-                </div>
-
-                <!-- Form Row: Hit Policy & Danh mục -->
-                <div class="form-row-2col">
-                  <!-- Hit Policy -->
-                  <div class="form-group">
-                    <label class="form-label">
-                      <span>Hit Policy</span>
-                    </label>
-                    <div class="select-wrapper">
-                      <select class="form-control form-select" [formField]="decisionForm.hitPolicy">
-                        <option value="FIRST">FIRST (F)</option>
-                        <option value="UNIQUE">UNIQUE (U)</option>
-                        <option value="PRIORITY">PRIORITY (P)</option>
-                        <option value="ANY">ANY (A)</option>
-                        <option value="COLLECT">COLLECT (C)</option>
-                        <option value="RULE ORDER">RULE ORDER (R)</option>
-                        <option value="OUTPUT ORDER">OUTPUT ORDER (O)</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <!-- Danh mục -->
-                  <div
-                    class="form-group"
-                    [class.has-error]="
-                      decisionForm.category().invalid() && decisionForm.category().touched()
-                    "
-                  >
-                    <label class="form-label">
-                      <span>Danh mục (Category)</span>
-                      <span class="required-star">*</span>
-                    </label>
-                    <div class="input-with-icon">
-                      <span nz-icon nzType="appstore" nzTheme="outline" class="input-icon"></span>
-                      <input
-                        type="text"
-                        class="form-control"
-                        [formField]="decisionForm.category"
-                        placeholder="VD: GENERAL, FINANCE"
-                      />
-                    </div>
-                    @if (decisionForm.category().invalid() && decisionForm.category().touched()) {
-                      @for (error of decisionForm.category().errors(); track error.kind) {
-                        <div class="form-error-msg">
-                          <span nz-icon nzType="info-circle" nzTheme="outline"></span>
-                          <span>{{ error.message }}</span>
-                        </div>
-                      }
-                    }
-                  </div>
-                </div>
-
-                <!-- Form Row: Phiên bản & Trạng thái -->
-                <div class="form-row-2col">
-                  <!-- Phiên bản (Version number - Tự động quản lý bởi máy chủ) -->
-                  <div class="form-group">
-                    <label class="form-label">
-                      <span>Phiên bản</span>
-                      <span class="auto-hint">(Hệ thống tự tăng)</span>
-                    </label>
-                    <div class="input-with-icon">
-                      <span nz-icon nzType="tag" nzTheme="outline" class="input-icon"></span>
-                      <input
-                        type="text"
-                        class="form-control readonly-input"
-                        [value]="
-                          'v' + (selectedDecision()?.version || decisionFormModel().version || 1)
-                        "
-                        readonly
-                        disabled
-                        title="Phiên bản được máy chủ tự động quản lý và tăng dần"
-                      />
-                    </div>
-                  </div>
-
-                  <!-- Trạng thái -->
-                  <div class="form-group">
-                    <label class="form-label">
-                      <span>Trạng thái</span>
-                    </label>
-                    <div class="select-wrapper">
-                      <select class="form-control form-select" [formField]="decisionForm.status">
-                        <option value="DRAFT">Bản nháp</option>
-                        <option value="PUBLISHED">Đã phát hành</option>
-                        <option value="ARCHIVED">Lưu trữ</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Mô tả bảng quyết định -->
-                <div class="form-group">
-                  <label class="form-label">
-                    <span>Mô tả bảng quyết định</span>
-                  </label>
-                  <textarea
-                    class="form-control form-textarea"
-                    rows="3"
-                    [formField]="decisionForm.description"
-                    placeholder="Mô tả logic quyết định, đầu vào và bảng kết quả..."
-                  ></textarea>
-                </div>
-
-                <!-- Metadata Summary Card -->
-                <div class="metadata-card">
-                  <div class="metadata-card-header">
-                    <span nz-icon nzType="info-circle" nzTheme="outline"></span>
-                    <span>Siêu dữ liệu hệ thống</span>
-                  </div>
-                  <div class="metadata-grid">
-                    <div class="meta-item">
-                      <span class="meta-label">Mã ID hệ thống:</span>
-                      <span class="meta-value">{{ selectedDecision()?.id || 'Tạo mới' }}</span>
-                    </div>
-                    <div class="meta-item">
-                      <span class="meta-label">Phiên bản:</span>
-                      <span class="meta-value">
-                        <span class="version-tag">v{{ selectedDecision()?.version || 1 }}</span>
-                        <span class="meta-subtext">(Tự động tăng)</span>
-                      </span>
-                    </div>
-                    <div class="meta-item">
-                      <span class="meta-label">Người tạo:</span>
-                      <span class="meta-value">{{
-                        selectedDecision()?.createdBy || 'System Admin'
-                      }}</span>
-                    </div>
-                    <div class="meta-item">
-                      <span class="meta-label">Người cập nhật:</span>
-                      <span class="meta-value">{{ selectedDecision()?.updatedBy || '-' }}</span>
-                    </div>
-                    <div class="meta-item">
-                      <span class="meta-label">Lần sửa cuối:</span>
-                      <span class="meta-value">{{
-                        selectedDecision()?.updatedAt || 'Vừa khởi tạo'
-                      }}</span>
-                    </div>
-                    <div class="meta-item">
-                      <span class="meta-label">Định dạng sơ đồ:</span>
-                      <span class="meta-value badge-xml">OMG DMN 1.3 XML</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Sidebar Footer Actions -->
-            <div class="info-sidebar-footer">
-              @if (modalMode() === 'create') {
-                <button
-                  type="button"
-                  class="btn-footer-submit create"
-                  (click)="submitFromSidebar()"
-                  [disabled]="isSubmitting()"
-                >
-                  <span
-                    nz-icon
-                    [nzType]="isSubmitting() ? 'loading' : 'plus'"
-                    nzTheme="outline"
-                  ></span>
-                  <span>{{ isSubmitting() ? 'Đang tạo...' : 'Tạo DMN' }}</span>
-                </button>
-                <button
-                  type="button"
-                  class="btn-footer-cancel"
-                  (click)="closeModal()"
-                  [disabled]="isSubmitting()"
-                >
-                  Hủy
-                </button>
-              } @else if (modalMode() === 'edit') {
-                <button
-                  type="button"
-                  class="btn-footer-delete"
-                  nz-popconfirm
-                  nzPopconfirmTitle="Bạn có chắc chắn muốn xóa bảng quyết định này không?"
-                  nzOkText="Xóa"
-                  nzCancelText="Hủy"
-                  nzOkDanger
-                  (nzOnConfirm)="deleteFromModal()"
-                  [disabled]="isSubmitting()"
-                  title="Xóa vĩnh viễn bảng quyết định này"
-                >
-                  <span nz-icon nzType="delete" nzTheme="outline"></span>
-                  <span>Xóa quyết định</span>
-                </button>
-                <button
-                  type="button"
-                  class="btn-footer-submit save"
-                  (click)="submitFromSidebar()"
-                  [disabled]="isSubmitting()"
-                >
-                  <span
-                    nz-icon
-                    [nzType]="isSubmitting() ? 'loading' : 'save'"
-                    nzTheme="outline"
-                  ></span>
-                  <span>{{ isSubmitting() ? 'Đang lưu...' : 'Lưu thay đổi' }}</span>
-                </button>
-                <button
-                  type="button"
-                  class="btn-footer-cancel"
-                  (click)="closeModal()"
-                  [disabled]="isSubmitting()"
-                >
-                  Hủy
-                </button>
-              } @else {
-                <button type="button" class="btn-footer-submit edit" (click)="switchToEditMode()">
-                  <span nz-icon nzType="edit" nzTheme="outline"></span>
-                  <span>Sửa</span>
-                </button>
-                <button type="button" class="btn-footer-cancel" (click)="closeModal()">Đóng</button>
-              }
-            </div>
-          </aside>
-        </div>
+        }
       }
     </div>
+
+    <div
+      class="form-group"
+      [class.has-error]="decisionForm.name().invalid() && decisionForm.name().touched()"
+    >
+      <label class="form-label" for="dmnFormName">
+        <span>Tên bảng quyết định</span>
+        <span class="required-star">*</span>
+      </label>
+      <div class="input-with-icon">
+        <span nz-icon nzType="edit" nzTheme="outline" class="input-icon"></span>
+        <input
+          id="dmnFormName"
+          type="text"
+          class="form-control"
+          [formField]="decisionForm.name"
+          placeholder="Nhập tên bảng quyết định..."
+        />
+      </div>
+      @if (decisionForm.name().invalid() && decisionForm.name().touched()) {
+        @for (error of decisionForm.name().errors(); track error.kind) {
+          <div class="form-error-msg">
+            <span nz-icon nzType="info-circle" nzTheme="outline"></span>
+            <span>{{ error.message }}</span>
+          </div>
+        }
+      }
+    </div>
+
+    <div class="form-row-2col">
+      <div class="form-group">
+        <label class="form-label" for="dmnFormHitPolicy">
+          <span>Hit Policy</span>
+        </label>
+        <div class="select-wrapper">
+          <select
+            id="dmnFormHitPolicy"
+            class="form-control form-select"
+            [formField]="decisionForm.hitPolicy"
+          >
+            <option value="FIRST">FIRST (F)</option>
+            <option value="UNIQUE">UNIQUE (U)</option>
+            <option value="PRIORITY">PRIORITY (P)</option>
+            <option value="ANY">ANY (A)</option>
+            <option value="COLLECT">COLLECT (C)</option>
+            <option value="RULE ORDER">RULE ORDER (R)</option>
+            <option value="OUTPUT ORDER">OUTPUT ORDER (O)</option>
+          </select>
+        </div>
+      </div>
+
+      <div
+        class="form-group"
+        [class.has-error]="decisionForm.category().invalid() && decisionForm.category().touched()"
+      >
+        <label class="form-label" for="dmnFormCategory">
+          <span>Danh mục (Category)</span>
+          <span class="required-star">*</span>
+        </label>
+        <div class="input-with-icon">
+          <span nz-icon nzType="appstore" nzTheme="outline" class="input-icon"></span>
+          <input
+            id="dmnFormCategory"
+            type="text"
+            class="form-control"
+            [formField]="decisionForm.category"
+            placeholder="VD: GENERAL, FINANCE"
+          />
+        </div>
+        @if (decisionForm.category().invalid() && decisionForm.category().touched()) {
+          @for (error of decisionForm.category().errors(); track error.kind) {
+            <div class="form-error-msg">
+              <span nz-icon nzType="info-circle" nzTheme="outline"></span>
+              <span>{{ error.message }}</span>
+            </div>
+          }
+        }
+      </div>
+    </div>
+
+    <div class="form-row-2col">
+      <div class="form-group">
+        <label class="form-label" for="dmnFormVersion">
+          <span>Phiên bản</span>
+          <span class="auto-hint">(Hệ thống tự tăng)</span>
+        </label>
+        <div class="input-with-icon">
+          <span nz-icon nzType="tag" nzTheme="outline" class="input-icon"></span>
+          <input
+            id="dmnFormVersion"
+            type="text"
+            class="form-control readonly-input"
+            [value]="'v' + (editor.selected()?.version || decisionFormModel().version || 1)"
+            readonly
+            disabled
+            title="Phiên bản được máy chủ tự động quản lý và tăng dần"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="dmnFormStatus">
+          <span>Trạng thái</span>
+        </label>
+        <div class="select-wrapper">
+          <select
+            id="dmnFormStatus"
+            class="form-control form-select"
+            [formField]="decisionForm.status"
+          >
+            <option value="DRAFT">Bản nháp</option>
+            <option value="PUBLISHED">Đã phát hành</option>
+            <option value="ARCHIVED">Lưu trữ</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="dmnFormDescription">
+        <span>Mô tả bảng quyết định</span>
+      </label>
+      <textarea
+        id="dmnFormDescription"
+        class="form-control form-textarea"
+        rows="3"
+        [formField]="decisionForm.description"
+        placeholder="Mô tả logic quyết định, đầu vào và bảng kết quả..."
+      ></textarea>
+    </div>
   </div>
-}
+</app-designer-modal>

@@ -1,28 +1,45 @@
 import { Component, inject, signal, computed, ViewChild, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { form, FormField, required, submit } from '@angular/forms/signals';
+import { form, FormField, required } from '@angular/forms/signals';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzSelectModule } from 'ng-zorro-antd/select';
-import { NzResizableModule, NzResizeEvent } from 'ng-zorro-antd/resizable';
-import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
-import { NzSpinModule } from 'ng-zorro-antd/spin';
+import { NzModalModule } from 'ng-zorro-antd/modal';
 import { NzListModule } from 'ng-zorro-antd/list';
 import { NzPaginationModule } from 'ng-zorro-antd/pagination';
 import { BpmnProcessService } from '@core/services';
-import { BpmnProcess } from '@core/models';
+import { BpmnProcess, getDefinitionStatusMeta } from '@core/models';
 import { BpmnDesignerComponent } from '@shared/components/bpmn-designer/bpmn-designer.component';
+import {
+  AdvancedFilterPanelComponent,
+  FilterToolbarComponent,
+  PageHeaderComponent,
+  StatCardComponent,
+  StatusPillComponent,
+} from '@shared/components/list-page';
+import {
+  DefinitionEditorStore,
+  DesignerModalComponent,
+  DesignerModalLabels,
+} from '@shared/components/designer-modal';
 import { TableAutoHeightDirective } from '@shared/directives';
-import { sortByString, sortByNumber } from '@shared/utils';
+import { createListFilter, sortByString, sortByNumber } from '@shared/utils';
+
+interface BpmnProcessForm {
+  processKey: string;
+  name: string;
+  description: string;
+  category: string;
+  version: number;
+  status: string;
+}
 
 @Component({
   selector: 'app-bpmn-list',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     FormField,
     NzTableModule,
@@ -32,66 +49,49 @@ import { sortByString, sortByNumber } from '@shared/utils';
     NzIconModule,
     NzInputModule,
     NzSelectModule,
-    NzResizableModule,
+    // Cung cấp NzModalService cho DefinitionEditorStore (hộp xác nhận khi đóng)
     NzModalModule,
-    NzSpinModule,
     BpmnDesignerComponent,
     TableAutoHeightDirective,
+    PageHeaderComponent,
+    StatCardComponent,
+    FilterToolbarComponent,
+    AdvancedFilterPanelComponent,
+    StatusPillComponent,
+    DesignerModalComponent,
   ],
   templateUrl: './bpmn-list.component.html',
   styleUrl: './bpmn-list.component.scss',
 })
 export class BpmnListComponent implements OnInit {
-  @ViewChild(BpmnDesignerComponent) protected designerComponent?: BpmnDesignerComponent;
+  @ViewChild(BpmnDesignerComponent) private designer?: BpmnDesignerComponent;
 
-  private bpmnService = inject(BpmnProcessService);
-  private modal = inject(NzModalService);
+  private readonly bpmnService = inject(BpmnProcessService);
 
-  ngOnInit(): void {
-    this.search();
-  }
+  protected readonly isStatsOpen = signal<boolean>(false);
+  protected readonly isAdvancedFilterOpen = signal<boolean>(false);
+  protected readonly viewDisplayMode = signal<'table' | 'list'>('table');
+  protected readonly pageIndex = signal<number>(1);
+  protected readonly pageSize = signal<number>(10);
 
-  protected isModalOpen = signal<boolean>(false);
-  protected modalMode = signal<'view' | 'edit' | 'create'>('edit');
-  protected initialDesignerMode = signal<'design' | 'xml'>('design');
-  protected isDetailLoading = signal<boolean>(false);
-  protected isDeploying = signal<boolean>(false);
-  protected isStatsOpen = signal<boolean>(false);
-  protected selectedProcess = signal<BpmnProcess | null>(null);
-  protected viewDisplayMode = signal<'table' | 'list'>('table');
-  protected pageSize = signal<number>(10);
-  protected pageIndex = signal<number>(1);
-  protected designerWidth = signal<number | null>(null);
+  protected readonly processes = this.bpmnService.processes;
+  protected readonly isLoading = this.bpmnService.isLoading;
+  protected readonly publishedCount = computed(
+    () => this.processes().filter((p) => p.status === 'PUBLISHED').length,
+  );
+  protected readonly draftCount = computed(
+    () => this.processes().filter((p) => p.status === 'DRAFT').length,
+  );
 
-  protected paginatedProcesses = computed(() => {
-    const list = this.processes();
+  /** Chế độ xem danh sách tự phân trang (bảng dùng phân trang phía client của nz-table). */
+  protected readonly paginatedProcesses = computed(() => {
     const page = this.pageIndex();
     const size = this.pageSize();
-    return list.slice((page - 1) * size, page * size);
+    return this.processes().slice((page - 1) * size, page * size);
   });
 
-  onPageSizeChange(size: number): void {
-    this.pageSize.set(size);
-    this.pageIndex.set(1);
-  }
-  private resizeId = -1;
-  private initialFormModel: {
-    processKey: string;
-    name: string;
-    description: string;
-    category: string;
-    version: number;
-    status: string;
-  } | null = null;
-
-  toggleStats(): void {
-    this.isStatsOpen.update((v) => !v);
-  }
-
-  // Filter State for Server-side API query
-  protected isAdvancedFilterOpen = signal<boolean>(false);
-
-  protected readonly filterModel = signal({
+  // Bộ lọc (gửi lên API)
+  protected readonly filter = createListFilter({
     processKey: '',
     name: '',
     category: 'ALL',
@@ -99,27 +99,12 @@ export class BpmnListComponent implements OnInit {
     version: '' as string | number,
     createdBy: '',
   });
+  protected readonly filterModel = this.filter.model;
+  protected readonly isFiltered = this.filter.isFiltered;
+  protected readonly activeFilterCount = this.filter.activeCount;
 
-  protected readonly activeFilterCount = computed(() => {
-    const m = this.filterModel();
-    let count = 0;
-    if (m.processKey.trim()) count++;
-    if (m.name.trim()) count++;
-    if (m.category !== 'ALL') count++;
-    if (m.status !== 'ALL') count++;
-    if (m.version !== '' && m.version !== null && m.version !== undefined) count++;
-    if (m.createdBy.trim()) count++;
-    return count;
-  });
-
-  protected readonly isFiltered = computed(() => this.activeFilterCount() > 0);
-
-  toggleAdvancedFilter(): void {
-    this.isAdvancedFilterOpen.update((v) => !v);
-  }
-
-  // Signal Form for Process Information
-  protected readonly processFormModel = signal({
+  // Form thông tin quy trình trong modal
+  protected readonly processFormModel = signal<BpmnProcessForm>({
     processKey: '',
     name: '',
     description: '',
@@ -134,25 +119,82 @@ export class BpmnListComponent implements OnInit {
     required(schema.category, { message: 'Danh mục không được để trống' });
   });
 
-  protected processes = this.bpmnService.processes;
-  protected isLoading = this.bpmnService.isLoading;
+  protected readonly editor = new DefinitionEditorStore<BpmnProcess, BpmnProcessForm>({
+    formModel: this.processFormModel,
+    form: this.processForm,
+    keyField: 'processKey',
+    entityLabel: 'Quy trình',
+    designer: () => this.designer,
+    createDefaults: () => ({
+      processKey: 'BPMN-PROC-' + (this.processes().length + 1).toString().padStart(2, '0'),
+      name: 'Quy trình mới',
+      description: '',
+      category: 'GENERAL',
+      version: 1,
+      status: 'DRAFT',
+    }),
+    toForm: (process) => ({
+      processKey: process.processKey || '',
+      name: process.name || '',
+      description: process.description || '',
+      category: process.category || 'GENERAL',
+      version: process.version || 1,
+      status: process.status || 'DRAFT',
+    }),
+    load: (id) => this.bpmnService.getProcessById(id),
+    create: (f, xml, fallbackName) =>
+      this.bpmnService.createProcess({
+        processKey: f.processKey,
+        name: f.name.trim() || fallbackName,
+        description: f.description,
+        category: f.category,
+        bpmnXml: xml,
+      }),
+    update: (process, f, xml, fallbackName) =>
+      this.bpmnService.updateProcess(process.id, {
+        name: f.name.trim() || fallbackName,
+        description: f.description,
+        category: f.category,
+        status: f.status,
+        bpmnXml: xml,
+      }),
+    remove: (id) => this.bpmnService.deleteProcess(id),
+    publish: (process) =>
+      this.bpmnService.updateProcess(process.id, {
+        name: process.name,
+        description: process.description,
+        category: process.category,
+        status: 'PUBLISHED',
+        bpmnXml: process.bpmnXml,
+      }),
+  });
 
-  protected publishedCount = computed(
-    () => this.processes().filter((p) => p.status === 'PUBLISHED').length,
-  );
+  protected readonly modalLabels: DesignerModalLabels = {
+    entity: 'Quy trình',
+    icon: 'file-text',
+    loadingText: 'Đang tải dữ liệu chi tiết quy trình từ máy chủ...',
+    viewSubtitle: 'Xem thông tin chi tiết và dữ liệu nghiệp vụ quy trình',
+    editSubtitle: 'Thiết lập thông số và dữ liệu nghiệp vụ quy trình',
+    createButton: 'Tạo quy trình',
+    deleteButton: 'Xóa quy trình',
+    deleteConfirm: 'Bạn có chắc chắn muốn xóa quy trình này không?',
+    format: 'OMG BPMN 2.0 XML',
+  };
 
-  protected draftCount = computed(
-    () => this.processes().filter((p) => p.status === 'DRAFT').length,
-  );
+  protected readonly getDefinitionStatusMeta = getDefinitionStatusMeta;
 
-  // Table Sort Comparators
-  protected sortProcessKey = sortByString<BpmnProcess>('processKey');
-  protected sortCategory = sortByString<BpmnProcess>('category');
-  protected sortName = sortByString<BpmnProcess>('name');
-  protected sortVersion = sortByNumber<BpmnProcess>('version');
-  protected sortStatus = sortByString<BpmnProcess>('status');
-  protected sortCreatedAt = sortByString<BpmnProcess>('createdAt');
-  protected sortUpdatedAt = sortByString<BpmnProcess>('updatedAt');
+  // Sắp xếp bảng
+  protected readonly sortProcessKey = sortByString<BpmnProcess>('processKey');
+  protected readonly sortCategory = sortByString<BpmnProcess>('category');
+  protected readonly sortName = sortByString<BpmnProcess>('name');
+  protected readonly sortVersion = sortByNumber<BpmnProcess>('version');
+  protected readonly sortStatus = sortByString<BpmnProcess>('status');
+  protected readonly sortCreatedAt = sortByString<BpmnProcess>('createdAt');
+  protected readonly sortUpdatedAt = sortByString<BpmnProcess>('updatedAt');
+
+  ngOnInit(): void {
+    this.search();
+  }
 
   search(): void {
     this.pageIndex.set(1);
@@ -168,275 +210,17 @@ export class BpmnListComponent implements OnInit {
   }
 
   resetFilters(): void {
-    this.pageIndex.set(1);
-    this.filterModel.set({
-      processKey: '',
-      name: '',
-      category: 'ALL',
-      status: 'ALL',
-      version: '',
-      createdBy: '',
-    });
+    this.filter.reset();
     this.search();
   }
 
   onStatusChange(status: string): void {
-    this.filterModel.update((m) => ({ ...m, status }));
+    this.filter.patch({ status });
     this.search();
   }
 
-  loadProcesses(): void {
-    this.search();
-  }
-
-  onSideResize({ width }: NzResizeEvent): void {
-    cancelAnimationFrame(this.resizeId);
-    this.resizeId = requestAnimationFrame(() => {
-      if (width) {
-        this.designerWidth.set(width);
-      }
-    });
-  }
-
-  openCreateModal(mode: 'design' | 'xml' = 'design'): void {
-    this.initialDesignerMode.set(mode);
-    this.modalMode.set('create');
-    const nextKey = 'BPMN-PROC-' + (this.processes().length + 1).toString().padStart(2, '0');
-    const initial = {
-      processKey: nextKey,
-      name: mode === 'xml' ? 'Quy trình tạo từ XML' : 'Quy trình mới',
-      description: '',
-      category: 'GENERAL',
-      version: 1,
-      status: 'DRAFT',
-    };
-    this.selectedProcess.set(null);
-    this.processFormModel.set({ ...initial });
-    this.initialFormModel = { ...initial };
-    this.isDetailLoading.set(false);
-    this.isModalOpen.set(true);
-  }
-
-  openDetailModal(process: BpmnProcess, event?: Event): void {
-    event?.stopPropagation();
-    this.initialDesignerMode.set('design');
-    this.loadAndOpenModal(process.id, 'view', process);
-  }
-
-  openEditModal(process: BpmnProcess, event?: Event): void {
-    event?.stopPropagation();
-    this.initialDesignerMode.set('design');
-    this.loadAndOpenModal(process.id, 'edit', process);
-  }
-
-  switchToEditMode(): void {
-    this.modalMode.set('edit');
-  }
-
-  private loadAndOpenModal(id: string, mode: 'view' | 'edit', fallbackProcess?: BpmnProcess): void {
-    this.modalMode.set(mode);
-    this.isModalOpen.set(true);
-    this.isDetailLoading.set(true);
-
-    if (fallbackProcess) {
-      this.selectedProcess.set(fallbackProcess);
-      this.populateFormModel(fallbackProcess);
-    }
-
-    // Gọi API chi tiết /api/bpmn-processes/{id}
-    this.bpmnService.getProcessById(id).subscribe({
-      next: (detail) => {
-        const fullData = detail || fallbackProcess;
-        if (fullData) {
-          this.selectedProcess.set(fullData);
-          this.populateFormModel(fullData);
-        }
-        this.isDetailLoading.set(false);
-      },
-      error: (err) => {
-        console.warn(
-          `Không thể tải chi tiết quy trình (${id}) từ API /api/bpmn-processes/${id}, sử dụng dữ liệu tạm thời:`,
-          err,
-        );
-        if (fallbackProcess) {
-          this.selectedProcess.set(fallbackProcess);
-          this.populateFormModel(fallbackProcess);
-        }
-        this.isDetailLoading.set(false);
-      },
-    });
-  }
-
-  private populateFormModel(process: BpmnProcess): void {
-    const initial = {
-      processKey: process.processKey || '',
-      name: process.name || '',
-      description: process.description || '',
-      category: process.category || 'GENERAL',
-      version: process.version || 1,
-      status: process.status || 'DRAFT',
-    };
-    this.processFormModel.set({ ...initial });
-    this.initialFormModel = { ...initial };
-  }
-
-  protected hasUnsavedChanges(): boolean {
-    if (this.modalMode() === 'view') {
-      return false;
-    }
-    const isDesignerDirty = this.designerComponent?.hasChanges() ?? false;
-    const isFormDirty = this.checkFormDirty();
-    return isDesignerDirty || isFormDirty;
-  }
-
-  private checkFormDirty(): boolean {
-    if (!this.initialFormModel) return false;
-    const current = this.processFormModel();
-    return (
-      (this.modalMode() === 'create' &&
-        current.processKey !== this.initialFormModel.processKey) ||
-      current.name !== this.initialFormModel.name ||
-      current.description !== this.initialFormModel.description ||
-      current.category !== this.initialFormModel.category ||
-      current.status !== this.initialFormModel.status
-    );
-  }
-
-  closeModal(): void {
-    if (this.modalMode() !== 'view' && this.hasUnsavedChanges()) {
-      this.modal.confirm({
-        nzTitle: 'Xác nhận đóng',
-        nzContent:
-          'Quy trình đã có thay đổi chưa được lưu. Bạn có chắc chắn muốn đóng và hủy bỏ các thay đổi này không?',
-        nzOkText: 'Đóng không lưu',
-        nzOkDanger: true,
-        nzCancelText: 'Tiếp tục chỉnh sửa',
-        nzIconType: 'exclamation-circle',
-        nzCentered: true,
-        nzOnOk: () => {
-          this.forceCloseModal();
-        },
-      });
-    } else {
-      this.forceCloseModal();
-    }
-  }
-
-  protected isSubmitting = signal<boolean>(false);
-
-  protected forceCloseModal(): void {
-    this.isModalOpen.set(false);
-    this.selectedProcess.set(null);
-    this.initialFormModel = null;
-    this.isDetailLoading.set(false);
-    this.isSubmitting.set(false);
-    this.isDeploying.set(false);
-  }
-
-  submitFromSidebar(): void {
-    if (this.designerComponent) {
-      this.designerComponent.onSave();
-    }
-  }
-
-  onSaveFromModal(event: { name: string; xml: string }): void {
-    submit(this.processForm, async () => {
-      const current = this.selectedProcess();
-      const formVal = this.processFormModel();
-
-      if (this.modalMode() === 'create' || !current?.id) {
-        // Gọi API tạo mới: POST /api/bpmn-processes
-        this.isSubmitting.set(true);
-        this.bpmnService
-          .createProcess({
-            processKey: formVal.processKey,
-            name: formVal.name.trim() || event.name,
-            description: formVal.description,
-            category: formVal.category,
-            bpmnXml: event.xml,
-          })
-          .subscribe({
-            next: () => {
-              this.isSubmitting.set(false);
-              this.forceCloseModal();
-            },
-            error: () => {
-              this.isSubmitting.set(false);
-            },
-          });
-      } else {
-        // Cập nhật quy trình hiện tại: PUT /api/bpmn-processes/:id
-        this.isSubmitting.set(true);
-        this.bpmnService
-          .updateProcess(current.id, {
-            name: formVal.name.trim() || event.name,
-            description: formVal.description,
-            category: formVal.category,
-            status: formVal.status,
-            bpmnXml: event.xml,
-          })
-          .subscribe({
-            next: () => {
-              this.isSubmitting.set(false);
-              this.forceCloseModal();
-            },
-            error: () => {
-              this.isSubmitting.set(false);
-            },
-          });
-      }
-    });
-  }
-
-  deleteProcess(process: BpmnProcess, event?: Event): void {
-    event?.stopPropagation();
-    // Gọi API xóa: DELETE /api/bpmn-processes/:id
-    this.bpmnService.deleteProcess(process.id).subscribe();
-  }
-
-  deleteFromModal(): void {
-    const current = this.selectedProcess();
-    if (!current?.id) return;
-    this.isSubmitting.set(true);
-    // Gọi API xóa: DELETE /api/bpmn-processes/:id
-    this.bpmnService.deleteProcess(current.id).subscribe({
-      next: () => {
-        this.isSubmitting.set(false);
-        this.forceCloseModal();
-      },
-      error: () => {
-        this.isSubmitting.set(false);
-      },
-    });
-  }
-
-  deployProcessFromModal(): void {
-    const current = this.selectedProcess();
-    if (!current?.id) return;
-
-    this.isDeploying.set(true);
-    this.bpmnService
-      .updateProcess(current.id, {
-        name: current.name,
-        description: current.description,
-        category: current.category,
-        status: 'PUBLISHED',
-        bpmnXml: current.bpmnXml,
-      })
-      .subscribe({
-        next: (updated) => {
-          this.isDeploying.set(false);
-          const refreshed: BpmnProcess = updated || {
-            ...current,
-            status: 'PUBLISHED',
-            updatedAt: new Date().toISOString(),
-          };
-          this.selectedProcess.set(refreshed);
-          this.populateFormModel(refreshed);
-        },
-        error: () => {
-          this.isDeploying.set(false);
-        },
-      });
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
+    this.pageIndex.set(1);
   }
 }

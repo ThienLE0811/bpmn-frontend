@@ -1,26 +1,44 @@
 import { Component, inject, signal, computed, ViewChild, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { form, FormField, required, submit } from '@angular/forms/signals';
+import { form, FormField, required } from '@angular/forms/signals';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzSelectModule } from 'ng-zorro-antd/select';
-import { NzResizableModule, NzResizeEvent } from 'ng-zorro-antd/resizable';
-import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
-import { NzSpinModule } from 'ng-zorro-antd/spin';
+import { NzModalModule } from 'ng-zorro-antd/modal';
 import { DmnDecisionService } from '@core/services';
-import { DmnDecision } from '@core/models';
+import { DmnDecision, getDefinitionStatusMeta } from '@core/models';
 import { DmnDesignerComponent } from '@shared/components/dmn-designer/dmn-designer.component';
+import {
+  AdvancedFilterPanelComponent,
+  FilterToolbarComponent,
+  PageHeaderComponent,
+  StatCardComponent,
+  StatusPillComponent,
+} from '@shared/components/list-page';
+import {
+  DefinitionEditorStore,
+  DesignerModalComponent,
+  DesignerModalLabels,
+} from '@shared/components/designer-modal';
 import { TableAutoHeightDirective } from '@shared/directives';
-import { sortByString, sortByNumber } from '@shared/utils';
+import { createListFilter, sortByString, sortByNumber } from '@shared/utils';
+
+interface DmnDecisionForm {
+  decisionKey: string;
+  name: string;
+  description: string;
+  hitPolicy: string;
+  category: string;
+  version: number;
+  status: string;
+}
 
 @Component({
   selector: 'app-dmn-list',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     FormField,
     NzTableModule,
@@ -28,53 +46,41 @@ import { sortByString, sortByNumber } from '@shared/utils';
     NzIconModule,
     NzInputModule,
     NzSelectModule,
-    NzResizableModule,
+    // Cung cấp NzModalService cho DefinitionEditorStore (hộp xác nhận khi đóng)
     NzModalModule,
-    NzSpinModule,
     DmnDesignerComponent,
     TableAutoHeightDirective,
+    PageHeaderComponent,
+    StatCardComponent,
+    FilterToolbarComponent,
+    AdvancedFilterPanelComponent,
+    StatusPillComponent,
+    DesignerModalComponent,
   ],
   templateUrl: './dmn-list.component.html',
   styleUrl: './dmn-list.component.scss',
 })
 export class DmnListComponent implements OnInit {
-  @ViewChild(DmnDesignerComponent) protected designerComponent?: DmnDesignerComponent;
+  @ViewChild(DmnDesignerComponent) private designer?: DmnDesignerComponent;
 
-  private dmnService = inject(DmnDecisionService);
-  private modal = inject(NzModalService);
+  private readonly dmnService = inject(DmnDecisionService);
 
-  ngOnInit(): void {
-    this.search();
-  }
+  protected readonly isStatsOpen = signal<boolean>(false);
+  protected readonly isAdvancedFilterOpen = signal<boolean>(false);
+  protected readonly pageIndex = signal<number>(1);
+  protected readonly pageSize = signal<number>(10);
 
-  protected isModalOpen = signal<boolean>(false);
-  protected modalMode = signal<'view' | 'edit' | 'create'>('edit');
-  protected isDetailLoading = signal<boolean>(false);
-  protected isSubmitting = signal<boolean>(false);
-  protected isStatsOpen = signal<boolean>(false);
-  protected selectedDecision = signal<DmnDecision | null>(null);
-  protected pageIndex = signal<number>(1);
-  protected pageSize = signal<number>(10);
-  protected designerWidth = signal<number | null>(null);
-  private resizeId = -1;
-  private initialFormModel: {
-    decisionKey: string;
-    name: string;
-    description: string;
-    hitPolicy: string;
-    category: string;
-    version: number;
-    status: string;
-  } | null = null;
+  protected readonly decisions = this.dmnService.decisions;
+  protected readonly isLoading = this.dmnService.isLoading;
+  protected readonly publishedCount = computed(
+    () => this.decisions().filter((d) => d.status === 'PUBLISHED').length,
+  );
+  protected readonly draftCount = computed(
+    () => this.decisions().filter((d) => d.status === 'DRAFT').length,
+  );
 
-  toggleStats(): void {
-    this.isStatsOpen.update((v) => !v);
-  }
-
-  // Filter State for Server-side API query
-  protected isAdvancedFilterOpen = signal<boolean>(false);
-
-  protected readonly filterModel = signal({
+  // Bộ lọc (gửi lên API)
+  protected readonly filter = createListFilter({
     decisionKey: '',
     name: '',
     category: 'ALL',
@@ -83,28 +89,12 @@ export class DmnListComponent implements OnInit {
     version: '' as string | number,
     createdBy: '',
   });
+  protected readonly filterModel = this.filter.model;
+  protected readonly isFiltered = this.filter.isFiltered;
+  protected readonly activeFilterCount = this.filter.activeCount;
 
-  protected readonly activeFilterCount = computed(() => {
-    const m = this.filterModel();
-    let count = 0;
-    if (m.decisionKey.trim()) count++;
-    if (m.name.trim()) count++;
-    if (m.category !== 'ALL') count++;
-    if (m.hitPolicy !== 'ALL') count++;
-    if (m.status !== 'ALL') count++;
-    if (m.version !== '' && m.version !== null && m.version !== undefined) count++;
-    if (m.createdBy.trim()) count++;
-    return count;
-  });
-
-  protected readonly isFiltered = computed(() => this.activeFilterCount() > 0);
-
-  toggleAdvancedFilter(): void {
-    this.isAdvancedFilterOpen.update((v) => !v);
-  }
-
-  // Signal Form for Decision Information
-  protected readonly decisionFormModel = signal({
+  // Form thông tin bảng quyết định trong modal
+  protected readonly decisionFormModel = signal<DmnDecisionForm>({
     decisionKey: '',
     name: '',
     description: '',
@@ -120,20 +110,77 @@ export class DmnListComponent implements OnInit {
     required(schema.category, { message: 'Danh mục không được để trống' });
   });
 
-  protected decisions = this.dmnService.decisions;
-  protected isLoading = this.dmnService.isLoading;
+  protected readonly editor = new DefinitionEditorStore<DmnDecision, DmnDecisionForm>({
+    formModel: this.decisionFormModel,
+    form: this.decisionForm,
+    keyField: 'decisionKey',
+    entityLabel: 'Bảng quyết định',
+    designer: () => this.designer,
+    createDefaults: () => ({
+      decisionKey: 'DMN-DEC-' + (this.decisions().length + 1).toString().padStart(2, '0'),
+      name: 'Bảng quyết định mới',
+      description: '',
+      hitPolicy: 'FIRST',
+      category: 'GENERAL',
+      version: 1,
+      status: 'DRAFT',
+    }),
+    toForm: (decision) => ({
+      decisionKey: decision.decisionKey || '',
+      name: decision.name || '',
+      description: decision.description || '',
+      hitPolicy: decision.hitPolicy || 'FIRST',
+      category: decision.category || 'GENERAL',
+      version: typeof decision.version === 'number' ? decision.version : 1,
+      status: decision.status || 'DRAFT',
+    }),
+    load: (id) => this.dmnService.getDecisionById(id),
+    create: (f, xml, fallbackName) =>
+      this.dmnService.createDecision({
+        decisionKey: f.decisionKey,
+        name: f.name.trim() || fallbackName,
+        description: f.description,
+        hitPolicy: f.hitPolicy,
+        category: f.category,
+        dmnXml: xml,
+      }),
+    update: (decision, f, xml, fallbackName) =>
+      this.dmnService.updateDecision(decision.id, {
+        name: f.name.trim() || fallbackName,
+        description: f.description,
+        hitPolicy: f.hitPolicy,
+        category: f.category,
+        status: f.status,
+        dmnXml: xml,
+      }),
+    remove: (id) => this.dmnService.deleteDecision(id),
+  });
 
-  protected publishedCount = computed(
-    () => this.decisions().filter((d) => d.status === 'PUBLISHED').length,
-  );
+  protected readonly modalLabels: DesignerModalLabels = {
+    entity: 'Bảng Quyết định',
+    icon: 'table',
+    loadingText: 'Đang tải dữ liệu chi tiết bảng quyết định từ máy chủ...',
+    viewSubtitle: 'Xem thông tin chi tiết và quy tắc quyết định DMN',
+    editSubtitle: 'Thiết lập thông số và quy tắc quyết định DMN',
+    createButton: 'Tạo DMN',
+    deleteButton: 'Xóa quyết định',
+    deleteConfirm: 'Bạn có chắc chắn muốn xóa bảng quyết định này không?',
+    format: 'OMG DMN 1.3 XML',
+  };
 
-  protected draftCount = computed(
-    () => this.decisions().filter((d) => d.status === 'DRAFT').length,
-  );
+  protected readonly getDefinitionStatusMeta = getDefinitionStatusMeta;
 
-  onPageSizeChange(size: number): void {
-    this.pageSize.set(size);
-    this.pageIndex.set(1);
+  // Sắp xếp bảng
+  protected readonly sortDecisionKey = sortByString<DmnDecision>('decisionKey');
+  protected readonly sortName = sortByString<DmnDecision>('name');
+  protected readonly sortCategory = sortByString<DmnDecision>('category');
+  protected readonly sortHitPolicy = sortByString<DmnDecision>('hitPolicy');
+  protected readonly sortVersion = sortByNumber<DmnDecision>('version');
+  protected readonly sortStatus = sortByString<DmnDecision>('status');
+  protected readonly sortUpdatedAt = sortByString<DmnDecision>('updatedAt');
+
+  ngOnInit(): void {
+    this.search();
   }
 
   search(): void {
@@ -151,253 +198,17 @@ export class DmnListComponent implements OnInit {
   }
 
   resetFilters(): void {
-    this.filterModel.set({
-      decisionKey: '',
-      name: '',
-      category: 'ALL',
-      hitPolicy: 'ALL',
-      status: 'ALL',
-      version: '',
-      createdBy: '',
-    });
+    this.filter.reset();
     this.search();
   }
 
   onStatusChange(status: string): void {
-    this.filterModel.update((m) => ({ ...m, status }));
+    this.filter.patch({ status });
     this.search();
   }
 
-  loadDecisions(): void {
-    this.search();
-  }
-
-  // Table Sort Comparators
-  protected sortDecisionKey = sortByString<DmnDecision>('decisionKey');
-  protected sortName = sortByString<DmnDecision>('name');
-  protected sortCategory = sortByString<DmnDecision>('category');
-  protected sortHitPolicy = sortByString<DmnDecision>('hitPolicy');
-  protected sortVersion = sortByNumber<DmnDecision>('version');
-  protected sortStatus = sortByString<DmnDecision>('status');
-  protected sortUpdatedAt = sortByString<DmnDecision>('updatedAt');
-
-  onSideResize({ width }: NzResizeEvent): void {
-    cancelAnimationFrame(this.resizeId);
-    this.resizeId = requestAnimationFrame(() => {
-      if (width) {
-        this.designerWidth.set(width);
-      }
-    });
-  }
-
-  openCreateModal(): void {
-    this.modalMode.set('create');
-    const nextKey = 'DMN-DEC-' + (this.decisions().length + 1).toString().padStart(2, '0');
-    const initial = {
-      decisionKey: nextKey,
-      name: 'Bảng quyết định mới',
-      description: '',
-      hitPolicy: 'FIRST',
-      category: 'GENERAL',
-      version: 1,
-      status: 'DRAFT',
-    };
-    this.selectedDecision.set(null);
-    this.decisionFormModel.set({ ...initial });
-    this.initialFormModel = { ...initial };
-    this.isDetailLoading.set(false);
-    this.isModalOpen.set(true);
-  }
-
-  openDetailModal(decision: DmnDecision, event?: Event): void {
-    event?.stopPropagation();
-    this.loadAndOpenModal(decision.id, 'view', decision);
-  }
-
-  openEditModal(decision: DmnDecision, event?: Event): void {
-    event?.stopPropagation();
-    this.loadAndOpenModal(decision.id, 'edit', decision);
-  }
-
-  switchToEditMode(): void {
-    this.modalMode.set('edit');
-  }
-
-  private loadAndOpenModal(id: string, mode: 'view' | 'edit', fallbackDecision?: DmnDecision): void {
-    this.modalMode.set(mode);
-    this.isModalOpen.set(true);
-    this.isDetailLoading.set(true);
-
-    if (fallbackDecision) {
-      this.selectedDecision.set(fallbackDecision);
-      this.populateFormModel(fallbackDecision);
-    }
-
-    // Gọi API chi tiết /api/dmn-decisions/{id}
-    this.dmnService.getDecisionById(id).subscribe({
-      next: (detail) => {
-        const fullData = detail || fallbackDecision;
-        if (fullData) {
-          this.selectedDecision.set(fullData);
-          this.populateFormModel(fullData);
-        }
-        this.isDetailLoading.set(false);
-      },
-      error: (err) => {
-        console.warn(
-          `Không thể tải chi tiết bảng quyết định (${id}) từ API /api/dmn-decisions/${id}, sử dụng dữ liệu tạm thời:`,
-          err,
-        );
-        if (fallbackDecision) {
-          this.selectedDecision.set(fallbackDecision);
-          this.populateFormModel(fallbackDecision);
-        }
-        this.isDetailLoading.set(false);
-      },
-    });
-  }
-
-  private populateFormModel(decision: DmnDecision): void {
-    const initial = {
-      decisionKey: decision.decisionKey || '',
-      name: decision.name || '',
-      description: decision.description || '',
-      hitPolicy: decision.hitPolicy || 'FIRST',
-      category: decision.category || 'GENERAL',
-      version: typeof decision.version === 'number' ? decision.version : 1,
-      status: decision.status || 'DRAFT',
-    };
-    this.decisionFormModel.set({ ...initial });
-    this.initialFormModel = { ...initial };
-  }
-
-  protected hasUnsavedChanges(): boolean {
-    if (this.modalMode() === 'view') {
-      return false;
-    }
-    const isDesignerDirty = this.designerComponent?.hasChanges() ?? false;
-    const isFormDirty = this.checkFormDirty();
-    return isDesignerDirty || isFormDirty;
-  }
-
-  private checkFormDirty(): boolean {
-    if (!this.initialFormModel) return false;
-    const current = this.decisionFormModel();
-    return (
-      (this.modalMode() === 'create' &&
-        current.decisionKey !== this.initialFormModel.decisionKey) ||
-      current.name !== this.initialFormModel.name ||
-      current.description !== this.initialFormModel.description ||
-      current.hitPolicy !== this.initialFormModel.hitPolicy ||
-      current.category !== this.initialFormModel.category ||
-      current.status !== this.initialFormModel.status
-    );
-  }
-
-  closeModal(): void {
-    if (this.modalMode() !== 'view' && this.hasUnsavedChanges()) {
-      this.modal.confirm({
-        nzTitle: 'Xác nhận đóng',
-        nzContent:
-          'Bảng quyết định đã có thay đổi chưa được lưu. Bạn có chắc chắn muốn đóng và hủy bỏ các thay đổi này không?',
-        nzOkText: 'Đóng không lưu',
-        nzOkDanger: true,
-        nzCancelText: 'Tiếp tục chỉnh sửa',
-        nzIconType: 'exclamation-circle',
-        nzCentered: true,
-        nzOnOk: () => {
-          this.forceCloseModal();
-        },
-      });
-    } else {
-      this.forceCloseModal();
-    }
-  }
-
-  protected forceCloseModal(): void {
-    this.isModalOpen.set(false);
-    this.selectedDecision.set(null);
-    this.initialFormModel = null;
-    this.isDetailLoading.set(false);
-    this.isSubmitting.set(false);
-  }
-
-  submitFromSidebar(): void {
-    if (this.designerComponent) {
-      this.designerComponent.onSave();
-    }
-  }
-
-  onSaveFromModal(event: { name: string; xml: string }): void {
-    submit(this.decisionForm, async () => {
-      const current = this.selectedDecision();
-      const formVal = this.decisionFormModel();
-
-      if (this.modalMode() === 'create' || !current?.id) {
-        // Gọi API tạo mới: POST /api/dmn-decisions
-        this.isSubmitting.set(true);
-        this.dmnService
-          .createDecision({
-            decisionKey: formVal.decisionKey,
-            name: formVal.name.trim() || event.name,
-            description: formVal.description,
-            hitPolicy: formVal.hitPolicy,
-            category: formVal.category,
-            dmnXml: event.xml,
-          })
-          .subscribe({
-            next: () => {
-              this.isSubmitting.set(false);
-              this.forceCloseModal();
-            },
-            error: () => {
-              this.isSubmitting.set(false);
-            },
-          });
-      } else {
-        // Cập nhật bảng quyết định hiện tại: PUT /api/dmn-decisions/:id
-        this.isSubmitting.set(true);
-        this.dmnService
-          .updateDecision(current.id, {
-            name: formVal.name.trim() || event.name,
-            description: formVal.description,
-            hitPolicy: formVal.hitPolicy,
-            category: formVal.category,
-            status: formVal.status,
-            dmnXml: event.xml,
-          })
-          .subscribe({
-            next: () => {
-              this.isSubmitting.set(false);
-              this.forceCloseModal();
-            },
-            error: () => {
-              this.isSubmitting.set(false);
-            },
-          });
-      }
-    });
-  }
-
-  deleteDecision(decision: DmnDecision, event?: Event): void {
-    event?.stopPropagation();
-    // Gọi API xóa: DELETE /api/dmn-decisions/:id
-    this.dmnService.deleteDecision(decision.id).subscribe();
-  }
-
-  deleteFromModal(): void {
-    const current = this.selectedDecision();
-    if (!current?.id) return;
-    this.isSubmitting.set(true);
-    // Gọi API xóa: DELETE /api/dmn-decisions/:id
-    this.dmnService.deleteDecision(current.id).subscribe({
-      next: () => {
-        this.isSubmitting.set(false);
-        this.forceCloseModal();
-      },
-      error: () => {
-        this.isSubmitting.set(false);
-      },
-    });
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
+    this.pageIndex.set(1);
   }
 }

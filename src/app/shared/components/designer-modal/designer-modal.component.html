@@ -1,0 +1,260 @@
+@let ed = editor();
+@let l = labels();
+
+@if (ed.isOpen()) {
+  <div class="modal-backdrop">
+    <div class="modal-wrapper" (click)="$event.stopPropagation()">
+      @if (ed.isLoading()) {
+        <div class="modal-loading-box">
+          <nz-spin nzSimple nzSize="large"></nz-spin>
+          <p class="loading-label">{{ l.loadingText }}</p>
+        </div>
+      } @else {
+        <div class="modal-split-container">
+          <!-- Designer (kéo giãn được bằng NzResizable) -->
+          <div
+            class="designer-column"
+            nz-resizable
+            [nzMinWidth]="360"
+            [nzMaxWidth]="1450"
+            (nzResize)="onSideResize($event)"
+            [style.width.px]="designerWidth()"
+            [style.flex]="designerWidth() ? '0 0 ' + designerWidth() + 'px' : '2'"
+          >
+            <nz-resize-handle nzDirection="right" nzCursorType="grid">
+              <div class="resize-handle-wrapper">
+                <div class="resize-handle-rail"></div>
+                <div class="resize-handle-knob" title="Kéo để điều chỉnh độ rộng khung">
+                  <span class="grip-line"></span>
+                  <span class="grip-line"></span>
+                </div>
+              </div>
+            </nz-resize-handle>
+
+            <ng-content select="[designer]" />
+          </div>
+
+          <!-- Form thông tin -->
+          <aside class="info-sidebar">
+            <div class="info-sidebar-header">
+              <div class="header-main">
+                <div class="icon-wrap">
+                  <span nz-icon [nzType]="l.icon" nzTheme="outline"></span>
+                </div>
+                <div class="header-titles">
+                  <div class="header-top-row">
+                    <h3>
+                      @switch (ed.mode()) {
+                        @case ('view') {
+                          Chi tiết {{ l.entity }}
+                        }
+                        @case ('create') {
+                          Tạo {{ l.entity }} mới
+                        }
+                        @default {
+                          Cập nhật {{ l.entity }}
+                        }
+                      }
+                    </h3>
+                    <div class="header-badges">
+                      @if (ed.mode() === 'view') {
+                        <span class="mode-pill">
+                          <span nz-icon nzType="eye" nzTheme="outline"></span>
+                          <span>Chỉ xem</span>
+                        </span>
+                      } @else if (ed.mode() === 'edit') {
+                        <span class="mode-pill">
+                          <span nz-icon nzType="edit" nzTheme="outline"></span>
+                          <span>Chỉnh sửa</span>
+                        </span>
+                      }
+                      <span class="version-pill" title="Phiên bản"
+                        >v{{ ed.selected()?.version || 1 }}</span
+                      >
+                      <app-status-pill [label]="statusMeta().label" [tone]="statusMeta().tone" />
+                    </div>
+                  </div>
+                  <p>{{ ed.mode() === 'view' ? l.viewSubtitle : l.editSubtitle }}</p>
+                </div>
+              </div>
+
+              @if (ed.mode() === 'view') {
+                <button
+                  type="button"
+                  class="btn-switch-edit"
+                  (click)="ed.switchToEdit()"
+                  title="Chuyển sang chế độ cập nhật"
+                >
+                  <span nz-icon nzType="edit" nzTheme="outline"></span>
+                  <span>Chỉnh sửa</span>
+                </button>
+              }
+            </div>
+
+            <div class="info-sidebar-body">
+              <ng-content />
+
+              <div class="metadata-card">
+                <div class="metadata-card-header">
+                  <span nz-icon nzType="info-circle" nzTheme="outline"></span>
+                  <span>Siêu dữ liệu hệ thống</span>
+                </div>
+                <div class="metadata-grid">
+                  <div class="meta-item">
+                    <span class="meta-label">Mã ID hệ thống:</span>
+                    <span class="meta-value">{{ ed.selected()?.id || 'Tạo mới' }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-label">Phiên bản:</span>
+                    <span class="meta-value">
+                      <span class="version-tag">v{{ ed.selected()?.version || 1 }}</span>
+                      <span class="meta-subtext">(Tự động tăng)</span>
+                    </span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-label">Người tạo:</span>
+                    <span class="meta-value">{{ ed.selected()?.createdBy || '-' }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-label">Người cập nhật:</span>
+                    <span class="meta-value">{{ ed.selected()?.updatedBy || '-' }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-label">Lần sửa cuối:</span>
+                    <span class="meta-value">{{ ed.selected()?.updatedAt || 'Vừa khởi tạo' }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-label">Định dạng sơ đồ:</span>
+                    <span class="meta-value badge-xml">{{ l.format }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="info-sidebar-footer">
+              @switch (ed.mode()) {
+                @case ('create') {
+                  <button
+                    type="button"
+                    class="btn-footer-submit create"
+                    (click)="ed.requestSave()"
+                    [disabled]="ed.isSubmitting()"
+                  >
+                    <span
+                      nz-icon
+                      [nzType]="ed.isSubmitting() ? 'loading' : 'plus'"
+                      nzTheme="outline"
+                    ></span>
+                    <span>{{ ed.isSubmitting() ? 'Đang tạo...' : l.createButton }}</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-footer-cancel"
+                    (click)="ed.requestClose()"
+                    [disabled]="ed.isSubmitting()"
+                  >
+                    Hủy
+                  </button>
+                }
+                @case ('edit') {
+                  <button
+                    type="button"
+                    class="btn-footer-delete"
+                    nz-popconfirm
+                    [nzPopconfirmTitle]="l.deleteConfirm"
+                    nzOkText="Xóa"
+                    nzCancelText="Hủy"
+                    nzOkDanger
+                    (nzOnConfirm)="ed.removeSelected()"
+                    [disabled]="ed.isSubmitting()"
+                  >
+                    <span nz-icon nzType="delete" nzTheme="outline"></span>
+                    <span>{{ l.deleteButton }}</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-footer-submit save"
+                    (click)="ed.requestSave()"
+                    [disabled]="ed.isSubmitting()"
+                  >
+                    <span
+                      nz-icon
+                      [nzType]="ed.isSubmitting() ? 'loading' : 'save'"
+                      nzTheme="outline"
+                    ></span>
+                    <span>{{ ed.isSubmitting() ? 'Đang lưu...' : 'Lưu thay đổi' }}</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-footer-cancel"
+                    (click)="ed.requestClose()"
+                    [disabled]="ed.isSubmitting()"
+                  >
+                    Hủy
+                  </button>
+                }
+                @default {
+                  @if (ed.canPublish) {
+                    @let republish = ed.selected()?.status === 'PUBLISHED';
+                    <button
+                      type="button"
+                      class="btn-footer-submit deploy"
+                      nz-popconfirm
+                      [nzPopconfirmTitle]="
+                        republish
+                          ? l.entity +
+                            ' này đã được phát hành trước đó. Bạn có chắc chắn muốn triển khai lại (Deploy) không?'
+                          : 'Bạn có chắc chắn muốn triển khai (Deploy) ' +
+                            l.entity.toLowerCase() +
+                            ' này để đưa vào vận hành?'
+                      "
+                      nzOkText="Triển khai"
+                      nzCancelText="Hủy"
+                      (nzOnConfirm)="ed.publishSelected()"
+                      [disabled]="ed.isDeploying() || ed.isSubmitting()"
+                      [title]="
+                        republish
+                          ? 'Triển khai lại ' + l.entity.toLowerCase()
+                          : 'Triển khai ' + l.entity.toLowerCase() + ' lên hệ thống'
+                      "
+                    >
+                      <span
+                        nz-icon
+                        [nzType]="ed.isDeploying() ? 'loading' : 'deployment-unit'"
+                        nzTheme="outline"
+                      ></span>
+                      <span>{{
+                        ed.isDeploying()
+                          ? 'Đang triển khai...'
+                          : republish
+                            ? 'Deploy lại'
+                            : 'Deploy'
+                      }}</span>
+                    </button>
+                  }
+                  <button
+                    type="button"
+                    class="btn-footer-submit edit"
+                    (click)="ed.switchToEdit()"
+                    [disabled]="ed.isDeploying()"
+                  >
+                    <span nz-icon nzType="edit" nzTheme="outline"></span>
+                    <span>Sửa</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-footer-cancel"
+                    (click)="ed.requestClose()"
+                    [disabled]="ed.isDeploying()"
+                  >
+                    Đóng
+                  </button>
+                }
+              }
+            </div>
+          </aside>
+        </div>
+      }
+    </div>
+  </div>
+}

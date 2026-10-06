@@ -1,0 +1,44 @@
+<div class="panel-header">
+  <div class="panel-title">
+    <span nz-icon nzType="control" nzTheme="outline"></span>
+    <span>{{ title() }}</span>
+  </div>
+  <button type="button" class="btn-close-panel" (click)="collapse.emit()" title="Thu gọn bộ lọc">
+    <span nz-icon nzType="close" nzTheme="outline"></span>
+  </button>
+</div>
+
+<div class="advanced-filter-grid">
+  <ng-content />
+</div>
+
+<div class="panel-actions">
+  <button
+    type="button"
+    class="btn-panel-search"
+    (click)="applyFilters.emit()"
+    [disabled]="loading()"
+    title="Áp dụng bộ lọc"
+  >
+    <span nz-icon nzType="search" nzTheme="outline"></span>
+    <span>Áp dụng bộ lọc</span>
+  </button>
+
+  @if (filtered()) {
+    <button
+      type="button"
+      class="btn-panel-reset"
+      (click)="filtersReset.emit()"
+      [disabled]="loading()"
+      title="Xóa tất cả bộ lọc"
+    >
+      <span nz-icon nzType="clear" nzTheme="outline"></span>
+      <span>Đặt lại mặc định</span>
+    </button>
+  }
+
+  <button type="button" class="btn-panel-collapse" (click)="collapse.emit()" title="Thu gọn panel">
+    <span nz-icon nzType="up" nzTheme="outline"></span>
+    <span>Thu gọn</span>
+  </button>
+</div>

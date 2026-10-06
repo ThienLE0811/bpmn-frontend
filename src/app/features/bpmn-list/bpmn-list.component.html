@@ -1,100 +1,169 @@
 <div class="bpmn-list-layout">
-  <!-- Page Header Title Area -->
-  <div class="page-title-bar">
-    <div class="title-info">
-      <h2>Danh sách Quy trình BPMN</h2>
-      <p>Quản lý, tạo mới và chỉnh sửa các sơ đồ quy trình nghiệp vụ (BPMN 2.0).</p>
-    </div>
+  <app-page-header
+    variant="plain"
+    title="Danh sách Quy trình BPMN"
+    description="Quản lý, tạo mới và chỉnh sửa các sơ đồ quy trình nghiệp vụ (BPMN 2.0)."
+    [(statsOpen)]="isStatsOpen"
+  >
+    <button class="btn-primary-glow" (click)="editor.openCreate()">
+      <span nz-icon nzType="plus" nzTheme="outline"></span>
+      <span>Tạo quy trình mới</span>
+    </button>
+  </app-page-header>
 
-    <div class="title-actions">
-      <button
-        class="btn btn-outline-stats"
-        [class.active]="isStatsOpen()"
-        (click)="toggleStats()"
-        title="Xem thống kê tổng quan"
-      >
-        <span
-          nz-icon
-          [nzType]="isStatsOpen() ? 'eye-invisible' : 'dashboard'"
-          nzTheme="outline"
-        ></span>
-        <span>{{ isStatsOpen() ? 'Ẩn thống kê' : 'Xem thống kê' }}</span>
-      </button>
-
-      <button class="btn btn-primary-glow" (click)="openCreateModal('design')">
-        <span nz-icon nzType="plus" nzTheme="outline"></span>
-        <span>Tạo quy trình mới</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Main Dashboard View -->
   <main class="main-content">
     <div class="content-container">
-      <!-- Overview Stat Cards (Collapsible) -->
       @if (isStatsOpen()) {
         <section class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon total">
-              <span nz-icon nzType="file-text" nzTheme="outline"></span>
-            </div>
-            <div class="stat-info">
-              <span class="stat-label">Tổng số Quy trình</span>
-              <span class="stat-value">{{ processes().length }}</span>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon published">
-              <span nz-icon nzType="check-circle" nzTheme="outline"></span>
-            </div>
-            <div class="stat-info">
-              <span class="stat-label">Đã phát hành</span>
-              <span class="stat-value">{{ publishedCount() }}</span>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon draft">
-              <span nz-icon nzType="edit" nzTheme="outline"></span>
-            </div>
-            <div class="stat-info">
-              <span class="stat-label">Bản nháp</span>
-              <span class="stat-value">{{ draftCount() }}</span>
-            </div>
-          </div>
+          <app-stat-card icon="file-text" label="Tổng số Quy trình" [value]="processes().length" />
+          <app-stat-card
+            icon="check-circle"
+            label="Đã phát hành"
+            [value]="publishedCount()"
+            tone="success"
+          />
+          <app-stat-card icon="edit" label="Bản nháp" [value]="draftCount()" tone="warning" />
         </section>
       }
 
-      <!-- Table Section -->
       <section class="table-card">
-        <!-- Main Quick Toolbar -->
-        <div class="table-toolbar">
-          <div class="toolbar-left">
-            <!-- Quick Search by Tên quy trình -->
-            <div class="filter-field quick-search">
+        <app-filter-toolbar
+          placeholder="Tìm theo tên quy trình..."
+          [searchText]="filterModel().name"
+          (searchTextChange)="filter.patch({ name: $event })"
+          [filtered]="isFiltered()"
+          [loading]="isLoading()"
+          (searchSubmit)="search()"
+          (filtersReset)="resetFilters()"
+          (reload)="search()"
+        >
+          <div class="filter-field">
+            <nz-select
+              [ngModel]="filterModel().status"
+              (ngModelChange)="onStatusChange($event)"
+              class="filter-select"
+              nzPlaceHolder="Trạng thái"
+            >
+              <nz-option nzValue="ALL" nzLabel="Tất cả trạng thái"></nz-option>
+              <nz-option nzValue="PUBLISHED" nzLabel="Đã phát hành"></nz-option>
+              <nz-option nzValue="DRAFT" nzLabel="Bản nháp"></nz-option>
+              <nz-option nzValue="ARCHIVED" nzLabel="Lưu trữ"></nz-option>
+            </nz-select>
+          </div>
+
+          <button
+            type="button"
+            class="btn-toggle-advanced"
+            [class.active]="isAdvancedFilterOpen() || isFiltered()"
+            (click)="isAdvancedFilterOpen.set(!isAdvancedFilterOpen())"
+            title="Mở/đóng bộ lọc nâng cao"
+          >
+            <span nz-icon nzType="filter" nzTheme="outline"></span>
+            <span>Bộ lọc nâng cao</span>
+            @if (activeFilterCount() > 0) {
+              <span class="filter-badge">{{ activeFilterCount() }}</span>
+            }
+            <span
+              nz-icon
+              [nzType]="isAdvancedFilterOpen() ? 'up' : 'down'"
+              class="toggle-arrow"
+            ></span>
+          </button>
+
+          <div toolbarRight class="view-mode-toggle">
+            <button
+              type="button"
+              class="btn-toggle-view"
+              [class.active]="viewDisplayMode() === 'table'"
+              (click)="viewDisplayMode.set('table')"
+              title="Chế độ xem Bảng chi tiết"
+            >
+              <span nz-icon nzType="table" nzTheme="outline"></span>
+              <span>Bảng</span>
+            </button>
+            <button
+              type="button"
+              class="btn-toggle-view"
+              [class.active]="viewDisplayMode() === 'list'"
+              (click)="viewDisplayMode.set('list')"
+              title="Chế độ xem Danh sách rút gọn"
+            >
+              <span nz-icon nzType="unordered-list" nzTheme="outline"></span>
+              <span>Danh sách</span>
+            </button>
+          </div>
+          <div toolbarRight class="toolbar-divider"></div>
+        </app-filter-toolbar>
+
+        @if (isAdvancedFilterOpen()) {
+          <app-advanced-filter-panel
+            [filtered]="isFiltered()"
+            [loading]="isLoading()"
+            (applyFilters)="search()"
+            (filtersReset)="resetFilters()"
+            (collapse)="isAdvancedFilterOpen.set(false)"
+          >
+            <div class="grid-form-item">
+              <label class="form-label" for="bpmnFilterKey">Mã quy trình</label>
               <nz-input-wrapper [nzAllowClear]="true">
                 <span nzInputPrefix>
-                  <span nz-icon nzType="search" class="filter-icon"></span>
+                  <span nz-icon nzType="barcode" class="filter-icon"></span>
                 </span>
                 <input
+                  id="bpmnFilterKey"
                   type="text"
                   nz-input
-                  placeholder="Tìm theo tên quy trình..."
-                  [ngModel]="filterModel().name"
-                  (ngModelChange)="filterModel.update((m) => ({ ...m, name: $event }))"
+                  placeholder="VD: BPMN-PROC-01..."
+                  [ngModel]="filterModel().processKey"
+                  (ngModelChange)="filter.patch({ processKey: $event })"
                   (keyup.enter)="search()"
                 />
               </nz-input-wrapper>
             </div>
 
-            <!-- Quick Filter by Trạng thái -->
-            <div class="filter-field quick-status">
+            <div class="grid-form-item">
+              <label class="form-label" for="bpmnFilterName">Tên quy trình</label>
+              <nz-input-wrapper [nzAllowClear]="true">
+                <span nzInputPrefix>
+                  <span nz-icon nzType="file-text" class="filter-icon"></span>
+                </span>
+                <input
+                  id="bpmnFilterName"
+                  type="text"
+                  nz-input
+                  placeholder="Nhập tên quy trình..."
+                  [ngModel]="filterModel().name"
+                  (ngModelChange)="filter.patch({ name: $event })"
+                  (keyup.enter)="search()"
+                />
+              </nz-input-wrapper>
+            </div>
+
+            <div class="grid-form-item">
+              <span class="form-label">Danh mục</span>
+              <nz-select
+                [ngModel]="filterModel().category"
+                (ngModelChange)="filter.patch({ category: $event })"
+                class="filter-select"
+                nzPlaceHolder="Chọn danh mục"
+              >
+                <nz-option nzValue="ALL" nzLabel="Tất cả danh mục"></nz-option>
+                <nz-option nzValue="GENERAL" nzLabel="GENERAL - Chung"></nz-option>
+                <nz-option nzValue="HR" nzLabel="HR - Nhân sự"></nz-option>
+                <nz-option nzValue="FINANCE" nzLabel="FINANCE - Tài chính"></nz-option>
+                <nz-option nzValue="SALES" nzLabel="SALES - Bán hàng"></nz-option>
+                <nz-option nzValue="IT" nzLabel="IT - Công nghệ thông tin"></nz-option>
+                <nz-option nzValue="LEGAL" nzLabel="LEGAL - Pháp lý"></nz-option>
+              </nz-select>
+            </div>
+
+            <div class="grid-form-item">
+              <span class="form-label">Trạng thái phát hành</span>
               <nz-select
                 [ngModel]="filterModel().status"
-                (ngModelChange)="onStatusChange($event)"
-                class="filter-select status-select"
-                nzPlaceHolder="Trạng thái"
+                (ngModelChange)="filter.patch({ status: $event })"
+                class="filter-select"
+                nzPlaceHolder="Chọn trạng thái"
               >
                 <nz-option nzValue="ALL" nzLabel="Tất cả trạng thái"></nz-option>
                 <nz-option nzValue="PUBLISHED" nzLabel="Đã phát hành"></nz-option>
@@ -103,249 +172,42 @@
               </nz-select>
             </div>
 
-            <!-- Nút Toggle Bộ lọc nâng cao -->
-            <button
-              class="btn-toggle-advanced"
-              [class.active]="isAdvancedFilterOpen() || isFiltered()"
-              (click)="toggleAdvancedFilter()"
-              title="Mở/đóng bộ lọc nâng cao"
-            >
-              <span nz-icon nzType="filter" nzTheme="outline"></span>
-              <span>Bộ lọc nâng cao</span>
-              @if (activeFilterCount() > 0) {
-                <span class="filter-badge">{{ activeFilterCount() }}</span>
-              }
-              <span
-                nz-icon
-                [nzType]="isAdvancedFilterOpen() ? 'up' : 'down'"
-                class="toggle-arrow"
-              ></span>
-            </button>
-
-            <!-- Nút Tìm kiếm nhanh -->
-            <button
-              class="btn-search-trigger"
-              (click)="search()"
-              [disabled]="isLoading()"
-              title="Tìm kiếm"
-            >
-              <span nz-icon nzType="search" nzTheme="outline"></span>
-              <span>Tìm kiếm</span>
-            </button>
-
-            <!-- Nút Đặt lại nhanh -->
-            @if (isFiltered()) {
-              <button
-                class="btn-reset-filter"
-                (click)="resetFilters()"
-                [disabled]="isLoading()"
-                title="Xóa tất cả bộ lọc"
-              >
-                <span nz-icon nzType="clear" nzTheme="outline"></span>
-                <span>Đặt lại</span>
-              </button>
-            }
-          </div>
-
-          <div class="toolbar-right">
-            <!-- View Mode Switcher: Table vs List -->
-            <div class="view-mode-toggle">
-              <button
-                type="button"
-                class="btn-toggle-view"
-                [class.active]="viewDisplayMode() === 'table'"
-                (click)="viewDisplayMode.set('table')"
-                title="Chế độ xem Bảng chi tiết"
-              >
-                <span nz-icon nzType="table" nzTheme="outline"></span>
-                <span>Bảng</span>
-              </button>
-              <button
-                type="button"
-                class="btn-toggle-view"
-                [class.active]="viewDisplayMode() === 'list'"
-                (click)="viewDisplayMode.set('list')"
-                title="Chế độ xem Danh sách rút gọn"
-              >
-                <span nz-icon nzType="unordered-list" nzTheme="outline"></span>
-                <span>Danh sách</span>
-              </button>
+            <div class="grid-form-item">
+              <label class="form-label" for="bpmnFilterVersion">Phiên bản</label>
+              <nz-input-wrapper [nzAllowClear]="true">
+                <span nzInputPrefix>
+                  <span nz-icon nzType="number" class="filter-icon"></span>
+                </span>
+                <input
+                  id="bpmnFilterVersion"
+                  type="number"
+                  nz-input
+                  placeholder="VD: 1, 2..."
+                  [ngModel]="filterModel().version"
+                  (ngModelChange)="filter.patch({ version: $event })"
+                  (keyup.enter)="search()"
+                />
+              </nz-input-wrapper>
             </div>
 
-            <div class="toolbar-divider"></div>
-
-            <button
-              class="btn-refresh"
-              (click)="loadProcesses()"
-              [disabled]="isLoading()"
-              title="Tải lại danh sách"
-            >
-              <span nz-icon nzType="redo" nzTheme="outline" [nzSpin]="isLoading()"></span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Collapsible Advanced Filter Panel -->
-        @if (isAdvancedFilterOpen()) {
-          <div class="advanced-filter-panel">
-            <div class="panel-header">
-              <div class="panel-title">
-                <span nz-icon nzType="control" nzTheme="outline"></span>
-                <span>Bộ lọc chi tiết</span>
-              </div>
-              <button
-                class="btn-close-panel"
-                (click)="toggleAdvancedFilter()"
-                title="Thu gọn bộ lọc"
-              >
-                <span nz-icon nzType="close" nzTheme="outline"></span>
-              </button>
+            <div class="grid-form-item">
+              <label class="form-label" for="bpmnFilterCreatedBy">Người tạo</label>
+              <nz-input-wrapper [nzAllowClear]="true">
+                <span nzInputPrefix>
+                  <span nz-icon nzType="user" class="filter-icon"></span>
+                </span>
+                <input
+                  id="bpmnFilterCreatedBy"
+                  type="text"
+                  nz-input
+                  placeholder="Nhập tên người tạo..."
+                  [ngModel]="filterModel().createdBy"
+                  (ngModelChange)="filter.patch({ createdBy: $event })"
+                  (keyup.enter)="search()"
+                />
+              </nz-input-wrapper>
             </div>
-
-            <!-- Form Grid 3-4 Cột -->
-            <div class="advanced-filter-grid">
-              <!-- Field 1: Mã quy trình -->
-              <div class="grid-form-item">
-                <label class="form-label">Mã quy trình</label>
-                <nz-input-wrapper [nzAllowClear]="true">
-                  <span nzInputPrefix>
-                    <span nz-icon nzType="barcode" class="filter-icon"></span>
-                  </span>
-                  <input
-                    type="text"
-                    nz-input
-                    placeholder="VD: BPMN-PROC-01..."
-                    [ngModel]="filterModel().processKey"
-                    (ngModelChange)="filterModel.update((m) => ({ ...m, processKey: $event }))"
-                    (keyup.enter)="search()"
-                  />
-                </nz-input-wrapper>
-              </div>
-
-              <!-- Field 2: Tên quy trình -->
-              <div class="grid-form-item">
-                <label class="form-label">Tên quy trình</label>
-                <nz-input-wrapper [nzAllowClear]="true">
-                  <span nzInputPrefix>
-                    <span nz-icon nzType="file-text" class="filter-icon"></span>
-                  </span>
-                  <input
-                    type="text"
-                    nz-input
-                    placeholder="Nhập tên quy trình..."
-                    [ngModel]="filterModel().name"
-                    (ngModelChange)="filterModel.update((m) => ({ ...m, name: $event }))"
-                    (keyup.enter)="search()"
-                  />
-                </nz-input-wrapper>
-              </div>
-
-              <!-- Field 3: Danh mục -->
-              <div class="grid-form-item">
-                <label class="form-label">Danh mục</label>
-                <nz-select
-                  [ngModel]="filterModel().category"
-                  (ngModelChange)="filterModel.update((m) => ({ ...m, category: $event }))"
-                  class="filter-select"
-                  nzPlaceHolder="Chọn danh mục"
-                >
-                  <nz-option nzValue="ALL" nzLabel="Tất cả danh mục"></nz-option>
-                  <nz-option nzValue="GENERAL" nzLabel="GENERAL - Chung"></nz-option>
-                  <nz-option nzValue="HR" nzLabel="HR - Nhân sự"></nz-option>
-                  <nz-option nzValue="FINANCE" nzLabel="FINANCE - Tài chính"></nz-option>
-                  <nz-option nzValue="SALES" nzLabel="SALES - Bán hàng"></nz-option>
-                  <nz-option nzValue="IT" nzLabel="IT - Công nghệ thông tin"></nz-option>
-                  <nz-option nzValue="LEGAL" nzLabel="LEGAL - Pháp lý"></nz-option>
-                </nz-select>
-              </div>
-
-              <!-- Field 4: Trạng thái -->
-              <div class="grid-form-item">
-                <label class="form-label">Trạng thái phát hành</label>
-                <nz-select
-                  [ngModel]="filterModel().status"
-                  (ngModelChange)="filterModel.update((m) => ({ ...m, status: $event }))"
-                  class="filter-select"
-                  nzPlaceHolder="Chọn trạng thái"
-                >
-                  <nz-option nzValue="ALL" nzLabel="Tất cả trạng thái"></nz-option>
-                  <nz-option nzValue="PUBLISHED" nzLabel="Đã phát hành"></nz-option>
-                  <nz-option nzValue="DRAFT" nzLabel="Bản nháp"></nz-option>
-                  <nz-option nzValue="ARCHIVED" nzLabel="Lưu trữ"></nz-option>
-                </nz-select>
-              </div>
-
-              <!-- Field 5: Phiên bản -->
-              <div class="grid-form-item">
-                <label class="form-label">Phiên bản</label>
-                <nz-input-wrapper [nzAllowClear]="true">
-                  <span nzInputPrefix>
-                    <span nz-icon nzType="number" class="filter-icon"></span>
-                  </span>
-                  <input
-                    type="number"
-                    nz-input
-                    placeholder="VD: 1, 2..."
-                    [ngModel]="filterModel().version"
-                    (ngModelChange)="filterModel.update((m) => ({ ...m, version: $event }))"
-                    (keyup.enter)="search()"
-                  />
-                </nz-input-wrapper>
-              </div>
-
-              <!-- Field 6: Người tạo -->
-              <div class="grid-form-item">
-                <label class="form-label">Người tạo</label>
-                <nz-input-wrapper [nzAllowClear]="true">
-                  <span nzInputPrefix>
-                    <span nz-icon nzType="user" class="filter-icon"></span>
-                  </span>
-                  <input
-                    type="text"
-                    nz-input
-                    placeholder="Nhập tên người tạo..."
-                    [ngModel]="filterModel().createdBy"
-                    (ngModelChange)="filterModel.update((m) => ({ ...m, createdBy: $event }))"
-                    (keyup.enter)="search()"
-                  />
-                </nz-input-wrapper>
-              </div>
-            </div>
-
-            <!-- Action Buttons Footer inside Panel -->
-            <div class="panel-actions">
-              <button
-                class="btn-panel-search"
-                (click)="search()"
-                [disabled]="isLoading()"
-                title="Áp dụng bộ lọc"
-              >
-                <span nz-icon nzType="search" nzTheme="outline"></span>
-                <span>Áp dụng bộ lọc</span>
-              </button>
-
-              @if (isFiltered()) {
-                <button
-                  class="btn-panel-reset"
-                  (click)="resetFilters()"
-                  [disabled]="isLoading()"
-                  title="Xóa tất cả bộ lọc"
-                >
-                  <span nz-icon nzType="clear" nzTheme="outline"></span>
-                  <span>Đặt lại mặc định</span>
-                </button>
-              }
-
-              <button
-                class="btn-panel-collapse"
-                (click)="toggleAdvancedFilter()"
-                title="Thu gọn panel"
-              >
-                <span nz-icon nzType="up" nzTheme="outline"></span>
-                <span>Thu gọn</span>
-              </button>
-            </div>
-          </div>
+          </app-advanced-filter-panel>
         }
 
         @if (viewDisplayMode() === 'table') {
@@ -359,6 +221,7 @@
               [nzPageIndex]="pageIndex()"
               (nzPageIndexChange)="pageIndex.set($event)"
               [nzPageSize]="pageSize()"
+              (nzPageSizeChange)="onPageSizeChange($event)"
               [nzPageSizeOptions]="[5, 10, 20, 50]"
               [nzShowSizeChanger]="true"
               [nzShowTotal]="totalTemplate"
@@ -366,7 +229,6 @@
               [nzNoResult]="emptyTemplate"
               nzSize="middle"
               class="custom-nz-table"
-              (nzPageSizeChange)="onPageSizeChange($event)"
             >
               <thead>
                 <tr>
@@ -382,41 +244,25 @@
               </thead>
               <tbody>
                 @for (process of processTable.data; track process.id) {
-                  <tr class="table-row" (click)="openDetailModal(process)">
+                  <tr class="table-row" (click)="editor.openView(process)">
                     <td>
                       <span class="code-badge">{{ process.processKey }}</span>
                     </td>
                     <td>
-                      <div class="process-name-cell">
+                      <div class="definition-name-cell">
                         <span class="name">{{ process.name }}</span>
                         <span class="desc">{{ process.description }}</span>
                       </div>
                     </td>
                     <td>
-                      <span
-                        class="code-badge"
-                        style="background: #f1f5f9; color: #475569; border-color: #e2e8f0"
-                        >{{ process.category }}</span
-                      >
+                      <span class="code-badge category">{{ process.category }}</span>
                     </td>
                     <td>
                       <span class="version-tag">v{{ process.version }}</span>
                     </td>
                     <td>
-                      <span class="status-pill" [class]="process.status.toLowerCase()">
-                        <span class="dot"></span>
-                        @switch (process.status) {
-                          @case ('PUBLISHED') {
-                            Đã phát hành
-                          }
-                          @case ('ARCHIVED') {
-                            Lưu trữ
-                          }
-                          @default {
-                            Bản nháp
-                          }
-                        }
-                      </span>
+                      @let status = getDefinitionStatusMeta(process.status);
+                      <app-status-pill [label]="status.label" [tone]="status.tone" />
                     </td>
                     <td>
                       <span class="date-text">{{ process.createdAt }}</span>
@@ -428,14 +274,14 @@
                       <div class="action-btns">
                         <button
                           class="btn-action view"
-                          (click)="openDetailModal(process, $event)"
+                          (click)="editor.openView(process, $event)"
                           title="Xem chi tiết quy trình"
                         >
                           <span nz-icon nzType="eye" nzTheme="outline"></span>
                         </button>
                         <button
                           class="btn-action edit"
-                          (click)="openEditModal(process, $event)"
+                          (click)="editor.openEdit(process, $event)"
                           title="Cập nhật quy trình"
                         >
                           <span nz-icon nzType="edit" nzTheme="outline"></span>
@@ -447,7 +293,7 @@
                           nzOkText="Xóa"
                           nzCancelText="Hủy"
                           nzOkDanger
-                          (nzOnConfirm)="deleteProcess(process)"
+                          (nzOnConfirm)="editor.remove(process)"
                           (click)="$event.stopPropagation()"
                           title="Xóa quy trình"
                         >
@@ -473,38 +319,22 @@
               class="custom-nz-list"
             >
               <ng-template #processListItem let-item>
-                <nz-list-item class="bpmn-list-item-row" (click)="openDetailModal(item)">
+                <nz-list-item class="bpmn-list-item-row" (click)="editor.openView(item)">
                   <div class="bpmn-item-card">
-                    <!-- Biểu tượng quy trình -->
                     <div class="item-avatar">
                       <span nz-icon nzType="branches" nzTheme="outline"></span>
                     </div>
 
-                    <!-- Nội dung chính: 2 dòng tinh gọn -->
                     <div class="item-body">
-                      <!-- Dòng 1: Tiêu đề + Badges -->
                       <div class="item-header-row">
                         <span class="item-title">{{ item.name }}</span>
                         <span class="code-badge">{{ item.processKey }}</span>
                         <span class="category-badge">{{ item.category }}</span>
                         <span class="version-tag">v{{ item.version }}</span>
-                        <span class="status-pill" [class]="item.status.toLowerCase()">
-                          <span class="dot"></span>
-                          @switch (item.status) {
-                            @case ('PUBLISHED') {
-                              Đã phát hành
-                            }
-                            @case ('ARCHIVED') {
-                              Lưu trữ
-                            }
-                            @default {
-                              Bản nháp
-                            }
-                          }
-                        </span>
+                        @let status = getDefinitionStatusMeta(item.status);
+                        <app-status-pill [label]="status.label" [tone]="status.tone" />
                       </div>
 
-                      <!-- Dòng 2: Mô tả & Thông tin ngày giờ, người tạo -->
                       <div class="item-meta-row">
                         @if (item.description) {
                           <span class="item-desc" [title]="item.description">{{
@@ -533,18 +363,17 @@
                       </div>
                     </div>
 
-                    <!-- Cụm nút thao tác hiện đại -->
                     <div class="item-actions" (click)="$event.stopPropagation()">
                       <button
                         class="btn-item-action view"
-                        (click)="openDetailModal(item, $event)"
+                        (click)="editor.openView(item, $event)"
                         title="Xem chi tiết quy trình"
                       >
                         <span nz-icon nzType="eye" nzTheme="outline"></span>
                       </button>
                       <button
                         class="btn-item-action edit"
-                        (click)="openEditModal(item, $event)"
+                        (click)="editor.openEdit(item, $event)"
                         title="Cập nhật quy trình"
                       >
                         <span nz-icon nzType="edit" nzTheme="outline"></span>
@@ -556,7 +385,7 @@
                         nzOkText="Xóa"
                         nzCancelText="Hủy"
                         nzOkDanger
-                        (nzOnConfirm)="deleteProcess(item)"
+                        (nzOnConfirm)="editor.remove(item)"
                         (click)="$event.stopPropagation()"
                         title="Xóa quy trình"
                       >
@@ -568,7 +397,6 @@
               </ng-template>
             </nz-list>
 
-            <!-- Thanh phân trang cho chế độ danh sách -->
             @if (processes().length > 0) {
               <div class="list-pagination-bar">
                 <nz-pagination
@@ -601,441 +429,172 @@
   </main>
 </div>
 
-<!-- Modal Container chứa BPMN Designer (2/3) và Signal Form Thông tin quy trình (1/3) -->
-@if (isModalOpen()) {
-  <div class="modal-backdrop">
-    <div class="modal-wrapper" (click)="$event.stopPropagation()">
-      @if (isDetailLoading()) {
-        <div class="modal-loading-box">
-          <nz-spin nzSimple nzSize="large"></nz-spin>
-          <p class="loading-label">Đang tải dữ liệu chi tiết quy trình từ máy chủ...</p>
-        </div>
-      } @else {
-        <div class="modal-split-container">
-          <!-- 2/3 Độ rộng (có thể tùy chỉnh kéo giãn bằng NzResizable): BPMN Designer -->
-          <div
-            class="designer-column"
-            nz-resizable
-            [nzMinWidth]="360"
-            [nzMaxWidth]="1450"
-            (nzResize)="onSideResize($event)"
-            [style.width.px]="designerWidth()"
-            [style.flex]="designerWidth() ? '0 0 ' + designerWidth() + 'px' : '2'"
-          >
-            <nz-resize-handle nzDirection="right" nzCursorType="grid">
-              <div class="resize-handle-wrapper">
-                <div class="resize-handle-rail"></div>
-                <div class="resize-handle-knob" title="Kéo để điều chỉnh độ rộng khung">
-                  <span class="grip-line"></span>
-                  <span class="grip-line"></span>
-                </div>
-              </div>
-            </nz-resize-handle>
+<!-- Modal: BPMN Designer (trái) + form thông tin quy trình (phải) -->
+<app-designer-modal
+  [editor]="editor"
+  [labels]="modalLabels"
+  [status]="processForm.status().value()"
+>
+  @if (editor.isOpen() && !editor.isLoading()) {
+    <app-bpmn-designer
+      designer
+      [processData]="editor.selected()"
+      [readOnly]="editor.mode() === 'view'"
+      [saveLabel]="editor.mode() === 'create' ? 'Tạo quy trình' : 'Lưu quy trình'"
+      (save)="editor.save($event)"
+      (closed)="editor.requestClose()"
+    />
+  }
 
-            <app-bpmn-designer
-              [processData]="selectedProcess()"
-              [readOnly]="modalMode() === 'view'"
-              [saveLabel]="modalMode() === 'create' ? 'Tạo quy trình' : 'Lưu quy trình'"
-              [initialMode]="initialDesignerMode()"
-              (save)="onSaveFromModal($event)"
-              (closed)="closeModal()"
-            ></app-bpmn-designer>
+  <div class="signal-form" [class.view-mode]="editor.mode() === 'view'">
+    <div
+      class="form-group"
+      [class.has-error]="processForm.processKey().invalid() && processForm.processKey().touched()"
+    >
+      <label class="form-label" for="bpmnFormKey">
+        <span>Mã quy trình (Key)</span>
+        <span class="required-star">*</span>
+        @if (editor.mode() !== 'create') {
+          <span class="auto-hint">(Cố định)</span>
+        }
+      </label>
+      <div class="input-with-icon">
+        <span nz-icon nzType="code" nzTheme="outline" class="input-icon"></span>
+        @if (editor.mode() === 'create') {
+          <input
+            id="bpmnFormKey"
+            type="text"
+            class="form-control"
+            [formField]="processForm.processKey"
+            placeholder="VD: BPMN-PROC-01"
+          />
+        } @else {
+          <input
+            id="bpmnFormKey"
+            type="text"
+            class="form-control readonly-input"
+            [value]="processFormModel().processKey"
+            readonly
+            disabled
+            title="Mã quy trình là định danh cố định, không thể thay đổi sau khi tạo"
+          />
+        }
+      </div>
+      @if (processForm.processKey().invalid() && processForm.processKey().touched()) {
+        @for (error of processForm.processKey().errors(); track error.kind) {
+          <div class="form-error-msg">
+            <span nz-icon nzType="info-circle" nzTheme="outline"></span>
+            <span>{{ error.message }}</span>
           </div>
-
-          <!-- 1/3 Độ rộng: Signal Form Thông tin quy trình -->
-          <aside class="process-info-sidebar">
-            <!-- Header -->
-            <div class="info-sidebar-header">
-              <div class="header-main">
-                <div class="icon-wrap">
-                  <span nz-icon nzType="file-text" nzTheme="outline"></span>
-                </div>
-                <div class="header-titles">
-                  <div class="header-top-row">
-                    <h3>
-                      @switch (modalMode()) {
-                        @case ('view') {
-                          Chi tiết Quy trình
-                        }
-                        @case ('create') {
-                          Tạo Quy trình mới
-                        }
-                        @default {
-                          Cập nhật Quy trình
-                        }
-                      }
-                    </h3>
-                    <div class="header-badges">
-                      @if (modalMode() === 'view') {
-                        <span class="mode-pill view">
-                          <span nz-icon nzType="eye" nzTheme="outline"></span>
-                          <span>Chỉ xem</span>
-                        </span>
-                      } @else if (modalMode() === 'edit') {
-                        <span class="mode-pill edit">
-                          <span nz-icon nzType="edit" nzTheme="outline"></span>
-                          <span>Chỉnh sửa</span>
-                        </span>
-                      }
-                      <span class="version-pill" title="Phiên bản quy trình"
-                        >v{{ selectedProcess()?.version || processFormModel().version || 1 }}</span
-                      >
-                      <span
-                        class="status-badge"
-                        [class]="processForm.status().value().toLowerCase()"
-                      >
-                        <span class="status-dot"></span>
-                        @switch (processForm.status().value()) {
-                          @case ('PUBLISHED') {
-                            Đã phát hành
-                          }
-                          @case ('ARCHIVED') {
-                            Lưu trữ
-                          }
-                          @default {
-                            Bản nháp
-                          }
-                        }
-                      </span>
-                    </div>
-                  </div>
-                  <p>
-                    @if (modalMode() === 'view') {
-                      Xem thông tin chi tiết và dữ liệu nghiệp vụ quy trình
-                    } @else {
-                      Thiết lập thông số và dữ liệu nghiệp vụ quy trình
-                    }
-                  </p>
-                </div>
-              </div>
-
-              @if (modalMode() === 'view') {
-                <button
-                  class="btn-switch-edit"
-                  (click)="switchToEditMode()"
-                  title="Chuyển sang chế độ cập nhật"
-                >
-                  <span nz-icon nzType="edit" nzTheme="outline"></span>
-                  <span>Chỉnh sửa</span>
-                </button>
-              }
-            </div>
-
-            <!-- Body Form Content -->
-            <div class="info-sidebar-body">
-              <div class="process-signal-form" [class.view-mode]="modalMode() === 'view'">
-                <!-- Mã quy trình (Process Key) -->
-                <div
-                  class="form-group"
-                  [class.has-error]="
-                    processForm.processKey().invalid() && processForm.processKey().touched()
-                  "
-                >
-                  <label class="form-label">
-                    <span>Mã quy trình (Key)</span>
-                    <span class="required-star">*</span>
-                    @if (modalMode() !== 'create') {
-                      <span class="auto-hint">(Cố định)</span>
-                    }
-                  </label>
-                  <div class="input-with-icon">
-                    <span nz-icon nzType="code" nzTheme="outline" class="input-icon"></span>
-                    @if (modalMode() === 'create') {
-                      <input
-                        type="text"
-                        class="form-control"
-                        [formField]="processForm.processKey"
-                        placeholder="VD: BPMN-PROC-01"
-                      />
-                    } @else {
-                      <input
-                        type="text"
-                        class="form-control readonly-input"
-                        [value]="processFormModel().processKey"
-                        readonly
-                        disabled
-                        title="Mã quy trình là định danh cố định, không thể thay đổi sau khi tạo"
-                      />
-                    }
-                  </div>
-                  @if (processForm.processKey().invalid() && processForm.processKey().touched()) {
-                    @for (error of processForm.processKey().errors(); track error.kind) {
-                      <div class="form-error-msg">
-                        <span nz-icon nzType="info-circle" nzTheme="outline"></span>
-                        <span>{{ error.message }}</span>
-                      </div>
-                    }
-                  }
-                </div>
-
-                <!-- Tên quy trình -->
-                <div
-                  class="form-group"
-                  [class.has-error]="processForm.name().invalid() && processForm.name().touched()"
-                >
-                  <label class="form-label">
-                    <span>Tên quy trình</span>
-                    <span class="required-star">*</span>
-                  </label>
-                  <div class="input-with-icon">
-                    <span nz-icon nzType="edit" nzTheme="outline" class="input-icon"></span>
-                    <input
-                      type="text"
-                      class="form-control"
-                      [formField]="processForm.name"
-                      placeholder="Nhập tên quy trình..."
-                    />
-                  </div>
-                  @if (processForm.name().invalid() && processForm.name().touched()) {
-                    @for (error of processForm.name().errors(); track error.kind) {
-                      <div class="form-error-msg">
-                        <span nz-icon nzType="info-circle" nzTheme="outline"></span>
-                        <span>{{ error.message }}</span>
-                      </div>
-                    }
-                  }
-                </div>
-
-                <!-- Form Row: Danh mục & Phiên bản -->
-                <div class="form-row-2col">
-                  <!-- Danh mục (Category) -->
-                  <div
-                    class="form-group"
-                    [class.has-error]="
-                      processForm.category().invalid() && processForm.category().touched()
-                    "
-                  >
-                    <label class="form-label">
-                      <span>Danh mục</span>
-                      <span class="required-star">*</span>
-                    </label>
-                    <div class="input-with-icon">
-                      <span nz-icon nzType="appstore" nzTheme="outline" class="input-icon"></span>
-                      <input
-                        type="text"
-                        class="form-control"
-                        [formField]="processForm.category"
-                        placeholder="VD: ORDER, HR, GENERAL"
-                      />
-                    </div>
-                    @if (processForm.category().invalid() && processForm.category().touched()) {
-                      @for (error of processForm.category().errors(); track error.kind) {
-                        <div class="form-error-msg">
-                          <span nz-icon nzType="info-circle" nzTheme="outline"></span>
-                          <span>{{ error.message }}</span>
-                        </div>
-                      }
-                    }
-                  </div>
-
-                  <!-- Phiên bản (Version number - Tự động quản lý bởi máy chủ) -->
-                  <div class="form-group">
-                    <label class="form-label">
-                      <span>Phiên bản</span>
-                      <span class="auto-hint">(Hệ thống tự tăng)</span>
-                    </label>
-                    <div class="input-with-icon">
-                      <span nz-icon nzType="tag" nzTheme="outline" class="input-icon"></span>
-                      <input
-                        type="text"
-                        class="form-control readonly-input"
-                        [value]="
-                          'v' + (selectedProcess()?.version || processFormModel().version || 1)
-                        "
-                        readonly
-                        disabled
-                        title="Phiên bản được máy chủ tự động quản lý và tăng dần"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Trạng thái -->
-                <div class="form-group">
-                  <label class="form-label">
-                    <span>Trạng thái</span>
-                  </label>
-                  <div class="select-wrapper">
-                    <select class="form-control form-select" [formField]="processForm.status">
-                      <option value="DRAFT">Bản nháp</option>
-                      <option value="PUBLISHED">Đã phát hành</option>
-                      <option value="ARCHIVED">Lưu trữ</option>
-                    </select>
-                  </div>
-                </div>
-
-                <!-- Mô tả quy trình -->
-                <div class="form-group">
-                  <label class="form-label">
-                    <span>Mô tả quy trình</span>
-                  </label>
-                  <textarea
-                    class="form-control form-textarea"
-                    rows="3"
-                    [formField]="processForm.description"
-                    placeholder="Mô tả mục tiêu, phạm vi và các bước thực hiện của quy trình..."
-                  ></textarea>
-                </div>
-
-                <!-- Metadata Summary Card -->
-                <div class="metadata-card">
-                  <div class="metadata-card-header">
-                    <span nz-icon nzType="info-circle" nzTheme="outline"></span>
-                    <span>Siêu dữ liệu hệ thống</span>
-                  </div>
-                  <div class="metadata-grid">
-                    <div class="meta-item">
-                      <span class="meta-label">Mã ID hệ thống:</span>
-                      <span class="meta-value">{{ selectedProcess()?.id || 'Tạo mới' }}</span>
-                    </div>
-                    <div class="meta-item">
-                      <span class="meta-label">Phiên bản:</span>
-                      <span class="meta-value">
-                        <span class="version-tag">v{{ selectedProcess()?.version || 1 }}</span>
-                        <span class="meta-subtext">(Tự động tăng)</span>
-                      </span>
-                    </div>
-                    <div class="meta-item">
-                      <span class="meta-label">Người tạo:</span>
-                      <span class="meta-value">{{
-                        selectedProcess()?.createdBy || 'System Admin'
-                      }}</span>
-                    </div>
-                    <div class="meta-item">
-                      <span class="meta-label">Người cập nhật:</span>
-                      <span class="meta-value">{{ selectedProcess()?.updatedBy || '-' }}</span>
-                    </div>
-                    <div class="meta-item">
-                      <span class="meta-label">Lần sửa cuối:</span>
-                      <span class="meta-value">{{
-                        selectedProcess()?.updatedAt || 'Vừa khởi tạo'
-                      }}</span>
-                    </div>
-                    <div class="meta-item">
-                      <span class="meta-label">Định dạng sơ đồ:</span>
-                      <span class="meta-value badge-xml">OMG BPMN 2.0 XML</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Sidebar Footer Actions -->
-            <div class="info-sidebar-footer">
-              @if (modalMode() === 'create') {
-                <button
-                  type="button"
-                  class="btn-footer-submit create"
-                  (click)="submitFromSidebar()"
-                  [disabled]="isSubmitting()"
-                >
-                  <span
-                    nz-icon
-                    [nzType]="isSubmitting() ? 'loading' : 'plus'"
-                    nzTheme="outline"
-                  ></span>
-                  <span>{{ isSubmitting() ? 'Đang tạo...' : 'Tạo quy trình' }}</span>
-                </button>
-                <button
-                  type="button"
-                  class="btn-footer-cancel"
-                  (click)="closeModal()"
-                  [disabled]="isSubmitting()"
-                >
-                  Hủy
-                </button>
-              } @else if (modalMode() === 'edit') {
-                <button
-                  type="button"
-                  class="btn-footer-delete"
-                  nz-popconfirm
-                  nzPopconfirmTitle="Bạn có chắc chắn muốn xóa quy trình này không?"
-                  nzOkText="Xóa"
-                  nzCancelText="Hủy"
-                  nzOkDanger
-                  (nzOnConfirm)="deleteFromModal()"
-                  [disabled]="isSubmitting()"
-                  title="Xóa vĩnh viễn quy trình này"
-                >
-                  <span nz-icon nzType="delete" nzTheme="outline"></span>
-                  <span>Xóa quy trình</span>
-                </button>
-                <button
-                  type="button"
-                  class="btn-footer-submit save"
-                  (click)="submitFromSidebar()"
-                  [disabled]="isSubmitting()"
-                >
-                  <span
-                    nz-icon
-                    [nzType]="isSubmitting() ? 'loading' : 'save'"
-                    nzTheme="outline"
-                  ></span>
-                  <span>{{ isSubmitting() ? 'Đang lưu...' : 'Lưu thay đổi' }}</span>
-                </button>
-                <button
-                  type="button"
-                  class="btn-footer-cancel"
-                  (click)="closeModal()"
-                  [disabled]="isSubmitting()"
-                >
-                  Hủy
-                </button>
-              } @else {
-                <button
-                  type="button"
-                  class="btn-footer-submit deploy"
-                  nz-popconfirm
-                  [nzPopconfirmTitle]="
-                    selectedProcess()?.status === 'PUBLISHED'
-                      ? 'Quy trình này đã được phát hành trước đó. Bạn có chắc chắn muốn triển khai lại (Deploy) không?'
-                      : 'Bạn có chắc chắn muốn triển khai (Deploy) quy trình này để đưa vào vận hành?'
-                  "
-                  nzOkText="Triển khai"
-                  nzCancelText="Hủy"
-                  (nzOnConfirm)="deployProcessFromModal()"
-                  [disabled]="isDeploying() || isSubmitting()"
-                  [title]="
-                    selectedProcess()?.status === 'PUBLISHED'
-                      ? 'Triển khai lại quy trình'
-                      : 'Triển khai quy trình lên hệ thống'
-                  "
-                >
-                  <span
-                    nz-icon
-                    [nzType]="isDeploying() ? 'loading' : 'deployment-unit'"
-                    nzTheme="outline"
-                  ></span>
-                  <span>{{
-                    isDeploying()
-                      ? 'Đang triển khai...'
-                      : selectedProcess()?.status === 'PUBLISHED'
-                        ? 'Deploy lại'
-                        : 'Deploy'
-                  }}</span>
-                </button>
-                <button
-                  type="button"
-                  class="btn-footer-submit edit"
-                  (click)="switchToEditMode()"
-                  [disabled]="isDeploying()"
-                >
-                  <span nz-icon nzType="edit" nzTheme="outline"></span>
-                  <span>Sửa</span>
-                </button>
-                <button
-                  type="button"
-                  class="btn-footer-cancel"
-                  (click)="closeModal()"
-                  [disabled]="isDeploying()"
-                >
-                  Đóng
-                </button>
-              }
-            </div>
-          </aside>
-        </div>
+        }
       }
     </div>
+
+    <div
+      class="form-group"
+      [class.has-error]="processForm.name().invalid() && processForm.name().touched()"
+    >
+      <label class="form-label" for="bpmnFormName">
+        <span>Tên quy trình</span>
+        <span class="required-star">*</span>
+      </label>
+      <div class="input-with-icon">
+        <span nz-icon nzType="edit" nzTheme="outline" class="input-icon"></span>
+        <input
+          id="bpmnFormName"
+          type="text"
+          class="form-control"
+          [formField]="processForm.name"
+          placeholder="Nhập tên quy trình..."
+        />
+      </div>
+      @if (processForm.name().invalid() && processForm.name().touched()) {
+        @for (error of processForm.name().errors(); track error.kind) {
+          <div class="form-error-msg">
+            <span nz-icon nzType="info-circle" nzTheme="outline"></span>
+            <span>{{ error.message }}</span>
+          </div>
+        }
+      }
+    </div>
+
+    <div class="form-row-2col">
+      <div
+        class="form-group"
+        [class.has-error]="processForm.category().invalid() && processForm.category().touched()"
+      >
+        <label class="form-label" for="bpmnFormCategory">
+          <span>Danh mục</span>
+          <span class="required-star">*</span>
+        </label>
+        <div class="input-with-icon">
+          <span nz-icon nzType="appstore" nzTheme="outline" class="input-icon"></span>
+          <input
+            id="bpmnFormCategory"
+            type="text"
+            class="form-control"
+            [formField]="processForm.category"
+            placeholder="VD: ORDER, HR, GENERAL"
+          />
+        </div>
+        @if (processForm.category().invalid() && processForm.category().touched()) {
+          @for (error of processForm.category().errors(); track error.kind) {
+            <div class="form-error-msg">
+              <span nz-icon nzType="info-circle" nzTheme="outline"></span>
+              <span>{{ error.message }}</span>
+            </div>
+          }
+        }
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="bpmnFormVersion">
+          <span>Phiên bản</span>
+          <span class="auto-hint">(Hệ thống tự tăng)</span>
+        </label>
+        <div class="input-with-icon">
+          <span nz-icon nzType="tag" nzTheme="outline" class="input-icon"></span>
+          <input
+            id="bpmnFormVersion"
+            type="text"
+            class="form-control readonly-input"
+            [value]="'v' + (editor.selected()?.version || processFormModel().version || 1)"
+            readonly
+            disabled
+            title="Phiên bản được máy chủ tự động quản lý và tăng dần"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="bpmnFormStatus">
+        <span>Trạng thái</span>
+      </label>
+      <div class="select-wrapper">
+        <select
+          id="bpmnFormStatus"
+          class="form-control form-select"
+          [formField]="processForm.status"
+        >
+          <option value="DRAFT">Bản nháp</option>
+          <option value="PUBLISHED">Đã phát hành</option>
+          <option value="ARCHIVED">Lưu trữ</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="bpmnFormDescription">
+        <span>Mô tả quy trình</span>
+      </label>
+      <textarea
+        id="bpmnFormDescription"
+        class="form-control form-textarea"
+        rows="3"
+        [formField]="processForm.description"
+        placeholder="Mô tả mục tiêu, phạm vi và các bước thực hiện của quy trình..."
+      ></textarea>
+    </div>
   </div>
-}
+</app-designer-modal>
