@@ -1,31 +1,24 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { NzCardModule } from 'ng-zorro-antd/card';
-import { NzGridModule } from 'ng-zorro-antd/grid';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzBadgeModule } from 'ng-zorro-antd/badge';
-import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzTabsModule } from 'ng-zorro-antd/tabs';
 import { NzTimelineModule } from 'ng-zorro-antd/timeline';
-import { NzDescriptionsModule } from 'ng-zorro-antd/descriptions';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
-import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzEmptyModule } from 'ng-zorro-antd/empty';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
-import { NzDividerModule } from 'ng-zorro-antd/divider';
 import { NzMessageService } from 'ng-zorro-antd/message';
 
 import { OperateService } from '@core/services';
 import { OperateProcessInstance, ProcessIncident, ProcessInstanceState } from '@core/models';
-import { formatDisplayDateTime } from '@shared/utils';
 import { FormatDatePipe } from '@shared/pipes';
 import { TableAutoHeightDirective } from '@shared/directives';
 import { OperateViewerComponent } from './operate-viewer/operate-viewer.component';
@@ -36,25 +29,19 @@ import { OperateViewerComponent } from './operate-viewer/operate-viewer.componen
   imports: [
     CommonModule,
     FormsModule,
-    NzCardModule,
-    NzGridModule,
     NzTableModule,
     NzTagModule,
     NzBadgeModule,
-    NzButtonModule,
     NzIconModule,
     NzInputModule,
     NzSelectModule,
     NzDrawerModule,
     NzTabsModule,
     NzTimelineModule,
-    NzDescriptionsModule,
     NzPopconfirmModule,
     NzTooltipModule,
-    NzAlertModule,
     NzEmptyModule,
     NzSpinModule,
-    NzDividerModule,
     OperateViewerComponent,
     TableAutoHeightDirective,
     FormatDatePipe,
@@ -113,8 +100,6 @@ export class OperateComponent implements OnInit {
     this.operateService.cancelInstance(instance.id);
     this.message.info(`Đã hủy phiên thực thi ${instance.id}`);
   }
-
-  readonly formatTime = formatDisplayDateTime;
 
   getStateTagColor(state: ProcessInstanceState | string): string {
     switch ((state || '').toUpperCase()) {

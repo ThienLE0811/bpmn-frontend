@@ -9,9 +9,6 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzModalModule } from 'ng-zorro-antd/modal';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
-import { NzBadgeModule } from 'ng-zorro-antd/badge';
-import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
-import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzMessageService } from 'ng-zorro-antd/message';
 
 import { TaskService, FormSchemaService } from '@core/services';
@@ -19,12 +16,9 @@ import { TaskResponse, getTaskStatusMeta, FormDefinition } from '@core/models';
 import { TableAutoHeightDirective } from '@shared/directives';
 import { DynamicFormRendererComponent } from '@shared/components/dynamic-form-renderer/dynamic-form-renderer.component';
 import {
-  getAvatarColor,
-  getUserInitials,
   copyToClipboard,
   sortByString,
   sortByDate,
-  safeJsonParse,
 } from '@shared/utils';
 import { AvatarColorPipe, UserInitialsPipe, FormatDatePipe } from '@shared/pipes';
 
@@ -42,9 +36,6 @@ import { AvatarColorPipe, UserInitialsPipe, FormatDatePipe } from '@shared/pipes
     NzDrawerModule,
     NzModalModule,
     NzTooltipModule,
-    NzBadgeModule,
-    NzPopconfirmModule,
-    NzSwitchModule,
     TableAutoHeightDirective,
     AvatarColorPipe,
     UserInitialsPipe,
@@ -70,9 +61,6 @@ export class TaskListComponent implements OnInit {
   readonly selectedTaskFormSchema = signal<FormDefinition | null>(null);
   readonly taskFormVariables = signal<Record<string, unknown>>({});
   readonly isFormValid = signal<boolean>(true);
-  readonly completeVariablesJson = signal<string>(
-    JSON.stringify({ approved: true, comment: 'Đã thẩm định hồ sơ đạt yêu cầu' }, null, 2),
-  );
 
   // Bộ lọc
   readonly filterModel = signal<{
@@ -107,8 +95,6 @@ export class TaskListComponent implements OnInit {
 
   // Helpers
   readonly getTaskStatusMeta = getTaskStatusMeta;
-  readonly getAvatarColor = getAvatarColor;
-  readonly getUserInitials = getUserInitials;
 
   ngOnInit(): void {
     this.loadTasks();
@@ -202,14 +188,12 @@ export class TaskListComponent implements OnInit {
       approved: true,
     });
     this.taskFormVariables.set(initVals);
-    this.completeVariablesJson.set(JSON.stringify(initVals, null, 2));
     this.isFormValid.set(true);
     this.isCompleteModalVisible.set(true);
   }
 
   onFormValuesChange(vals: Record<string, unknown>): void {
     this.taskFormVariables.set(vals);
-    this.completeVariablesJson.set(JSON.stringify(vals, null, 2));
   }
 
   closeCompleteModal(): void {

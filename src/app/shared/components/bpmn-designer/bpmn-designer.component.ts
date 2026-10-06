@@ -131,17 +131,6 @@ export class BpmnDesignerComponent implements AfterViewInit, OnChanges {
     }
   }
 
-  async getDiagramXml(): Promise<string> {
-    try {
-      if (this.modeler.isReady) {
-        return (await this.modeler.saveXML()) || this.xmlSync.xmlContent();
-      }
-    } catch (err) {
-      console.error('Lỗi khi lấy sơ đồ BPMN XML:', err);
-    }
-    return this.xmlSync.xmlContent() || this.processData?.bpmnXml || DEFAULT_BPMN_XML;
-  }
-
   async onSave(): Promise<void> {
     try {
       // If currently in XML mode and modified, ensure it's applied

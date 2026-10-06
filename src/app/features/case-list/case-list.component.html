@@ -253,7 +253,7 @@
                         </span>
                         <button
                           class="btn-task-link"
-                          (click)="navigateToTask(item.currentNodeId, item.id, $event)"
+                          (click)="navigateToTask(item.id, $event)"
                           nz-tooltip
                           nzTooltipTitle="Đi đến Tác vụ (Task) tương ứng"
                         >
@@ -578,7 +578,7 @@
                     </div>
                     <button
                       class="btn btn-jump-task"
-                      (click)="navigateToTask(inst.currentNodeId, inst.id)"
+                      (click)="navigateToTask(inst.id)"
                     >
                       <span nz-icon nzType="arrow-right"></span>
                       <span>Xử lý Task này</span>

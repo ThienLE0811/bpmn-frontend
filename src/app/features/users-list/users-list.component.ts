@@ -8,9 +8,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
-import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
-import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { UserService, AuthService } from '@core/services';
 import { User, UserRole, UserStatus } from '@core/models';
@@ -39,9 +37,7 @@ import { AvatarColorPipe, UserInitialsPipe, FormatDatePipe } from '@shared/pipes
     NzInputModule,
     NzSelectModule,
     NzModalModule,
-    NzTagModule,
     NzDropdownModule,
-    NzTooltipModule,
     NzDrawerModule,
     TableAutoHeightDirective,
     AvatarColorPipe,
@@ -59,9 +55,6 @@ export class UsersListComponent implements OnInit {
 
   readonly loggedInUser = this.authService.currentUser;
   readonly isAdmin = computed(() => checkPer('ADMIN', this.loggedInUser()));
-
-  // Cung cấp hàm checkPer dùng trong template và component
-  protected readonly checkPer = checkPer;
 
   canEditUser(targetUser: User | null | undefined): boolean {
     if (!targetUser) return false;
@@ -99,11 +92,9 @@ export class UsersListComponent implements OnInit {
     return !isSameId && !isSameUsername;
   }
 
-
   ngOnInit(): void {
     this.search();
   }
-
 
   // UI state signals
   protected isModalOpen = signal<boolean>(false);
@@ -166,7 +157,6 @@ export class UsersListComponent implements OnInit {
     required(schema.role, { message: 'Vui lòng chọn vai trò người dùng' });
   });
 
-
   protected users = this.userService.users;
   protected isLoading = this.userService.isLoading;
 
@@ -176,7 +166,6 @@ export class UsersListComponent implements OnInit {
   protected inactiveCount = computed(
     () => this.users().filter((u) => u.status === 'INACTIVE' || u.status === 'LOCKED').length,
   );
-  protected adminCount = computed(() => this.users().filter((u) => u.role === 'ADMIN').length);
   protected developerCount = computed(() => this.users().filter((u) => u.role === 'DEVELOPER').length);
 
   toggleStats(): void {
@@ -234,7 +223,6 @@ export class UsersListComponent implements OnInit {
 
   // Sorting comparators
   protected sortFullName = sortByString<User>('fullName');
-  protected sortUsername = sortByString<User>('username');
   protected sortEmail = sortByString<User>('email');
   protected sortRole = sortByString<User>('role');
   protected sortStatus = sortByString<User>('status');
@@ -283,7 +271,6 @@ export class UsersListComponent implements OnInit {
     this.initialFormModel = { ...initial };
     this.isModalOpen.set(true);
   }
-
 
   openDetailDrawer(user: User): void {
     this.detailUser.set(user);
@@ -381,7 +368,6 @@ export class UsersListComponent implements OnInit {
 
       this.isSubmitting.set(true);
 
-
       if (!current?.id) {
         // Gọi API tạo mới: POST /api/users
         this.userService
@@ -428,7 +414,6 @@ export class UsersListComponent implements OnInit {
       }
     });
   }
-
 
   deleteUser(user: User, event?: Event): void {
     event?.stopPropagation();

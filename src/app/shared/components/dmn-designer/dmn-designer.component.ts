@@ -195,18 +195,6 @@ export class DmnDesignerComponent implements AfterViewInit, OnDestroy, OnChanges
     }
   }
 
-  async getDiagramXml(): Promise<string> {
-    try {
-      if (this.dmnModeler) {
-        const { xml } = await this.dmnModeler.saveXML({ format: true });
-        return xml || '';
-      }
-    } catch (err) {
-      console.error('Lỗi khi lấy sơ đồ DMN XML:', err);
-    }
-    return this.decisionData?.dmnXml || DEFAULT_DMN_XML;
-  }
-
   async onSave(): Promise<void> {
     try {
       const { xml } = await this.dmnModeler.saveXML({ format: true });

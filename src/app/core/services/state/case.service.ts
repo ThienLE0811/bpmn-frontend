@@ -9,7 +9,6 @@ import {
   extractPageMetadata,
 } from '@core/models';
 import { CaseApiService } from '../api/case-api.service';
-import { AuthService } from './auth.service';
 import { ApiErrorHandlerService } from '@shared/services';
 
 @Injectable({
@@ -17,7 +16,6 @@ import { ApiErrorHandlerService } from '@shared/services';
 })
 export class CaseService {
   private readonly caseApi = inject(CaseApiService);
-  private readonly authService = inject(AuthService);
   private readonly errorHandler = inject(ApiErrorHandlerService);
   private readonly message = inject(NzMessageService);
 

@@ -1,4 +1,4 @@
-import { Component, inject, computed, OnInit, signal } from '@angular/core';
+import { Component, inject, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { NgApexchartsModule } from 'ng-apexcharts';
@@ -18,20 +18,16 @@ import type {
   ApexResponsive,
 } from 'ng-apexcharts';
 
-import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzGridModule } from 'ng-zorro-antd/grid';
-import { NzStatisticModule } from 'ng-zorro-antd/statistic';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzProgressModule } from 'ng-zorro-antd/progress';
-import { NzBadgeModule } from 'ng-zorro-antd/badge';
 import { NzEmptyModule } from 'ng-zorro-antd/empty';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 
 import { BpmnProcessService, DmnDecisionService } from '@core/services';
-import { BpmnProcess, DmnDecision } from '@core/models';
 
 export interface ChartOptions {
   series: ApexAxisChartSeries | ApexNonAxisChartSeries;
@@ -57,14 +53,11 @@ export interface ChartOptions {
     CommonModule,
     RouterLink,
     NgApexchartsModule,
-    NzCardModule,
     NzGridModule,
-    NzStatisticModule,
     NzIconModule,
     NzTagModule,
     NzButtonModule,
     NzProgressModule,
-    NzBadgeModule,
     NzEmptyModule,
     NzSpinModule,
     NzTooltipModule,
@@ -503,31 +496,5 @@ export class DashboardComponent implements OnInit {
   refreshData(): void {
     this.bpmnService.loadProcesses();
     this.dmnService.loadDecisions();
-  }
-
-  getStatusColor(status: string): string {
-    switch (status) {
-      case 'PUBLISHED':
-        return 'success';
-      case 'DRAFT':
-        return 'warning';
-      case 'ARCHIVED':
-        return 'default';
-      default:
-        return 'default';
-    }
-  }
-
-  getStatusLabel(status: string): string {
-    switch (status) {
-      case 'PUBLISHED':
-        return 'Đã xuất bản';
-      case 'DRAFT':
-        return 'Bản nháp';
-      case 'ARCHIVED':
-        return 'Lưu trữ';
-      default:
-        return status;
-    }
   }
 }

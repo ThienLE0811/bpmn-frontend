@@ -163,16 +163,6 @@ export class DmnListComponent implements OnInit {
     this.search();
   }
 
-  onCategoryChange(category: string): void {
-    this.filterModel.update((m) => ({ ...m, category }));
-    this.search();
-  }
-
-  onHitPolicyChange(hitPolicy: string): void {
-    this.filterModel.update((m) => ({ ...m, hitPolicy }));
-    this.search();
-  }
-
   onStatusChange(status: string): void {
     this.filterModel.update((m) => ({ ...m, status }));
     this.search();

@@ -12,9 +12,8 @@ import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzListModule } from 'ng-zorro-antd/list';
 import { NzPaginationModule } from 'ng-zorro-antd/pagination';
-import { NzMessageService } from 'ng-zorro-antd/message';
 import { BpmnProcessService } from '@core/services';
-import { BpmnProcess, BpmnProcessStatus } from '@core/models';
+import { BpmnProcess } from '@core/models';
 import { BpmnDesignerComponent } from '@shared/components/bpmn-designer/bpmn-designer.component';
 import { TableAutoHeightDirective } from '@shared/directives';
 import { sortByString, sortByNumber } from '@shared/utils';
@@ -47,7 +46,6 @@ export class BpmnListComponent implements OnInit {
 
   private bpmnService = inject(BpmnProcessService);
   private modal = inject(NzModalService);
-  private message = inject(NzMessageService);
 
   ngOnInit(): void {
     this.search();
@@ -179,11 +177,6 @@ export class BpmnListComponent implements OnInit {
       version: '',
       createdBy: '',
     });
-    this.search();
-  }
-
-  onCategoryChange(category: string): void {
-    this.filterModel.update((m) => ({ ...m, category }));
     this.search();
   }
 

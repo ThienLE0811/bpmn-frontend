@@ -11,31 +11,24 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzModalModule } from 'ng-zorro-antd/modal';
 import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
-import { NzBadgeModule } from 'ng-zorro-antd/badge';
-import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDescriptionsModule } from 'ng-zorro-antd/descriptions';
 import { NzTabsModule } from 'ng-zorro-antd/tabs';
 import { NzTimelineModule } from 'ng-zorro-antd/timeline';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
-import { NzEmptyModule } from 'ng-zorro-antd/empty';
 import { NzMessageService } from 'ng-zorro-antd/message';
 
-import { CaseService, BpmnProcessService, AuthService, FormSchemaService } from '@core/services';
+import { CaseService, BpmnProcessService, FormSchemaService } from '@core/services';
 import {
   ProcessInstance,
   getCaseStatusMeta,
   StartProcessInstanceRequest,
-  BpmnProcess,
   FormDefinition,
 } from '@core/models';
 import { DynamicFormRendererComponent } from '@shared/components/dynamic-form-renderer/dynamic-form-renderer.component';
 import {
-  getAvatarColor,
-  getUserInitials,
   formatDisplayDateTime,
   copyToClipboard,
   sortByString,
-  safeJsonParse,
 } from '@shared/utils';
 import { AvatarColorPipe, UserInitialsPipe, FormatDatePipe } from '@shared/pipes';
 import { TableAutoHeightDirective } from '@shared/directives';
@@ -61,13 +54,10 @@ export interface VariableRow {
     NzDrawerModule,
     NzModalModule,
     NzTooltipModule,
-    NzBadgeModule,
-    NzButtonModule,
     NzDescriptionsModule,
     NzTabsModule,
     NzTimelineModule,
     NzSpinModule,
-    NzEmptyModule,
     TableAutoHeightDirective,
     AvatarColorPipe,
     UserInitialsPipe,
@@ -81,7 +71,6 @@ export interface VariableRow {
 export class CaseListComponent implements OnInit {
   protected readonly caseService = inject(CaseService);
   protected readonly bpmnService = inject(BpmnProcessService);
-  protected readonly authService = inject(AuthService);
   protected readonly formSchemaService = inject(FormSchemaService);
   private readonly router = inject(Router);
   private readonly message = inject(NzMessageService);
@@ -108,10 +97,6 @@ export class CaseListComponent implements OnInit {
   readonly startFormSchema = signal<FormDefinition | null>(null);
   readonly startFormVariables = signal<Record<string, unknown>>({});
   readonly isStartFormValid = signal<boolean>(true);
-  readonly startVariablesJson = signal<string>(
-    JSON.stringify({ amount: 5000, customer: 'Khách hàng thử nghiệm', note: 'Khởi động từ portal' }, null, 2),
-  );
-  readonly jsonError = signal<string | null>(null);
 
   // BPMN XML của case được chọn để hiển thị trong Viewer
   readonly currentCaseBpmnXml = signal<string | null>(null);
@@ -164,8 +149,6 @@ export class CaseListComponent implements OnInit {
 
   // Helpers
   readonly getCaseStatusMeta = getCaseStatusMeta;
-  readonly getAvatarColor = getAvatarColor;
-  readonly getUserInitials = getUserInitials;
 
   ngOnInit(): void {
     this.bpmnService.loadProcesses();
@@ -237,7 +220,6 @@ export class CaseListComponent implements OnInit {
       this.startProcessId.set(targetId);
       this.updateStartFormSchema(targetId);
     }
-    this.jsonError.set(null);
     this.isStartModalVisible.set(true);
   }
 
@@ -253,13 +235,11 @@ export class CaseListComponent implements OnInit {
     this.startFormSchema.set(schema);
     const initVals = this.formSchemaService.extractFormValues(schema);
     this.startFormVariables.set(initVals);
-    this.startVariablesJson.set(JSON.stringify(initVals, null, 2));
     this.isStartFormValid.set(true);
   }
 
   onStartFormValuesChange(vals: Record<string, unknown>): void {
     this.startFormVariables.set(vals);
-    this.startVariablesJson.set(JSON.stringify(vals, null, 2));
   }
 
   closeStartModal(): void {
@@ -276,7 +256,6 @@ export class CaseListComponent implements OnInit {
       this.startProcessId.set(found.id || found.processKey);
     }
     this.updateStartFormSchema(targetKey);
-    this.jsonError.set(null);
   }
 
   submitStartCase(): void {
@@ -336,7 +315,7 @@ export class CaseListComponent implements OnInit {
   }
 
   // Điều hướng nhanh đến trang Tasks nếu đang dừng ở User Task
-  navigateToTask(taskNodeId: string, instanceId: string, event?: Event): void {
+  navigateToTask(instanceId: string, event?: Event): void {
     if (event) event.stopPropagation();
     this.router.navigate(['/tasks'], {
       queryParams: {

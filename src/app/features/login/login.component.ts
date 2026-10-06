@@ -2,12 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { NzFormModule } from 'ng-zorro-antd/form';
-import { NzInputModule } from 'ng-zorro-antd/input';
-import { NzButtonModule } from 'ng-zorro-antd/button';
-import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzIconModule } from 'ng-zorro-antd/icon';
-import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
@@ -20,12 +15,7 @@ import { getApiErrorMessage } from '@shared/utils';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    NzFormModule,
-    NzInputModule,
-    NzButtonModule,
-    NzCheckboxModule,
     NzIconModule,
-    NzAlertModule,
     NzSpinModule,
     NzModalModule,
   ],

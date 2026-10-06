@@ -18,12 +18,8 @@ import { NzInputNumberModule } from 'ng-zorro-antd/input-number';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
-import { NzRadioModule } from 'ng-zorro-antd/radio';
 import { NzIconModule } from 'ng-zorro-antd/icon';
-import { NzButtonModule } from 'ng-zorro-antd/button';
-import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzTagModule } from 'ng-zorro-antd/tag';
-import { NzTooltipModule } from 'ng-zorro-antd/tooltip';
 import { NzMessageService } from 'ng-zorro-antd/message';
 
 import {
@@ -45,12 +41,8 @@ import { FormSchemaService } from '@core/services/state/form-schema.service';
     NzSelectModule,
     NzSwitchModule,
     NzDatePickerModule,
-    NzRadioModule,
     NzIconModule,
-    NzButtonModule,
-    NzAlertModule,
     NzTagModule,
-    NzTooltipModule,
   ],
   templateUrl: './dynamic-form-renderer.component.html',
   styleUrl: './dynamic-form-renderer.component.scss',

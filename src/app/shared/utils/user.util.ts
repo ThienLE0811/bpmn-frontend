@@ -1,4 +1,4 @@
-import { User, UserRole, UserStatus } from '@core/models';
+import { UserRole, UserStatus } from '@core/models';
 
 export interface UserRoleMeta {
   label: string;
