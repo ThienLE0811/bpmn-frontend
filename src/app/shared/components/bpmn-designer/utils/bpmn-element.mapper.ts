@@ -1,4 +1,4 @@
-import { BpmnElementProperties } from '../bpmn-designer.models';
+import { BpmnElementProperties, ConnectorParam } from '../bpmn-designer.models';
 import { getTimerDefinition, TIMER_TYPES } from './timer.utils';
 
 /**
@@ -9,6 +9,15 @@ function readCamundaAttr(bo: any, prop: string): string {
   return bo[prop] || bo.get?.(`camunda:${prop}`) || bo.$attrs?.[`camunda:${prop}`] || '';
 }
 
+/** Tìm camunda:Connector trong extensionElements của element (nếu có). */
+export function getConnector(bo: any): any {
+  return bo.extensionElements?.values?.find((v: any) => v.$type === 'camunda:Connector');
+}
+
+function readConnectorParams(params: any[] | undefined): ConnectorParam[] {
+  return (params ?? []).map((p) => ({ name: p.name || '', value: p.value || '' }));
+}
+
 export function readElementProperties(element: any): BpmnElementProperties {
   const bo = element.businessObject;
 
@@ -16,6 +25,8 @@ export function readElementProperties(element: any): BpmnElementProperties {
   // object directly (not its id string) - compare by id to know if THIS flow is it.
   const sourceDefault = element.source?.businessObject?.default;
   const isDefaultFlow = !!sourceDefault && sourceDefault.id === bo.id;
+
+  const connector = getConnector(bo);
 
   const timerDef = getTimerDefinition(bo);
   const timerType = timerDef ? TIMER_TYPES.find((t) => timerDef[t]) || '' : '';
@@ -38,6 +49,9 @@ export function readElementProperties(element: any): BpmnElementProperties {
     delegateExpression: readCamundaAttr(bo, 'delegateExpression'),
     javaClass: readCamundaAttr(bo, 'class'),
     calledElement: bo.calledElement || bo.get?.('calledElement') || '',
+    connectorId: connector?.connectorId || '',
+    connectorInputs: readConnectorParams(connector?.inputOutput?.inputParameters),
+    connectorOutputs: readConnectorParams(connector?.inputOutput?.outputParameters),
     decisionRef: readCamundaAttr(bo, 'decisionRef'),
     resultVariable: readCamundaAttr(bo, 'resultVariable'),
     hasTimer: !!timerDef,

@@ -389,6 +389,68 @@
           </div>
         }
 
+        <!-- Connector (Service Task) -->
+        @if (isServiceTask(element.type)) {
+          <div class="section-card">
+            <div class="section-title">
+              <span nz-icon nzType="cloud-server" nzTheme="outline"></span>
+              <span>Connector (gọi API ngoài)</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <span>Connector</span>
+              </label>
+              <div class="select-wrapper">
+                <select
+                  class="form-input form-select"
+                  [ngModel]="element.connectorId || ''"
+                  (ngModelChange)="updateConnector({ connectorId: $event })"
+                >
+                  <option value="">Không dùng connector</option>
+                  @for (id of connectorOptions(); track id) {
+                    <option [value]="id">{{ id }}</option>
+                  }
+                </select>
+              </div>
+              <span class="field-hint"
+                >Khi tác vụ chạy, backend gọi connector này. Nếu connector lỗi, vụ việc chuyển sang
+                trạng thái Lỗi và có thể thử lại.</span
+              >
+            </div>
+
+            @if (element.connectorId) {
+              <ng-container
+                *ngTemplateOutlet="
+                  paramsTpl;
+                  context: {
+                    kind: 'connectorInputs',
+                    title: 'Tham số đầu vào (Input)',
+                    rows: element.connectorInputs,
+                    valuePlaceholder: '${customerId} hoặc giá trị cố định'
+                  }
+                "
+              ></ng-container>
+              <ng-container
+                *ngTemplateOutlet="
+                  paramsTpl;
+                  context: {
+                    kind: 'connectorOutputs',
+                    title: 'Tham số đầu ra (Output)',
+                    rows: element.connectorOutputs,
+                    valuePlaceholder: '${json.score}'
+                  }
+                "
+              ></ng-container>
+              <span class="field-hint"
+                >Giá trị dạng <code>&#36;&#123;...&#125;</code> là biểu thức JEXL (đọc biến của quy trình); không
+                bọc thì là giá trị cố định. Tham số đầu ra được đọc từ kết quả connector trả về,
+                không phải từ biến quy trình.</span
+              >
+            }
+          </div>
+        }
+
         <!-- Form dành cho Call Activity -->
         @if (isCallActivity(element.type)) {
           <div class="section-card">
@@ -686,3 +748,47 @@
     </div>
   }
 </aside>
+
+<ng-template
+  #paramsTpl
+  let-kind="kind"
+  let-title="title"
+  let-rows="rows"
+  let-valuePlaceholder="valuePlaceholder"
+>
+  <div class="form-group">
+    <label class="form-label">
+      <span>{{ title }}</span>
+    </label>
+    @for (row of rows; track $index) {
+      <div class="param-row">
+        <input
+          type="text"
+          class="form-input code-input"
+          [ngModel]="row.name"
+          (ngModelChange)="updateConnectorParam(kind, $index, { name: $event })"
+          placeholder="Tên"
+        />
+        <input
+          type="text"
+          class="form-input code-input"
+          [ngModel]="row.value"
+          (ngModelChange)="updateConnectorParam(kind, $index, { value: $event })"
+          [placeholder]="valuePlaceholder"
+        />
+        <button
+          type="button"
+          class="param-remove"
+          title="Xóa tham số"
+          (click)="removeConnectorParam(kind, $index)"
+        >
+          <span nz-icon nzType="delete" nzTheme="outline"></span>
+        </button>
+      </div>
+    }
+    <button type="button" class="param-add" (click)="addConnectorParam(kind)">
+      <span nz-icon nzType="plus" nzTheme="outline"></span>
+      <span>Thêm tham số</span>
+    </button>
+  </div>
+</ng-template>

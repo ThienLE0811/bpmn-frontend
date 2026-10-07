@@ -1,3 +1,9 @@
+/** Một camunda:inputParameter / camunda:outputParameter của connector. */
+export interface ConnectorParam {
+  name: string;
+  value: string;
+}
+
 export type TimerType = 'timeDuration' | 'timeDate' | 'timeCycle';
 
 export interface BpmnElementProperties {
@@ -20,6 +26,10 @@ export interface BpmnElementProperties {
   delegateExpression?: string;
   javaClass?: string;
   calledElement?: string;
+  // Connector của Service Task (camunda:connector)
+  connectorId?: string;
+  connectorInputs?: ConnectorParam[];
+  connectorOutputs?: ConnectorParam[];
   // Business Rule Task (DMN)
   decisionRef?: string;
   resultVariable?: string;

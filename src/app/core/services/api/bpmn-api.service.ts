@@ -65,6 +65,11 @@ export class BpmnApiService {
     return this.api.put<BpmnProcess>(`${this.endpoint}/${id}`, payload);
   }
 
+  /** Id các connector backend hỗ trợ cho serviceTask, vd `["http"]`. */
+  getConnectors(): Observable<string[]> {
+    return this.api.get<string[]>('/connectors');
+  }
+
   delete(id: string): Observable<void> {
     return this.api.delete<void>(`${this.endpoint}/${id}`);
   }

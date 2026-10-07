@@ -1,10 +1,16 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, input, model, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { DmnDecision } from '@core/models/dmn-decision.model';
 import { FormSchemaService } from '@core/services/state/form-schema.service';
 import { copyToClipboard } from '@shared/utils/clipboard.util';
-import { BpmnElementProperties, PropertiesTab, TimerType } from '../bpmn-designer.models';
+import {
+  BpmnElementProperties,
+  ConnectorParam,
+  PropertiesTab,
+  TimerType,
+} from '../bpmn-designer.models';
 import { BpmnModelerService } from '../services/bpmn-modeler.service';
 import {
   getBpmnTypeMeta,
@@ -15,6 +21,7 @@ import {
   isCallActivity,
   isSequenceFlow,
   isServiceOrScript,
+  isServiceTask,
   isUserOrTask,
 } from '../utils/bpmn-type-meta';
 import {
@@ -29,7 +36,7 @@ import {
 @Component({
   selector: 'app-bpmn-properties-panel',
   standalone: true,
-  imports: [FormsModule, NzIconModule],
+  imports: [FormsModule, NgTemplateOutlet, NzIconModule],
   templateUrl: './bpmn-properties-panel.component.html',
   styleUrl: './bpmn-properties-panel.component.scss',
 })
@@ -38,6 +45,7 @@ export class BpmnPropertiesPanelComponent {
   private formSchemaService = inject(FormSchemaService);
 
   readonly dmnDecisions = input<DmnDecision[]>([]);
+  readonly connectors = input<string[]>([]);
   readonly activeTab = model<PropertiesTab>('general');
 
   protected selected = this.modeler.selectedElement;
@@ -54,6 +62,12 @@ export class BpmnPropertiesPanelComponent {
     const el = this.selected();
     return !!el && isBranchingGateway(this.modeler.getElement(el.id)?.source?.type);
   });
+  /** Danh sách connector từ API, giữ thêm connectorId đang gán trong XML để không bị mất khi API không trả về. */
+  protected connectorOptions = computed(() => {
+    const current = this.selected()?.connectorId;
+    const options = this.connectors();
+    return current && !options.includes(current) ? [...options, current] : options;
+  });
   protected timerSummary = computed(() => {
     const el = this.selected();
     return el?.hasTimer ? describeTimer(el.timerType, el.timerValue) : null;
@@ -64,6 +78,7 @@ export class BpmnPropertiesPanelComponent {
   protected readonly isUserOrTask = isUserOrTask;
   protected readonly isSequenceFlow = isSequenceFlow;
   protected readonly isServiceOrScript = isServiceOrScript;
+  protected readonly isServiceTask = isServiceTask;
   protected readonly isCallActivity = isCallActivity;
   protected readonly isBusinessRuleTask = isBusinessRuleTask;
   protected readonly isBoundaryEvent = isBoundaryEvent;
@@ -109,6 +124,96 @@ export class BpmnPropertiesPanelComponent {
       }
       this.modeler.get('modeling').updateProperties(element, updatePayload);
     });
+  }
+
+  /**
+   * Connector config lives in `extensionElements > camunda:connector`. Choosing "no connector"
+   * drops the whole element; parameters with a blank name are kept in the sidebar only (so a
+   * freshly added row survives) and never written to the XML.
+   */
+  protected updateConnector(changes: {
+    connectorId?: string;
+    connectorInputs?: ConnectorParam[];
+    connectorOutputs?: ConnectorParam[];
+  }): void {
+    const currentSel = this.selected();
+    if (!currentSel) return;
+
+    const connectorId = changes.connectorId ?? currentSel.connectorId ?? '';
+    const inputs = connectorId ? (changes.connectorInputs ?? currentSel.connectorInputs ?? []) : [];
+    const outputs = connectorId
+      ? (changes.connectorOutputs ?? currentSel.connectorOutputs ?? [])
+      : [];
+
+    this.editSelected(
+      { connectorId, connectorInputs: inputs, connectorOutputs: outputs },
+      (element) => this.writeConnector(element, connectorId, inputs, outputs),
+    );
+  }
+
+  protected addConnectorParam(kind: 'connectorInputs' | 'connectorOutputs'): void {
+    const currentSel = this.selected();
+    if (!currentSel) return;
+    // Blank rows are not written to the XML, so only the sidebar state changes here.
+    this.selected.set({ ...currentSel, [kind]: [...(currentSel[kind] ?? []), { name: '', value: '' }] });
+  }
+
+  protected updateConnectorParam(
+    kind: 'connectorInputs' | 'connectorOutputs',
+    index: number,
+    patch: Partial<ConnectorParam>,
+  ): void {
+    const rows = (this.selected()?.[kind] ?? []).map((p, i) => (i === index ? { ...p, ...patch } : p));
+    this.updateConnector({ [kind]: rows });
+  }
+
+  protected removeConnectorParam(kind: 'connectorInputs' | 'connectorOutputs', index: number): void {
+    const rows = (this.selected()?.[kind] ?? []).filter((_, i) => i !== index);
+    this.updateConnector({ [kind]: rows });
+  }
+
+  private writeConnector(
+    element: any,
+    connectorId: string,
+    inputs: ConnectorParam[],
+    outputs: ConnectorParam[],
+  ): void {
+    const bpmnFactory = this.modeler.get('bpmnFactory');
+    const modeling = this.modeler.get('modeling');
+    const bo = element.businessObject;
+    const extension = bo.extensionElements;
+    const otherValues = (extension?.values ?? []).filter((v: any) => v.$type !== 'camunda:Connector');
+
+    const values = [...otherValues];
+    if (connectorId) {
+      const toParams = (type: string, rows: ConnectorParam[]) =>
+        rows
+          .filter((p) => p.name.trim())
+          .map((p) => bpmnFactory.create(type, { name: p.name.trim(), value: p.value }));
+      const inputOutput = bpmnFactory.create('camunda:InputOutput', {
+        inputParameters: toParams('camunda:InputParameter', inputs),
+        outputParameters: toParams('camunda:OutputParameter', outputs),
+      });
+      const connector = bpmnFactory.create('camunda:Connector', { connectorId, inputOutput });
+      inputOutput.$parent = connector;
+      [...inputOutput.inputParameters, ...inputOutput.outputParameters].forEach(
+        (p: any) => (p.$parent = inputOutput),
+      );
+      values.push(connector);
+    }
+
+    if (!extension) {
+      if (!values.length) return;
+      const created = bpmnFactory.create('bpmn:ExtensionElements', { values });
+      created.$parent = bo;
+      values.forEach((v: any) => (v.$parent = created));
+      modeling.updateProperties(element, { extensionElements: created });
+    } else if (values.length) {
+      values.forEach((v: any) => (v.$parent = extension));
+      modeling.updateModdleProperties(element, extension, { values });
+    } else {
+      modeling.updateProperties(element, { extensionElements: undefined });
+    }
   }
 
   /**

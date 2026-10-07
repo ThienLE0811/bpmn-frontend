@@ -14,6 +14,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BpmnProcess } from '@core/models/bpmn-process.model';
 import { DmnDecision } from '@core/models/dmn-decision.model';
+import { BpmnApiService } from '@core/services/api/bpmn-api.service';
 import { DmnApiService } from '@core/services/api/dmn-api.service';
 import { extractContent } from '@core/models';
 import { DEFAULT_BPMN_XML } from '@shared/constants';
@@ -43,6 +44,7 @@ export class BpmnDesignerComponent implements AfterViewInit, OnChanges {
   protected readonly modeler = inject(BpmnModelerService);
   protected readonly xmlSync = inject(BpmnXmlSyncService);
   private readonly dmnApi = inject(DmnApiService);
+  private readonly bpmnApi = inject(BpmnApiService);
 
   @Input() processData: BpmnProcess | null = null;
   @Input() readOnly = false;
@@ -56,6 +58,7 @@ export class BpmnDesignerComponent implements AfterViewInit, OnChanges {
   protected processName = signal<string>(DEFAULT_PROCESS_NAME);
   protected propertiesTab = signal<PropertiesTab>('general');
   protected dmnDecisionOptions = signal<DmnDecision[]>([]);
+  protected connectorOptions = signal<string[]>([]);
   protected currentZoom = this.modeler.currentZoom;
   readonly isModified = this.modeler.isModified;
   readonly isSimulationActive = this.modeler.isSimulationActive;
@@ -91,6 +94,7 @@ export class BpmnDesignerComponent implements AfterViewInit, OnChanges {
     this.modeler.init(this.canvasRef.nativeElement);
     this.xmlSync.attach();
     this.loadDmnDecisionOptions();
+    this.loadConnectorOptions();
     this.loadProcess();
   }
 
@@ -112,6 +116,14 @@ export class BpmnDesignerComponent implements AfterViewInit, OnChanges {
       next: (data) => this.dmnDecisionOptions.set(extractContent(data)),
       error: (err) =>
         console.warn('Không thể tải danh sách DMN decision để gán cho Business Rule Task:', err),
+    });
+  }
+
+  private loadConnectorOptions(): void {
+    this.bpmnApi.getConnectors().subscribe({
+      next: (ids) => this.connectorOptions.set(ids ?? []),
+      error: (err) =>
+        console.warn('Không thể tải danh sách connector để gán cho Service Task:', err),
     });
   }
 

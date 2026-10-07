@@ -160,6 +160,10 @@ export function isServiceOrScript(type?: string): boolean {
   );
 }
 
+export function isServiceTask(type?: string): boolean {
+  return type === 'bpmn:ServiceTask';
+}
+
 export function isCallActivity(type?: string): boolean {
   return type === 'bpmn:CallActivity';
 }

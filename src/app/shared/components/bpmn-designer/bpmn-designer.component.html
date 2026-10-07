@@ -48,6 +48,7 @@
     @if (viewMode() === 'design') {
       <app-bpmn-properties-panel
         [dmnDecisions]="dmnDecisionOptions()"
+        [connectors]="connectorOptions()"
         [(activeTab)]="propertiesTab"
       />
     }
