@@ -107,7 +107,6 @@ export class OperateComponent implements OnInit {
       case 'RUNNING':
         return 'processing';
       case 'INCIDENT':
-      case 'SUSPENDED':
       case 'FAILED':
         return 'error';
       case 'COMPLETED':
@@ -127,7 +126,6 @@ export class OperateComponent implements OnInit {
       case 'RUNNING':
         return 'Đang chạy';
       case 'INCIDENT':
-      case 'SUSPENDED':
       case 'FAILED':
         return 'Sự cố (Incident)';
       case 'COMPLETED':

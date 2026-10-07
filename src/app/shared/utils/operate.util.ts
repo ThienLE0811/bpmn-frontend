@@ -37,7 +37,7 @@ export function mapToOperateProcessInstance(
     state = 'COMPLETED';
   } else if (statusStr === 'TERMINATED' || statusStr === 'CANCELED' || statusStr === 'CANCELLED') {
     state = 'CANCELED';
-  } else if (statusStr === 'SUSPENDED' || statusStr === 'INCIDENT' || statusStr === 'FAILED') {
+  } else if (statusStr === 'INCIDENT' || statusStr === 'FAILED') {
     state = 'INCIDENT';
   } else {
     state = 'ACTIVE';

@@ -83,6 +83,13 @@
                         <span nz-icon nzType="clock-circle"></span>
                         <span>{{ inst.currentNodeId }}</span>
                       </div>
+                    } @else if (isFailed()) {
+                      <div class="node-chip failed-node">
+                        <span nz-icon nzType="exclamation-circle"></span>
+                        <span>{{
+                          incident()?.activityId || inst.incidentNodeId || 'Không xác định'
+                        }}</span>
+                      </div>
                     } @else {
                       <span class="text-success">Đã hoàn thành (End Event)</span>
                     }
@@ -95,6 +102,39 @@
                   </nz-descriptions-item>
                 </nz-descriptions>
               </div>
+
+              <!-- Incident Banner (case FAILED do connector lỗi) -->
+              @if (isFailed()) {
+                <div class="incident-banner">
+                  <div class="banner-icon">
+                    <span nz-icon nzType="exclamation-circle"></span>
+                  </div>
+                  <div class="banner-info">
+                    <h5>
+                      Tác vụ tự động bị lỗi tại:
+                      <code>{{
+                        incident()?.activityName || incident()?.activityId || inst.incidentNodeId
+                      }}</code>
+                    </h5>
+                    <p class="error-message">
+                      {{ incident()?.errorMessage || inst.incidentMessage || 'Không rõ lý do lỗi.' }}
+                    </p>
+                    @if (incident()?.creationTime; as errorTime) {
+                      <p class="error-time">Thời điểm lỗi: {{ errorTime | formatDate }}</p>
+                    }
+                  </div>
+                  <button
+                    nz-button
+                    nzType="primary"
+                    nzDanger
+                    [nzLoading]="isRetrying()"
+                    (click)="retryIncident(inst.id)"
+                  >
+                    <span nz-icon nzType="reload"></span>
+                    <span>Thử lại</span>
+                  </button>
+                </div>
+              }
 
               <!-- Step / Node Action Banner -->
               @if (inst.currentNodeId && inst.status === 'RUNNING') {
@@ -144,6 +184,23 @@
                           Dừng tại User Task: <code>{{ inst.currentNodeId }}</code>
                         </p>
                         <p class="step-desc">Đang chờ xử lý trong danh sách công việc</p>
+                      </div>
+                    </nz-timeline-item>
+                  }
+
+                  @if (isFailed()) {
+                    <nz-timeline-item nzColor="red">
+                      <div class="timeline-step">
+                        <span class="step-time">Hiện tại</span>
+                        <p class="step-title">
+                          Lỗi tại tác vụ tự động:
+                          <code>{{
+                            incident()?.activityName ||
+                              incident()?.activityId ||
+                              inst.incidentNodeId
+                          }}</code>
+                        </p>
+                        <p class="step-desc">Quy trình dừng lại, chờ thử lại hoặc xử lý thủ công</p>
                       </div>
                     </nz-timeline-item>
                   }
@@ -236,6 +293,7 @@
                 <app-operate-viewer
                   [xml]="bpmnXml()"
                   [activeActivities]="activeActivityIds()"
+                  [incidentActivities]="incidentActivityIds()"
                 ></app-operate-viewer>
               </div>
             </div>

@@ -1,6 +1,11 @@
 import { StatusTone } from './status-meta.model';
 
-export type ProcessInstanceStatus = 'RUNNING' | 'COMPLETED' | 'SUSPENDED' | 'TERMINATED' | string;
+export type ProcessInstanceStatus =
+  | 'RUNNING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'TERMINATED'
+  | string;
 
 export interface ProcessInstance {
   id: string;
@@ -12,6 +17,8 @@ export interface ProcessInstance {
   startedBy: string;
   startedAt: string; // format "dd/MM/yyyy HH:mm:ss", không phải ISO-8601
   completedAt: string | null;
+  incidentNodeId?: string | null; // node connector bị lỗi, chỉ có khi status FAILED
+  incidentMessage?: string | null; // lý do lỗi, chỉ có khi status FAILED
   createdAt: string;
   updatedAt: string;
 }
@@ -66,15 +73,15 @@ export function getCaseStatusMeta(status: string | null | undefined): CaseStatus
         icon: 'check-circle',
         badgeStatus: 'success',
       };
-    case 'SUSPENDED':
+    case 'FAILED':
       return {
-        key: 'SUSPENDED',
-        tone: 'warning',
-        label: 'Tạm dừng',
-        color: '#f59e0b',
-        tagColor: 'orange',
-        icon: 'pause-circle',
-        badgeStatus: 'warning',
+        key: 'FAILED',
+        tone: 'danger',
+        label: 'Lỗi - Cần xử lý',
+        color: '#ef4444',
+        tagColor: 'red',
+        icon: 'exclamation-circle',
+        badgeStatus: 'error',
       };
     case 'TERMINATED':
     case 'CANCELED':

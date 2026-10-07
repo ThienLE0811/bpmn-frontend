@@ -39,7 +39,7 @@ export class OperateApiService {
         } else if (s === 'CANCELED') {
           cleanParams['status'] = 'TERMINATED';
         } else if (s === 'INCIDENT') {
-          cleanParams['status'] = 'SUSPENDED';
+          cleanParams['status'] = 'FAILED';
         } else {
           cleanParams['status'] = filters.state;
         }
