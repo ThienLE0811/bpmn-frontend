@@ -8,9 +8,11 @@ import {
   signal,
   computed,
   inject,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TextFieldModule } from '@angular/cdk/text-field';
 
 import { NzGridModule } from 'ng-zorro-antd/grid';
 import { NzInputModule } from 'ng-zorro-antd/input';
@@ -18,6 +20,7 @@ import { NzInputNumberModule } from 'ng-zorro-antd/input-number';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
+import { NzRadioModule } from 'ng-zorro-antd/radio';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzMessageService } from 'ng-zorro-antd/message';
@@ -32,15 +35,18 @@ import { FormSchemaService } from '@core/services/state/form-schema.service';
 @Component({
   selector: 'app-dynamic-form-renderer',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     FormsModule,
+    TextFieldModule,
     NzGridModule,
     NzInputModule,
     NzInputNumberModule,
     NzSelectModule,
     NzSwitchModule,
     NzDatePickerModule,
+    NzRadioModule,
     NzIconModule,
     NzTagModule,
   ],
@@ -67,6 +73,7 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
   readonly formValues = signal<Record<string, any>>({});
   readonly jsonText = signal<string>('{}');
   readonly jsonError = signal<string | null>(null);
+  readonly fieldErrors = signal<Record<string, string>>({});
 
   // Danh sách các trường động được người dùng thêm bổ sung
   readonly dynamicFields = signal<FormFieldDefinition[]>([]);
@@ -83,18 +90,24 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
     return [...schemaFields, ...extra];
   });
 
+  // Set chứa key các trường động để tra cứu O(1) trong template
+  readonly dynamicKeySet = computed<Set<string>>(
+    () => new Set(this.dynamicFields().map((f) => f.key))
+  );
+
   readonly availableFieldTypes: Array<{ label: string; value: FormFieldType }> = [
     { label: 'Văn bản (Text)', value: 'text' },
     { label: 'Đoạn văn (Textarea)', value: 'textarea' },
     { label: 'Số (Number)', value: 'number' },
     { label: 'Tiền tệ (VNĐ)', value: 'currency' },
     { label: 'Bật/Tắt (Boolean Switch)', value: 'boolean' },
+    { label: 'Chọn một (Radio)', value: 'radio' },
     { label: 'Ngày tháng (Date)', value: 'date' },
   ];
 
-  // Tiền tệ VND formatter & parser
+  // Tiền tệ VND formatter & parser (trả về rỗng khi null để gõ/xóa số tự nhiên)
   formatterVnd = (value: number | null | undefined): string => {
-    if (value === null || value === undefined || isNaN(value)) return '0 ₫';
+    if (value === null || value === undefined || isNaN(value)) return '';
     return `${Math.round(value).toLocaleString('vi-VN')} ₫`;
   };
 
@@ -108,8 +121,6 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    // Parent thường bind ngược valuesChange vào initialValues; bỏ qua giá trị do chính component
-    // vừa phát ra để tránh vòng lặp change detection vô hạn.
     const valuesChanged =
       !!changes['initialValues'] &&
       changes['initialValues'].currentValue !== this.formValues();
@@ -154,7 +165,63 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
 
     this.formValues.set(resolvedValues);
     this.updateJsonFromValues(resolvedValues);
+    this.checkAllFieldsValid(resolvedValues);
     this.emitChanges();
+  }
+
+  /**
+   * Kiểm tra validation cho từng trường đơn lẻ
+   */
+  validateField(field: FormFieldDefinition, value: any): string | null {
+    if (field.required) {
+      if (
+        value === null ||
+        value === undefined ||
+        (typeof value === 'string' && value.trim() === '')
+      ) {
+        return `Trường "${field.label || field.key}" là bắt buộc.`;
+      }
+    }
+
+    if (field.type === 'number' || field.type === 'currency') {
+      if (value !== null && value !== undefined && value !== '') {
+        const num = Number(value);
+        if (isNaN(num)) {
+          return 'Giá trị phải là chữ số hợp lệ.';
+        }
+        if (field.min !== undefined && num < field.min) {
+          const minText = field.type === 'currency' ? this.formatterVnd(field.min) : field.min;
+          return `Giá trị tối thiểu là ${minText}.`;
+        }
+        if (field.max !== undefined && num > field.max) {
+          const maxText = field.type === 'currency' ? this.formatterVnd(field.max) : field.max;
+          return `Giá trị tối đa là ${maxText}.`;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Quét và cập nhật trạng thái lỗi của tất cả trường
+   */
+  checkAllFieldsValid(values?: Record<string, any>): boolean {
+    const vals = values ?? this.formValues();
+    const fields = this.allFields();
+    const errors: Record<string, string> = {};
+    let valid = true;
+
+    for (const f of fields) {
+      const err = this.validateField(f, vals[f.key]);
+      if (err) {
+        errors[f.key] = err;
+        valid = false;
+      }
+    }
+
+    this.fieldErrors.set(errors);
+    return valid;
   }
 
   /**
@@ -167,6 +234,20 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
       return updated;
     });
 
+    const field = this.allFields().find((f) => f.key === key);
+    if (field) {
+      const err = this.validateField(field, value);
+      this.fieldErrors.update((current) => {
+        const next = { ...current };
+        if (err) {
+          next[key] = err;
+        } else {
+          delete next[key];
+        }
+        return next;
+      });
+    }
+
     this.jsonError.set(null);
     this.emitChanges();
   }
@@ -177,11 +258,16 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
   switchMode(mode: 'form' | 'json'): void {
     if (mode === 'json') {
       this.updateJsonFromValues(this.formValues());
+      this.activeMode.set(mode);
     } else {
       // Khi quay lại Form, thử parse JSON
-      this.applyJsonToForm(this.jsonText());
+      const success = this.applyJsonToForm(this.jsonText());
+      if (!success) {
+        this.message.error('Vui lòng sửa lỗi cú pháp JSON trước khi chuyển về biểu mẫu trực quan.');
+        return;
+      }
+      this.activeMode.set(mode);
     }
-    this.activeMode.set(mode);
   }
 
   /**
@@ -212,6 +298,7 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
 
       this.jsonError.set(null);
       this.formValues.set(parsed);
+      this.checkAllFieldsValid(parsed);
       this.emitChanges();
       return true;
     } catch (e: any) {
@@ -231,8 +318,20 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
 
   private emitChanges(): void {
     const vals = this.formValues();
+    const isFieldsValid = Object.keys(this.fieldErrors()).length === 0;
+    const isJsonValid = this.jsonError() === null;
     this.valuesChange.emit(vals);
-    this.validityChange.emit(this.jsonError() === null);
+    this.validityChange.emit(isFieldsValid && isJsonValid);
+  }
+
+  /**
+   * Khôi phục toàn bộ biểu mẫu về giá trị mặc định của Schema
+   */
+  resetToDefaults(): void {
+    this.dynamicFields.set([]);
+    this.fieldErrors.set({});
+    this.initializeFormData();
+    this.message.info('Đã khôi phục các trường và giá trị về mặc định.');
   }
 
   /**
@@ -255,6 +354,14 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
       return;
     }
 
+    const IDENTIFIER_REGEX = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
+    if (!IDENTIFIER_REGEX.test(key)) {
+      this.message.warning(
+        'Mã biến không hợp lệ! Vui lòng chỉ dùng chữ cái, chữ số hoặc gạch dưới (VD: customerAge, discountRate).'
+      );
+      return;
+    }
+
     // Kiểm tra trùng key
     const all = this.allFields();
     if (all.some((f) => f.key.toLowerCase() === key.toLowerCase())) {
@@ -268,6 +375,7 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
     let defaultVal: any = '';
     if (type === 'boolean') defaultVal = true;
     if (type === 'number' || type === 'currency') defaultVal = 0;
+    if (type === 'radio') defaultVal = 'option1';
 
     const newField: FormFieldDefinition = {
       key,
@@ -275,6 +383,13 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
       type,
       defaultValue: defaultVal,
       colSpan: type === 'textarea' ? 24 : 12,
+      options:
+        type === 'radio'
+          ? [
+              { label: 'Lựa chọn 1', value: 'option1' },
+              { label: 'Lựa chọn 2', value: 'option2' },
+            ]
+          : undefined,
     };
 
     this.dynamicFields.update((f) => [...f, newField]);
@@ -293,6 +408,11 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
       const next = { ...current };
       delete next[key];
       this.updateJsonFromValues(next);
+      return next;
+    });
+    this.fieldErrors.update((current) => {
+      const next = { ...current };
+      delete next[key];
       return next;
     });
     this.emitChanges();
@@ -320,4 +440,14 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
       this.message.error('Không thể định dạng do lỗi cú pháp JSON.');
     }
   }
+
+  /**
+   * Xóa trắng dữ liệu JSON
+   */
+  clearJson(): void {
+    this.jsonText.set('{}');
+    this.applyJsonToForm('{}');
+    this.message.info('Đã làm trống dữ liệu JSON.');
+  }
 }
+

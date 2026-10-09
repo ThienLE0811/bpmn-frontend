@@ -45,6 +45,16 @@
           border-radius: 4px;
           line-height: 18px;
         }
+
+        .field-count-pill {
+          font-size: 11px;
+          font-weight: 500;
+          padding: 1px 7px;
+          background: #f1f5f9;
+          color: #475569;
+          border-radius: 10px;
+          border: 1px solid #e2e8f0;
+        }
       }
 
       .schema-desc {
@@ -56,6 +66,31 @@
   }
 
   .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .btn-header-reset {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 11px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #64748b;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+
+      &:hover {
+        color: #0f172a;
+        background: #f1f5f9;
+        border-color: #94a3b8;
+      }
+    }
+
     .mode-switch-group {
       display: inline-flex;
       background: #e2e8f0;
@@ -166,6 +201,11 @@
     background: #f8fafc;
   }
 
+  &.has-error {
+    border-color: #fca5a5;
+    background: #fffcfc;
+  }
+
   .field-label-row {
     display: flex;
     justify-content: space-between;
@@ -180,6 +220,7 @@
       display: flex;
       align-items: center;
       gap: 4px;
+      cursor: pointer;
 
       .required-mark {
         color: #ef4444;
@@ -231,6 +272,15 @@
       width: 100%;
       border-radius: 6px;
       font-size: 13px;
+
+      &.has-error {
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1) !important;
+      }
+    }
+
+    .form-control-date {
+      display: block;
     }
 
     .switch-control-box {
@@ -252,12 +302,44 @@
       }
     }
 
+    .radio-control-box {
+      padding: 4px 0;
+
+      .form-control-radio {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+      }
+    }
+
+    .number-input-box,
     .currency-input-box {
       width: 100%;
 
       ::ng-deep .ant-input-number {
         width: 100%;
+        border-radius: 6px;
       }
+
+      &.has-error ::ng-deep .ant-input-number {
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1) !important;
+      }
+    }
+  }
+
+  .field-error-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #ef4444;
+
+    .anticon {
+      font-size: 12px;
+      color: #ef4444;
     }
   }
 
@@ -275,6 +357,7 @@
     }
   }
 }
+
 
 /* Add Custom Field Section */
 .add-field-section {
@@ -337,6 +420,10 @@
     }
 
     .add-field-inputs {
+      .add-field-input-col {
+        margin-bottom: 8px;
+      }
+
       .sub-label {
         display: block;
         font-size: 12px;
