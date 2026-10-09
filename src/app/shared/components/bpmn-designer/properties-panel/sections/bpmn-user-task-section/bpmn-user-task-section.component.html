@@ -1,0 +1,130 @@
+<div class="section-card">
+  <div class="section-title">
+    <span nz-icon nzType="user" nzTheme="outline"></span>
+    <span>Phân công & Người thực hiện</span>
+  </div>
+
+  <!-- Người thực hiện (Assignee) -->
+  <div class="form-group">
+    <label class="form-label" for="taskAssignee">
+      <span>Người thực hiện (Assignee)</span>
+    </label>
+    <div class="input-wrap">
+      <span nz-icon nzType="user" nzTheme="outline" class="input-icon"></span>
+      <input
+        id="taskAssignee"
+        type="text"
+        class="form-input"
+        [ngModel]="element().assignee"
+        (ngModelChange)="updateProperty('assignee', $event)"
+        [placeholder]="'VD: admin hoặc ${initiator}'"
+      />
+    </div>
+    <span class="field-hint">Tên đăng nhập hoặc biến user xử lý</span>
+  </div>
+
+  <!-- Nhóm / Phòng ban ứng viên (Candidate Groups) -->
+  <div class="form-group">
+    <label class="form-label" for="taskCandidateGroups">
+      <span>Nhóm / Vai trò ứng viên (Candidate Groups)</span>
+    </label>
+    <div class="input-wrap">
+      <span nz-icon nzType="team" nzTheme="outline" class="input-icon"></span>
+      <input
+        id="taskCandidateGroups"
+        type="text"
+        class="form-input"
+        [ngModel]="element().candidateGroups"
+        (ngModelChange)="updateProperty('candidateGroups', $event)"
+        placeholder="VD: KE_TOAN, TRUONG_PHONG, HR"
+      />
+    </div>
+    <span class="field-hint">Phân cách các nhóm bằng dấu phẩy</span>
+  </div>
+
+  <!-- Người dùng ứng viên (Candidate Users) -->
+  <div class="form-group">
+    <label class="form-label" for="taskCandidateUsers">
+      <span>Người dùng ứng viên (Candidate Users)</span>
+    </label>
+    <div class="input-wrap">
+      <span nz-icon nzType="usergroup-add" nzTheme="outline" class="input-icon"></span>
+      <input
+        id="taskCandidateUsers"
+        type="text"
+        class="form-input"
+        [ngModel]="element().candidateUsers"
+        (ngModelChange)="updateProperty('candidateUsers', $event)"
+        placeholder="VD: user1, user2, user3"
+      />
+    </div>
+  </div>
+
+  <div class="form-row-2col">
+    <!-- Thời hạn hoàn thành (Due Date) -->
+    <div class="form-group">
+      <label class="form-label" for="taskDueDate">
+        <span>Hạn xử lý (Due Date)</span>
+      </label>
+      <div class="input-wrap">
+        <span nz-icon nzType="calendar" nzTheme="outline" class="input-icon"></span>
+        <input
+          id="taskDueDate"
+          type="text"
+          class="form-input"
+          [ngModel]="element().dueDate"
+          (ngModelChange)="updateProperty('dueDate', $event)"
+          placeholder="VD: P2D (2 ngày)"
+        />
+      </div>
+    </div>
+
+    <!-- Mức độ ưu tiên (Priority) -->
+    <div class="form-group">
+      <label class="form-label" for="taskPriority">
+        <span>Mức ưu tiên</span>
+      </label>
+      <div class="select-wrapper">
+        <select
+          id="taskPriority"
+          class="form-input form-select"
+          [ngModel]="element().priority || ''"
+          (ngModelChange)="updateProperty('priority', $event)"
+        >
+          <option value="">Mặc định (50)</option>
+          <option value="25">Thấp (25)</option>
+          <option value="50">Bình thường (50)</option>
+          <option value="75">Cao (75)</option>
+          <option value="100">Khẩn cấp (100)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cấu hình Biểu mẫu gắn kèm (Form Key) -->
+  <div class="form-group">
+    <label class="form-label" for="taskFormKey">
+      <span>Biểu mẫu gắn kèm (Form Key)</span>
+    </label>
+    <div class="input-wrap">
+      <span nz-icon nzType="form" nzTheme="outline" class="input-icon"></span>
+      <input
+        id="taskFormKey"
+        type="text"
+        class="form-input"
+        [ngModel]="element().formKey"
+        (ngModelChange)="updateProperty('formKey', $event)"
+        list="registeredFormsList"
+        placeholder="VD: form_order_fulfillment hoặc tự nhập"
+      />
+      <datalist id="registeredFormsList">
+        @for (f of registeredForms(); track f.id) {
+          <option [value]="f.id">{{ f.name }} ({{ f.id }})</option>
+        }
+      </datalist>
+    </div>
+    <span class="field-hint"
+      >Mã biểu mẫu tự động nạp khi người dùng xử lý tác vụ này (camunda:formKey)</span
+    >
+  </div>
+</div>

@@ -1,0 +1,62 @@
+<div class="advanced-summary-card">
+  <div class="advanced-title">
+    <span nz-icon nzType="database" nzTheme="outline"></span>
+    <span>Thông số XML Raw</span>
+  </div>
+  <div class="raw-meta-grid">
+    <div class="raw-item">
+      <span class="k">Element ID</span>
+      <span class="v code-val">{{ element().id }}</span>
+    </div>
+    <div class="raw-item">
+      <span class="k">BPMN Type</span>
+      <span class="v code-val">{{ element().type }}</span>
+    </div>
+    <div class="raw-item">
+      <span class="k">Category</span>
+      <span class="v">{{ typeMeta().category }}</span>
+    </div>
+    @if (element().assignee) {
+      <div class="raw-item">
+        <span class="k">Assignee</span>
+        <span class="v">{{ element().assignee }}</span>
+      </div>
+    }
+    @if (element().conditionExpression) {
+      <div class="raw-item">
+        <span class="k">Condition</span>
+        <span class="v code-val">{{ element().conditionExpression }}</span>
+      </div>
+    }
+    @if (element().topic) {
+      <div class="raw-item">
+        <span class="k">Topic</span>
+        <span class="v">{{ element().topic }}</span>
+      </div>
+    }
+    @if (element().decisionRef) {
+      <div class="raw-item">
+        <span class="k">Decision Ref</span>
+        <span class="v code-val">{{ element().decisionRef }}</span>
+      </div>
+    }
+    @if (element().resultVariable) {
+      <div class="raw-item">
+        <span class="k">Result Variable</span>
+        <span class="v code-val">{{ element().resultVariable }}</span>
+      </div>
+    }
+    @if (element().timerType) {
+      <div class="raw-item">
+        <span class="k">Timer</span>
+        <span class="v code-val">{{ element().timerType }}: {{ element().timerValue || '(trống)' }}</span>
+      </div>
+    }
+    @if (isBoundaryEvent(element().type)) {
+      <div class="raw-item">
+        <span class="k">cancelActivity</span>
+        <span class="v code-val">{{ element().isInterrupting }}</span>
+      </div>
+    }
+  </div>
+</div>

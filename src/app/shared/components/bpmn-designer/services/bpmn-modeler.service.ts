@@ -209,6 +209,44 @@ export class BpmnModelerService implements OnDestroy {
     }
   }
 
+  /**
+   * Áp dụng lệnh modeling lên phần tử đang chọn và đồng bộ giá trị thô vào signal selectedElement.
+   */
+  editSelected(
+    patch: Partial<BpmnElementProperties>,
+    edit: (element: any) => boolean | void,
+  ): void {
+    const currentSel = this.selectedElement();
+    if (!currentSel) return;
+
+    const element = this.getElement(currentSel.id);
+    if (!element) return;
+
+    if (this.applySidebarEdit(() => edit(element)) === false) return;
+    this.selectedElement.set({ ...currentSel, ...patch });
+  }
+
+  /**
+   * Cập nhật một thuộc tính đơn lẻ của phần tử đang chọn lên XML modeler.
+   */
+  updateProperty(propName: keyof BpmnElementProperties, value: any): void {
+    this.editSelected({ [propName]: value }, (element) => {
+      let updatePayload: Record<string, any>;
+      if (propName === 'conditionExpression') {
+        updatePayload = {
+          conditionExpression:
+            value && value.trim()
+              ? this.get('bpmnFactory').create('bpmn:FormalExpression', { body: value.trim() })
+              : undefined,
+        };
+      } else {
+        const moddlePropName = propName === 'javaClass' ? 'class' : propName;
+        updatePayload = { [moddlePropName]: value || undefined };
+      }
+      this.get('modeling').updateProperties(element, updatePayload);
+    });
+  }
+
   private refreshSelectedElement(): void {
     const currentSel = this.selectedElement();
     if (!currentSel) return;
