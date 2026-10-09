@@ -1,0 +1,92 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.json-editor-wrapper {
+  padding: 14px;
+  background: #ffffff;
+
+  .json-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 12px;
+
+    .json-tip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #64748b;
+
+      .anticon {
+        color: #0284c7;
+      }
+    }
+
+    .json-actions {
+      display: flex;
+      gap: 6px;
+
+      .btn-json-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        font-size: 12px;
+        color: #475569;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.18s ease;
+
+        &:hover {
+          background: #e2e8f0;
+          color: #0f172a;
+        }
+      }
+    }
+  }
+
+  .json-error-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    color: #b91c1c;
+    font-size: 12.5px;
+
+    .error-icon {
+      font-size: 14px;
+    }
+  }
+
+  .editor-area {
+    .raw-json-textarea {
+      width: 100%;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      line-height: 1.55;
+      background: #0f172a;
+      color: #38bdf8;
+      padding: 14px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+      resize: vertical;
+      outline: none;
+
+      &:focus {
+        border-color: #38bdf8;
+        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+      }
+    }
+  }
+}

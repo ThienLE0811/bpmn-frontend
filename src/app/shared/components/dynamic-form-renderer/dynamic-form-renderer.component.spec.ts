@@ -9,7 +9,12 @@ import { provideTestIcons } from '@shared/testing/test-icon-provider';
 describe('DynamicFormRendererComponent', () => {
   let fixture: ComponentFixture<DynamicFormRendererComponent>;
   let component: DynamicFormRendererComponent;
-  let mockMessage: { error: ReturnType<typeof vi.fn>; success: ReturnType<typeof vi.fn> };
+  let mockMessage: {
+    error: ReturnType<typeof vi.fn>;
+    success: ReturnType<typeof vi.fn>;
+    info: ReturnType<typeof vi.fn>;
+    warning: ReturnType<typeof vi.fn>;
+  };
 
   const testSchema: FormDefinition = {
     id: 'test_form',
@@ -25,6 +30,8 @@ describe('DynamicFormRendererComponent', () => {
     mockMessage = {
       error: vi.fn(),
       success: vi.fn(),
+      info: vi.fn(),
+      warning: vi.fn(),
     };
 
     await TestBed.configureTestingModule({
@@ -70,12 +77,29 @@ describe('DynamicFormRendererComponent', () => {
   });
 
   it('should allow adding dynamic fields', () => {
-    component.newFieldKey.set('extraNote');
-    component.newFieldLabel.set('Ghi chú thêm');
-    component.newFieldType.set('textarea');
-
-    (component as any).confirmAddField();
+    component.addDynamicField({
+      key: 'extraNote',
+      label: 'Ghi chú thêm',
+      type: 'textarea',
+      defaultValue: '',
+      colSpan: 24,
+    });
     expect(component.dynamicFields().some((f) => f.key === 'extraNote')).toBe(true);
     expect(component.allFields().some((f) => f.key === 'extraNote')).toBe(true);
+    expect(component.allFieldKeys()).toContain('extraNote');
+  });
+
+  it('should allow removing dynamic fields', () => {
+    component.addDynamicField({
+      key: 'tempField',
+      label: 'Tạm thời',
+      type: 'text',
+      defaultValue: '123',
+    });
+    expect(component.dynamicFields().some((f) => f.key === 'tempField')).toBe(true);
+
+    const dummyEvent = new MouseEvent('click');
+    component.removeDynamicField('tempField', dummyEvent);
+    expect(component.dynamicFields().some((f) => f.key === 'tempField')).toBe(false);
   });
 });

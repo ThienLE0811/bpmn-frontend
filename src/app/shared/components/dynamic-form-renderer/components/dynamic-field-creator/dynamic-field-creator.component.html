@@ -1,0 +1,58 @@
+<div class="add-field-section">
+  @if (!isAddingField()) {
+    <button type="button" class="btn-toggle-add-field" (click)="toggleAddField()">
+      <span nz-icon nzType="plus" nzTheme="outline"></span>
+      <span>Bổ sung thêm biến quy trình (Add Variable)</span>
+    </button>
+  } @else {
+    <div class="add-field-card">
+      <div class="add-field-header">
+        <span class="card-title">Thêm trường biến quy trình tùy chỉnh</span>
+        <button class="btn-close-mini" (click)="toggleAddField()">
+          <span nz-icon nzType="close"></span>
+        </button>
+      </div>
+
+      <div nz-row [nzGutter]="12" class="add-field-inputs">
+        <div nz-col [nzSpan]="24" [nzSm]="8" class="add-field-input-col">
+          <label class="sub-label">Tên mã biến (Key)*:</label>
+          <input
+            nz-input
+            placeholder="VD: discountPercent"
+            [ngModel]="newFieldKey()"
+            (ngModelChange)="newFieldKey.set($event)"
+          />
+        </div>
+        <div nz-col [nzSpan]="24" [nzSm]="8" class="add-field-input-col">
+          <label class="sub-label">Tiêu đề hiển thị:</label>
+          <input
+            nz-input
+            placeholder="VD: Phần trăm giảm giá"
+            [ngModel]="newFieldLabel()"
+            (ngModelChange)="newFieldLabel.set($event)"
+          />
+        </div>
+        <div nz-col [nzSpan]="24" [nzSm]="8" class="add-field-input-col">
+          <label class="sub-label">Kiểu dữ liệu:</label>
+          <nz-select
+            style="width: 100%;"
+            [ngModel]="newFieldType()"
+            (ngModelChange)="newFieldType.set($event)"
+          >
+            @for (t of availableFieldTypes; track t.value) {
+              <nz-option [nzValue]="t.value" [nzLabel]="t.label"></nz-option>
+            }
+          </nz-select>
+        </div>
+      </div>
+
+      <div class="add-field-actions">
+        <button class="btn-cancel-field" (click)="toggleAddField()">Hủy</button>
+        <button class="btn-confirm-field" (click)="confirmAddField()">
+          <span nz-icon nzType="check"></span>
+          <span>Thêm trường</span>
+        </button>
+      </div>
+    </div>
+  }
+</div>

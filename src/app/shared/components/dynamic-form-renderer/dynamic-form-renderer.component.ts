@@ -8,6 +8,7 @@ import {
   signal,
   computed,
   inject,
+  viewChild,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -28,9 +29,16 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 import {
   FormDefinition,
   FormFieldDefinition,
-  FormFieldType,
 } from '@core/models/form-schema.model';
 import { FormSchemaService } from '@core/services/state/form-schema.service';
+import {
+  formatVnd,
+  parseVnd,
+  validateFormField,
+  validateAllFormFields,
+} from './utils/dynamic-form.utils';
+import { JsonFormEditorComponent } from './components/json-form-editor/json-form-editor.component';
+import { DynamicFieldCreatorComponent } from './components/dynamic-field-creator/dynamic-field-creator.component';
 
 @Component({
   selector: 'app-dynamic-form-renderer',
@@ -49,6 +57,8 @@ import { FormSchemaService } from '@core/services/state/form-schema.service';
     NzRadioModule,
     NzIconModule,
     NzTagModule,
+    JsonFormEditorComponent,
+    DynamicFieldCreatorComponent,
   ],
   templateUrl: './dynamic-form-renderer.component.html',
   styleUrl: './dynamic-form-renderer.component.scss',
@@ -77,10 +87,6 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
 
   // Danh sách các trường động được người dùng thêm bổ sung
   readonly dynamicFields = signal<FormFieldDefinition[]>([]);
-  readonly isAddingField = signal<boolean>(false);
-  readonly newFieldKey = signal<string>('');
-  readonly newFieldLabel = signal<string>('');
-  readonly newFieldType = signal<FormFieldType>('text');
 
   // Gộp các trường từ Schema và các trường do người dùng tự thêm
   readonly allFields = computed<FormFieldDefinition[]>(() => {
@@ -90,31 +96,25 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
     return [...schemaFields, ...extra];
   });
 
+  // Danh sách tên mã biến của tất cả trường để kiểm tra trùng lặp
+  readonly allFieldKeys = computed<string[]>(() =>
+    this.allFields().map((f) => f.key)
+  );
+
   // Set chứa key các trường động để tra cứu O(1) trong template
   readonly dynamicKeySet = computed<Set<string>>(
     () => new Set(this.dynamicFields().map((f) => f.key))
   );
 
-  readonly availableFieldTypes: Array<{ label: string; value: FormFieldType }> = [
-    { label: 'Văn bản (Text)', value: 'text' },
-    { label: 'Đoạn văn (Textarea)', value: 'textarea' },
-    { label: 'Số (Number)', value: 'number' },
-    { label: 'Tiền tệ (VNĐ)', value: 'currency' },
-    { label: 'Bật/Tắt (Boolean Switch)', value: 'boolean' },
-    { label: 'Chọn một (Radio)', value: 'radio' },
-    { label: 'Ngày tháng (Date)', value: 'date' },
-  ];
+  // Tiền tệ VND formatter & parser
+  readonly formatterVnd = formatVnd;
+  readonly parserVnd = parseVnd;
 
-  // Tiền tệ VND formatter & parser (trả về rỗng khi null để gõ/xóa số tự nhiên)
-  formatterVnd = (value: number | null | undefined): string => {
-    if (value === null || value === undefined || isNaN(value)) return '';
-    return `${Math.round(value).toLocaleString('vi-VN')} ₫`;
-  };
+  readonly fieldCreator = viewChild<DynamicFieldCreatorComponent>(DynamicFieldCreatorComponent);
 
-  parserVnd = (value: string): number => {
-    const clean = value.replace(/\D/g, '');
-    return clean ? Number(clean) : 0;
-  };
+  openAddField(): void {
+    this.fieldCreator()?.toggleAddField();
+  }
 
   ngOnInit(): void {
     this.initializeFormData();
@@ -170,58 +170,14 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
   }
 
   /**
-   * Kiểm tra validation cho từng trường đơn lẻ
-   */
-  validateField(field: FormFieldDefinition, value: any): string | null {
-    if (field.required) {
-      if (
-        value === null ||
-        value === undefined ||
-        (typeof value === 'string' && value.trim() === '')
-      ) {
-        return `Trường "${field.label || field.key}" là bắt buộc.`;
-      }
-    }
-
-    if (field.type === 'number' || field.type === 'currency') {
-      if (value !== null && value !== undefined && value !== '') {
-        const num = Number(value);
-        if (isNaN(num)) {
-          return 'Giá trị phải là chữ số hợp lệ.';
-        }
-        if (field.min !== undefined && num < field.min) {
-          const minText = field.type === 'currency' ? this.formatterVnd(field.min) : field.min;
-          return `Giá trị tối thiểu là ${minText}.`;
-        }
-        if (field.max !== undefined && num > field.max) {
-          const maxText = field.type === 'currency' ? this.formatterVnd(field.max) : field.max;
-          return `Giá trị tối đa là ${maxText}.`;
-        }
-      }
-    }
-
-    return null;
-  }
-
-  /**
    * Quét và cập nhật trạng thái lỗi của tất cả trường
    */
   checkAllFieldsValid(values?: Record<string, any>): boolean {
     const vals = values ?? this.formValues();
     const fields = this.allFields();
-    const errors: Record<string, string> = {};
-    let valid = true;
-
-    for (const f of fields) {
-      const err = this.validateField(f, vals[f.key]);
-      if (err) {
-        errors[f.key] = err;
-        valid = false;
-      }
-    }
-
+    const errors = validateAllFormFields(fields, vals);
     this.fieldErrors.set(errors);
-    return valid;
+    return Object.keys(errors).length === 0;
   }
 
   /**
@@ -236,7 +192,7 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
 
     const field = this.allFields().find((f) => f.key === key);
     if (field) {
-      const err = this.validateField(field, value);
+      const err = validateFormField(field, value);
       this.fieldErrors.update((current) => {
         const next = { ...current };
         if (err) {
@@ -260,7 +216,6 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
       this.updateJsonFromValues(this.formValues());
       this.activeMode.set(mode);
     } else {
-      // Khi quay lại Form, thử parse JSON
       const success = this.applyJsonToForm(this.jsonText());
       if (!success) {
         this.message.error('Vui lòng sửa lỗi cú pháp JSON trước khi chuyển về biểu mẫu trực quan.');
@@ -279,8 +234,76 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
   }
 
   /**
-   * Parse JSON và đồng bộ vào formValues
+   * Thêm trường động mới do người dùng tạo
    */
+  addDynamicField(field: FormFieldDefinition): void {
+    this.dynamicFields.update((f) => [...f, field]);
+    this.onFieldChange(field.key, field.defaultValue);
+    this.message.success(`Đã thêm trường biến "${field.label}".`);
+  }
+
+  /**
+   * Xóa trường biến động
+   */
+  removeDynamicField(key: string, event: Event): void {
+    event.stopPropagation();
+    this.dynamicFields.update((f) => f.filter((item) => item.key !== key));
+    this.formValues.update((current) => {
+      const next = { ...current };
+      delete next[key];
+      this.updateJsonFromValues(next);
+      return next;
+    });
+    this.fieldErrors.update((current) => {
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+    this.emitChanges();
+    this.message.info(`Đã gỡ bỏ biến "${key}".`);
+  }
+
+  /**
+   * Khôi phục toàn bộ biểu mẫu về giá trị mặc định của Schema
+   */
+  resetToDefaults(): void {
+    this.dynamicFields.set([]);
+    this.fieldErrors.set({});
+    this.initializeFormData();
+    this.message.info('Đã khôi phục các trường và giá trị về mặc định.');
+  }
+
+  /**
+   * Sao chép JSON vào clipboard
+   */
+  copyJson(): void {
+    navigator.clipboard.writeText(this.jsonText()).then(() => {
+      this.message.success('Đã sao chép chuỗi JSON vào bộ nhớ đệm!');
+    });
+  }
+
+  /**
+   * Format lại chuỗi JSON
+   */
+  formatJson(): void {
+    try {
+      const parsed = JSON.parse(this.jsonText());
+      this.jsonText.set(JSON.stringify(parsed, null, 2));
+      this.jsonError.set(null);
+    } catch {
+      this.message.error('Không thể định dạng do lỗi cú pháp JSON.');
+    }
+  }
+
+  /**
+   * Xóa trắng dữ liệu JSON
+   */
+  clearJson(): void {
+    this.jsonText.set('{}');
+    this.applyJsonToForm('{}');
+    this.message.info('Đã làm trống dữ liệu JSON.');
+  }
+
   private applyJsonToForm(jsonString: string): boolean {
     try {
       if (!jsonString.trim()) {
@@ -323,131 +346,4 @@ export class DynamicFormRendererComponent implements OnInit, OnChanges {
     this.valuesChange.emit(vals);
     this.validityChange.emit(isFieldsValid && isJsonValid);
   }
-
-  /**
-   * Khôi phục toàn bộ biểu mẫu về giá trị mặc định của Schema
-   */
-  resetToDefaults(): void {
-    this.dynamicFields.set([]);
-    this.fieldErrors.set({});
-    this.initializeFormData();
-    this.message.info('Đã khôi phục các trường và giá trị về mặc định.');
-  }
-
-  /**
-   * Mở form thêm biến tùy chỉnh
-   */
-  toggleAddField(): void {
-    this.isAddingField.update((v) => !v);
-    this.newFieldKey.set('');
-    this.newFieldLabel.set('');
-    this.newFieldType.set('text');
-  }
-
-  /**
-   * Xác nhận thêm biến mới
-   */
-  confirmAddField(): void {
-    const key = this.newFieldKey().trim();
-    if (!key) {
-      this.message.warning('Vui lòng nhập tên mã biến (Variable Key).');
-      return;
-    }
-
-    const IDENTIFIER_REGEX = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
-    if (!IDENTIFIER_REGEX.test(key)) {
-      this.message.warning(
-        'Mã biến không hợp lệ! Vui lòng chỉ dùng chữ cái, chữ số hoặc gạch dưới (VD: customerAge, discountRate).'
-      );
-      return;
-    }
-
-    // Kiểm tra trùng key
-    const all = this.allFields();
-    if (all.some((f) => f.key.toLowerCase() === key.toLowerCase())) {
-      this.message.error(`Tên biến "${key}" đã tồn tại.`);
-      return;
-    }
-
-    const type = this.newFieldType();
-    const label = this.newFieldLabel().trim() || key;
-
-    let defaultVal: any = '';
-    if (type === 'boolean') defaultVal = true;
-    if (type === 'number' || type === 'currency') defaultVal = 0;
-    if (type === 'radio') defaultVal = 'option1';
-
-    const newField: FormFieldDefinition = {
-      key,
-      label,
-      type,
-      defaultValue: defaultVal,
-      colSpan: type === 'textarea' ? 24 : 12,
-      options:
-        type === 'radio'
-          ? [
-              { label: 'Lựa chọn 1', value: 'option1' },
-              { label: 'Lựa chọn 2', value: 'option2' },
-            ]
-          : undefined,
-    };
-
-    this.dynamicFields.update((f) => [...f, newField]);
-    this.onFieldChange(key, defaultVal);
-    this.isAddingField.set(false);
-    this.message.success(`Đã thêm trường biến "${label}".`);
-  }
-
-  /**
-   * Xóa trường biến động
-   */
-  removeDynamicField(key: string, event: Event): void {
-    event.stopPropagation();
-    this.dynamicFields.update((f) => f.filter((item) => item.key !== key));
-    this.formValues.update((current) => {
-      const next = { ...current };
-      delete next[key];
-      this.updateJsonFromValues(next);
-      return next;
-    });
-    this.fieldErrors.update((current) => {
-      const next = { ...current };
-      delete next[key];
-      return next;
-    });
-    this.emitChanges();
-    this.message.info(`Đã gỡ bỏ biến "${key}".`);
-  }
-
-  /**
-   * Sao chép JSON vào clipboard
-   */
-  copyJson(): void {
-    navigator.clipboard.writeText(this.jsonText()).then(() => {
-      this.message.success('Đã sao chép chuỗi JSON vào bộ nhớ đệm!');
-    });
-  }
-
-  /**
-   * Format lại chuỗi JSON
-   */
-  formatJson(): void {
-    try {
-      const parsed = JSON.parse(this.jsonText());
-      this.jsonText.set(JSON.stringify(parsed, null, 2));
-      this.jsonError.set(null);
-    } catch (e: any) {
-      this.message.error('Không thể định dạng do lỗi cú pháp JSON.');
-    }
-  }
-
-  /**
-   * Xóa trắng dữ liệu JSON
-   */
-  clearJson(): void {
-    this.jsonText.set('{}');
-    this.applyJsonToForm('{}');
-    this.message.info('Đã làm trống dữ liệu JSON.');
-  }
 }
-

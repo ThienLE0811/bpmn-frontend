@@ -1,0 +1,56 @@
+<div class="json-editor-wrapper">
+  <div class="json-toolbar">
+    <div class="json-tip">
+      <span nz-icon nzType="info-circle" nzTheme="outline"></span>
+      <span>Dữ liệu JSON sẽ tự động đồng bộ ngay khi chuyển về tab Biểu mẫu</span>
+    </div>
+    <div class="json-actions">
+      <button
+        type="button"
+        class="btn-json-action"
+        (click)="formatRequested.emit()"
+        title="Làm đẹp mã JSON"
+      >
+        <span nz-icon nzType="form" nzTheme="outline"></span>
+        <span>Định dạng</span>
+      </button>
+      <button
+        type="button"
+        class="btn-json-action"
+        (click)="clearRequested.emit()"
+        title="Xóa trắng dữ liệu JSON"
+      >
+        <span nz-icon nzType="clear" nzTheme="outline"></span>
+        <span>Làm trống</span>
+      </button>
+      <button
+        type="button"
+        class="btn-json-action"
+        (click)="copyRequested.emit()"
+        title="Sao chép JSON"
+      >
+        <span nz-icon nzType="copy" nzTheme="outline"></span>
+        <span>Sao chép</span>
+      </button>
+    </div>
+  </div>
+
+  @if (jsonError(); as err) {
+    <div class="json-error-banner">
+      <span nz-icon nzType="exclamation-circle" nzTheme="fill" class="error-icon"></span>
+      <span class="error-text">{{ err }}</span>
+    </div>
+  }
+
+  <div class="editor-area">
+    <textarea
+      class="raw-json-textarea"
+      [ngModel]="jsonText()"
+      (ngModelChange)="textChange.emit($event)"
+      [disabled]="readOnly()"
+      rows="12"
+      spellcheck="false"
+      placeholder='{\n  "key": "value"\n}'
+    ></textarea>
+  </div>
+</div>
